@@ -3,6 +3,7 @@ package nz.eloque.openmaps
 import android.app.Application
 import nz.eloque.openmaps.core.platform.createHttpClient
 import nz.eloque.openmaps.data.geocoding.geocodingModule
+import nz.eloque.openmaps.data.storage.storageModule
 import nz.eloque.openmaps.data.transit.transitModule
 import nz.eloque.openmaps.ui.uiModule
 import org.koin.android.ext.koin.androidContext
@@ -19,6 +20,7 @@ class OpenMapsApplication : Application() {
                 module { single { createHttpClient(USER_AGENT) } },
                 transitModule(language = { Locale.getDefault().language }),
                 geocodingModule(),
+                storageModule,
                 uiModule,
             )
         }

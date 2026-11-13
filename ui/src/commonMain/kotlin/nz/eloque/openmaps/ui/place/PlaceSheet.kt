@@ -1,7 +1,9 @@
 package nz.eloque.openmaps.ui.place
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -30,8 +32,10 @@ import nz.eloque.openmaps.map.MapController
 import nz.eloque.openmaps.ui.components.DirectionsButton
 import nz.eloque.openmaps.ui.components.FocusOnMap
 import nz.eloque.openmaps.ui.components.LoadStateContent
+import nz.eloque.openmaps.ui.components.SaveButton
 import nz.eloque.openmaps.ui.navigation.PlaceKey
 import nz.eloque.openmaps.ui.navigation.parsedOsmId
+import nz.eloque.openmaps.ui.navigation.toSearchResult
 import nz.eloque.openmaps.ui.resources.Res
 import nz.eloque.openmaps.ui.resources.opening_hours
 import nz.eloque.openmaps.ui.resources.phone
@@ -60,7 +64,10 @@ fun PlaceSheet(
         if (subtitle.isNotEmpty()) {
             Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        DirectionsButton(onDirections, Modifier.padding(top = 8.dp))
+        Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            DirectionsButton(onDirections)
+            SaveButton(place.toSearchResult())
+        }
         HorizontalDivider(Modifier.padding(top = 12.dp))
         LoadStateContent(details, onRetry = viewModel::load) { it?.let { DetailRows(it) } }
     }

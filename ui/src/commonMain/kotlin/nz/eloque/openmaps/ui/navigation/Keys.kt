@@ -2,9 +2,11 @@ package nz.eloque.openmaps.ui.navigation
 
 import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
+import nz.eloque.openmaps.core.model.FavouriteLabel
 import nz.eloque.openmaps.core.model.LatLng
 import nz.eloque.openmaps.core.model.OsmId
 import nz.eloque.openmaps.core.model.SearchResult
+import nz.eloque.openmaps.core.model.TransportMode
 
 @Serializable
 data object HomeKey : NavKey
@@ -14,10 +16,11 @@ data object AboutKey : NavKey
 
 enum class DirectionsField { FROM, TO }
 
-/** Search for the main map, or for one end of the directions when [field] is set. */
+/** Search for the main map, for one end of the directions when [field] is set, or to save a favourite when [saveAs] is set. */
 @Serializable
 data class SearchKey(
     val field: DirectionsField? = null,
+    val saveAs: FavouriteLabel? = null,
 ) : NavKey
 
 /** A route end. Stops route by id, everything else by coordinates. */
@@ -68,13 +71,23 @@ data class StopKey(
     val name: String,
     val latitude: Double,
     val longitude: Double,
+    val modes: Set<TransportMode> = emptySet(),
 ) : NavKey {
     val location: LatLng get() = LatLng(latitude, longitude)
 }
 
+fun StopKey.toSearchResult(): SearchResult = SearchResult.Stop(id, name, location, null, modes)
+
+fun PlaceKey.toSearchResult(): SearchResult =
+    if (osmId == null && category == null) {
+        SearchResult.Address(name, location, subtitle, null, null, null)
+    } else {
+        SearchResult.Place(parsedOsmId, name, location, subtitle, category)
+    }
+
 fun SearchResult.toKey(): NavKey =
     when (this) {
-        is SearchResult.Stop -> StopKey(id, name, location.latitude, location.longitude)
+        is SearchResult.Stop -> StopKey(id, name, location.latitude, location.longitude, modes)
         is SearchResult.Place ->
             PlaceKey(name, location.latitude, location.longitude, area, category, osmId?.let { "${it.type.name.lowercase()}/${it.id}" })
         is SearchResult.Address -> {

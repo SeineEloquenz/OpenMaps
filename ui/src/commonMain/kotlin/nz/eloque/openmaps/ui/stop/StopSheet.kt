@@ -1,5 +1,7 @@
 package nz.eloque.openmaps.ui.stop
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -18,8 +20,10 @@ import nz.eloque.openmaps.ui.components.DirectionsButton
 import nz.eloque.openmaps.ui.components.FocusOnMap
 import nz.eloque.openmaps.ui.components.LoadState
 import nz.eloque.openmaps.ui.components.LoadStateContent
+import nz.eloque.openmaps.ui.components.SaveButton
 import nz.eloque.openmaps.ui.components.rememberNow
 import nz.eloque.openmaps.ui.navigation.StopKey
+import nz.eloque.openmaps.ui.navigation.toSearchResult
 import nz.eloque.openmaps.ui.resources.Res
 import nz.eloque.openmaps.ui.resources.departures
 import nz.eloque.openmaps.ui.resources.no_departures
@@ -41,7 +45,10 @@ fun StopSheet(
     LazyColumn(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
         item {
             Text(stop.name, style = MaterialTheme.typography.headlineSmall)
-            DirectionsButton(onDirections, Modifier.padding(top = 8.dp))
+            Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                DirectionsButton(onDirections)
+                SaveButton(stop.toSearchResult())
+            }
             Text(
                 stringResource(Res.string.departures),
                 style = MaterialTheme.typography.titleSmall,

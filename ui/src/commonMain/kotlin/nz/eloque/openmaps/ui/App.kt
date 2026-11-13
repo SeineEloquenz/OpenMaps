@@ -48,6 +48,7 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass
+import nz.eloque.openmaps.core.model.PlacesStore
 import nz.eloque.openmaps.map.MapController
 import nz.eloque.openmaps.map.OpenMap
 import nz.eloque.openmaps.map.rememberMapController
@@ -76,6 +77,7 @@ import nz.eloque.openmaps.ui.stop.StopSheet
 import nz.eloque.openmaps.ui.theme.OpenMapsTheme
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.koinInject
 
 private val navConfiguration =
     SavedStateConfiguration {
@@ -104,6 +106,8 @@ fun App(version: String) {
         val map = rememberMapController()
         val snackbar = remember { SnackbarHostState() }
         val sheetState = rememberBottomSheetScaffoldState(snackbarHostState = snackbar)
+        val places = koinInject<PlacesStore>()
+        val scope = rememberCoroutineScope()
 
         BottomSheetScaffold(
             scaffoldState = sheetState,
@@ -121,7 +125,14 @@ fun App(version: String) {
                         ),
                     entryProvider =
                         entryProvider {
-                            entry<HomeKey> { HomeSheet(map, onOpenStop = backStack::add) }
+                            entry<HomeKey> {
+                                HomeSheet(
+                                    map = map,
+                                    onOpenStop = backStack::add,
+                                    onDirectionsTo = { backStack.add(DirectionsKey(from = null, to = it.toEndpoint())) },
+                                    onSetFavourite = { backStack.add(SearchKey(saveAs = it)) },
+                                )
+                            }
                             entry<AboutKey> { AboutSheet(version) }
                             entry<SearchKey> { search ->
                                 SearchScreen(
@@ -130,6 +141,10 @@ fun App(version: String) {
                                     onDismiss = { backStack.removeLastOrNull() },
                                     onSelect = { result ->
                                         backStack.removeLastOrNull()
+                                        search.saveAs?.let { label ->
+                                            scope.launch { places.saveFavourite(result, label) }
+                                            return@SearchScreen
+                                        }
                                         val field = search.field
                                         val index = backStack.indexOfLast { it is DirectionsKey }
                                         if (field == null || index < 0) {

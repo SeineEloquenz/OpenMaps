@@ -50,6 +50,16 @@
     <string name="route_expired">This route is no longer available.</string>
     <string name="towards">towards %1$s</string>
 
+    <string name="home">Home</string>
+    <string name="work">Work</string>
+    <string name="save">Save</string>
+    <string name="saved">Saved</string>
+    <string name="save_as_home">Save as home</string>
+    <string name="save_as_work">Save as work</string>
+    <string name="save_as_favourite">Save as favourite</string>
+    <string name="favourites">Favourites</string>
+    <string name="recent">Recent</string>
+
     <string name="about">About</string>
     <string name="about_app">OpenMaps %1$s</string>
     <string name="about_licence">Free software under the GNU AGPL 3.0</string>
