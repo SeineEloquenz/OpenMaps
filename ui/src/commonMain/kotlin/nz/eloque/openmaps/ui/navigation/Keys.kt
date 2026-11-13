@@ -61,6 +61,8 @@ data class PlaceKey(
     val subtitle: String?,
     val category: String?,
     val osmId: String?,
+    /** True for a pin dropped by long-pressing the map. */
+    val pinned: Boolean = false,
 ) : NavKey {
     val location: LatLng get() = LatLng(latitude, longitude)
 }

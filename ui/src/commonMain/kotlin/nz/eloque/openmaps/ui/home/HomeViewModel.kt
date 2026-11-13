@@ -16,6 +16,8 @@ import nz.eloque.openmaps.ui.components.DepartureGroup
 import nz.eloque.openmaps.ui.components.LoadState
 import nz.eloque.openmaps.ui.components.groupDepartures
 import nz.eloque.openmaps.ui.components.refreshing
+import kotlin.time.Clock
+import kotlin.time.Duration.Companion.hours
 
 data class NearbyStop(
     val id: String?,
@@ -54,10 +56,12 @@ class HomeViewModel(
         retries.value++
     }
 
-    private suspend fun loadNearby(location: LatLng): List<NearbyStop> =
-        transit
+    private suspend fun loadNearby(location: LatLng): List<NearbyStop> {
+        val latest = Clock.System.now() + LOOKAHEAD
+        return transit
             .departuresNear(location, radiusMeters = SEARCH_RADIUS_METERS, count = 60)
             .departures
+            .filter { it.time.actual <= latest }
             .groupBy { it.stopName }
             .values
             .sortedBy { it.first().stopLocation.distanceTo(location) }
@@ -66,8 +70,10 @@ class HomeViewModel(
                 val first = departures.first()
                 NearbyStop(first.stopId, first.stopName, first.stopLocation, groupDepartures(departures).take(MAX_LINES))
             }
+    }
 
     private companion object {
+        val LOOKAHEAD = 2.hours
         const val RELOAD_DISTANCE_METERS = 150.0
         const val SEARCH_RADIUS_METERS = 500
         const val MAX_STOPS = 4

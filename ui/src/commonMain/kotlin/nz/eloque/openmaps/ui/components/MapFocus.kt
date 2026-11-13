@@ -11,10 +11,13 @@ import nz.eloque.openmaps.map.MapController
 fun FocusOnMap(
     map: MapController,
     location: LatLng,
+    zoomIn: Boolean = true,
 ) {
-    LaunchedEffect(location) { map.show(location) }
+    LaunchedEffect(location) { map.show(location, zoomIn) }
     DisposableEffect(location) {
-        map.marker = location
-        onDispose { if (map.marker == location) map.marker = null }
+        // Compared by identity, so a sheet being replaced at the same coordinates does not clear its successor's marker.
+        val own = location.copy()
+        map.marker = own
+        onDispose { if (map.marker === own) map.marker = null }
     }
 }

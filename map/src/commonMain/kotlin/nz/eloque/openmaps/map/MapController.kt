@@ -9,6 +9,7 @@ import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.referentialEqualityPolicy
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.UiComposable
@@ -69,6 +70,8 @@ class MapController internal constructor(
 
     var lines: List<MapLine> by linesState
 
+    var onLongPress: ((LatLng) -> Unit)? by mutableStateOf(null)
+
     fun requestLocationPermission() = location.requestPermission()
 
     /** Returns false when there is no location fix yet. */
@@ -80,11 +83,13 @@ class MapController internal constructor(
         return true
     }
 
+    /** Centers on [target]. With [zoomIn] the camera also zooms to street level unless it is already closer. */
     suspend fun show(
         target: LatLng,
-        zoom: Double = PLACE_ZOOM,
+        zoomIn: Boolean = true,
     ) {
-        mapState.animateCamera(CameraUpdate(center = target.toPosition(), zoom = zoom))
+        val current = mapState.cameraPosition.zoom
+        mapState.animateCamera(CameraUpdate(center = target.toPosition(), zoom = if (zoomIn) maxOf(current, PLACE_ZOOM) else current))
     }
 
     suspend fun fit(points: List<LatLng>) {
@@ -106,8 +111,8 @@ fun rememberMapController(dark: Boolean = isSystemInDarkTheme()): MapController 
     val location = rememberLocationState()
     val markerColor = MaterialTheme.colorScheme.primary
     val casingColor = if (dark) Color.Black else Color.White
-    val markerState = remember { mutableStateOf<LatLng?>(null) }
-    val linesState = remember { mutableStateOf<List<MapLine>>(emptyList()) }
+    val markerState = remember { mutableStateOf<LatLng?>(null, referentialEqualityPolicy()) }
+    val linesState = remember { mutableStateOf<List<MapLine>>(emptyList(), referentialEqualityPolicy()) }
     val mapState =
         rememberMapState(
             baseStyle = BaseStyle.Uri(if (dark) DARK_STYLE else LIGHT_STYLE),

@@ -56,7 +56,7 @@ fun PlaceSheet(
 ) {
     val viewModel = koinViewModel<PlaceViewModel> { parametersOf(place.parsedOsmId) }
     val details by viewModel.details.collectAsStateWithLifecycle()
-    FocusOnMap(map, place.location)
+    FocusOnMap(map, place.location, zoomIn = !place.pinned)
 
     Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
         Text(place.name, style = MaterialTheme.typography.headlineSmall)

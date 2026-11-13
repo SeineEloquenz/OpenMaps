@@ -31,6 +31,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -48,6 +49,7 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass
+import nz.eloque.openmaps.core.model.Geocoder
 import nz.eloque.openmaps.core.model.PlacesStore
 import nz.eloque.openmaps.map.MapController
 import nz.eloque.openmaps.map.OpenMap
@@ -69,6 +71,7 @@ import nz.eloque.openmaps.ui.navigation.toKey
 import nz.eloque.openmaps.ui.place.PlaceSheet
 import nz.eloque.openmaps.ui.resources.Res
 import nz.eloque.openmaps.ui.resources.about
+import nz.eloque.openmaps.ui.resources.dropped_pin
 import nz.eloque.openmaps.ui.resources.my_location
 import nz.eloque.openmaps.ui.resources.search_hint
 import nz.eloque.openmaps.ui.resources.waiting_for_location
@@ -108,6 +111,21 @@ fun App(version: String) {
         val sheetState = rememberBottomSheetScaffoldState(snackbarHostState = snackbar)
         val places = koinInject<PlacesStore>()
         val scope = rememberCoroutineScope()
+        val geocoder = koinInject<Geocoder>()
+        val pinName = stringResource(Res.string.dropped_pin)
+        DisposableEffect(map) {
+            map.onLongPress = { location ->
+                val pin = PlaceKey(pinName, location.latitude, location.longitude, null, null, null, pinned = true)
+                if ((backStack.lastOrNull() as? PlaceKey)?.pinned == true) backStack.removeLastOrNull()
+                backStack.add(pin)
+                scope.launch {
+                    val address = runCatching { geocoder.reverse(location) }.getOrNull() ?: return@launch
+                    val index = backStack.indexOf(pin)
+                    if (index >= 0) backStack[index] = pin.copy(name = address.name, subtitle = address.area)
+                }
+            }
+            onDispose { map.onLongPress = null }
+        }
 
         BottomSheetScaffold(
             scaffoldState = sheetState,

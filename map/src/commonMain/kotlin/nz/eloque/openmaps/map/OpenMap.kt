@@ -5,11 +5,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import kotlinx.coroutines.flow.first
+import nz.eloque.openmaps.core.model.LatLng
+import org.maplibre.compose.interaction.ClickResult
+import org.maplibre.compose.interaction.MapInteractions
 import org.maplibre.compose.map.MaplibreMap
 
 /** [contentPadding] is the area covered by UI on top of the map. Controls and the camera center stay clear of it. */
@@ -26,9 +30,32 @@ fun OpenMap(
         centeredOnFirstFix = controller.centerOnUser()
     }
 
+    val interactions =
+        remember(controller) {
+            MapInteractions {
+                callbacks {
+                    longClick {
+                        onEvent { event ->
+                            val position = event.position
+                            val handler = controller.onLongPress
+                            if (position == null || handler == null) {
+                                ClickResult.Pass
+                            } else {
+                                // The position can lie in a repeated world copy, outside ±180° longitude.
+                                val longitude = ((position.longitude + 540) % 360 + 360) % 360 - 180
+                                handler(LatLng(position.latitude, longitude))
+                                ClickResult.Consume
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
     MaplibreMap(
         modifier = modifier,
         state = controller.mapState,
         viewportInsets = contentPadding,
+        interactions = interactions,
     )
 }

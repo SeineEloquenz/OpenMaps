@@ -6,6 +6,7 @@
     <string name="clear">Clear</string>
     <string name="no_results">No results</string>
     <string name="my_location">My location</string>
+    <string name="dropped_pin">Dropped pin</string>
     <string name="waiting_for_location">Waiting for location</string>
     <string name="load_failed">Couldn\'t load. Check your connection.</string>
     <string name="retry">Retry</string>
