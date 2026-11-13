@@ -23,9 +23,9 @@ The shell sets `LOCAL_COMPOSE_KIT=../compose-kit` so a sibling compose-kit check
 | `ui` | Screens, sheets, navigation and theme |
 | `map` | Map rendering, the only module using maplibre-compose |
 | `core/model` | Domain types |
-| `core/platform` | Platform services behind interfaces |
-| `data/transit` | Transitous client |
-| `data/geocoding` | Search and place details |
+| `core/platform` | HTTP client and platform services behind interfaces |
+| `data/transit` | Transitous client for routing, departures and search |
+| `data/geocoding` | Place details |
 | `data/storage` | Local database |
 
 ## License

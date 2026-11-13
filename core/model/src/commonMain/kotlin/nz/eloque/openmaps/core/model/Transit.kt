@@ -1,0 +1,101 @@
+package nz.eloque.openmaps.core.model
+
+import kotlin.time.Duration
+import kotlin.time.Instant
+
+data class EventTime(
+    val scheduled: Instant,
+    val actual: Instant,
+    val isRealTime: Boolean,
+) {
+    val delay: Duration
+        get() = actual - scheduled
+}
+
+data class Waypoint(
+    val name: String,
+    val location: LatLng,
+    val stopId: String?,
+    val platform: String?,
+    val scheduledPlatform: String?,
+    val arrival: EventTime?,
+    val departure: EventTime?,
+    val isCancelled: Boolean,
+    val timeZone: String?,
+)
+
+data class Line(
+    val shortName: String?,
+    val longName: String?,
+    val mode: TransportMode,
+    /** ARGB, or null when the feed has no colour. */
+    val color: Long?,
+    val textColor: Long?,
+    val agency: String?,
+) {
+    val label: String
+        get() = shortName ?: longName ?: ""
+}
+
+data class Alert(
+    val header: String,
+    val description: String?,
+)
+
+sealed interface Leg {
+    val from: Waypoint
+    val to: Waypoint
+    val start: EventTime
+    val end: EventTime
+    val geometry: List<LatLng>
+    val mode: TransportMode
+
+    data class Street(
+        override val mode: TransportMode,
+        override val from: Waypoint,
+        override val to: Waypoint,
+        override val start: EventTime,
+        override val end: EventTime,
+        override val geometry: List<LatLng>,
+        val distanceMeters: Double?,
+    ) : Leg
+
+    data class Transit(
+        override val from: Waypoint,
+        override val to: Waypoint,
+        override val start: EventTime,
+        override val end: EventTime,
+        override val geometry: List<LatLng>,
+        val line: Line,
+        val headsign: String?,
+        val tripId: String?,
+        val intermediateStops: List<Waypoint>,
+        val alerts: List<Alert>,
+        val isCancelled: Boolean,
+        val isWheelchairAccessible: Boolean?,
+    ) : Leg {
+        override val mode: TransportMode
+            get() = line.mode
+    }
+}
+
+data class Itinerary(
+    val id: String,
+    val start: Instant,
+    val end: Instant,
+    val transfers: Int,
+    val legs: List<Leg>,
+) {
+    val duration: Duration
+        get() = end - start
+}
+
+data class Departure(
+    val line: Line,
+    val headsign: String?,
+    val time: EventTime,
+    val platform: String?,
+    val tripId: String?,
+    val isCancelled: Boolean,
+    val alerts: List<Alert>,
+)

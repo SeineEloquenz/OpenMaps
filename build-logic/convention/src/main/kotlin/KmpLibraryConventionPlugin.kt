@@ -20,6 +20,10 @@ class KmpLibraryConventionPlugin : Plugin<Project> {
             extensions.configure<KotlinMultiplatformExtension> {
                 compilerOptions {
                     freeCompilerArgs.add("-Xexpect-actual-classes")
+                    optIn.add("kotlin.time.ExperimentalTime")
+                }
+                sourceSets.getByName("commonTest").dependencies {
+                    implementation(kotlin("test"))
                 }
                 targets.withType(KotlinMultiplatformAndroidLibraryTarget::class.java).configureEach {
                     namespace = "nz.eloque.openmaps" + path.replace(':', '.')
