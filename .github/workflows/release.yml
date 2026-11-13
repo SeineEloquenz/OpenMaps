@@ -1,0 +1,23 @@
+name: Release
+# Needs the repository secrets KEYSTORE, KEYSTORE_PASSWORD, SIGNING_KEY_ALIAS and SIGNING_KEY_PASSWORD.
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  release:
+    permissions:
+      contents: write
+    uses: SeineEloquenz/ci/.github/workflows/android-release.yml@main
+    with:
+      version-file: gradle.properties
+      test-task: ":app:android:testDebugUnitTest"
+      assemble-task: ":app:android:assembleRelease"
+      apk-path: app/android/build/outputs/apk/release
+    secrets:
+      KEYSTORE: ${{ secrets.KEYSTORE }}
+      KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+      SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+      SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
