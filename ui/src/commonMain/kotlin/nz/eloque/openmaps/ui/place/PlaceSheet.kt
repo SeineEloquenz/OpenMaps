@@ -12,7 +12,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Accessible
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Phone
-import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
@@ -37,7 +36,6 @@ import nz.eloque.openmaps.ui.navigation.PlaceKey
 import nz.eloque.openmaps.ui.navigation.parsedOsmId
 import nz.eloque.openmaps.ui.navigation.toSearchResult
 import nz.eloque.openmaps.ui.resources.Res
-import nz.eloque.openmaps.ui.resources.opening_hours
 import nz.eloque.openmaps.ui.resources.phone
 import nz.eloque.openmaps.ui.resources.website
 import nz.eloque.openmaps.ui.resources.wheelchair
@@ -76,9 +74,7 @@ fun PlaceSheet(
 @Composable
 private fun DetailRows(details: PlaceDetails) {
     val uriHandler = LocalUriHandler.current
-    details.openingHours?.let {
-        DetailRow(Icons.Default.Schedule, stringResource(Res.string.opening_hours), it)
-    }
+    details.openingHours?.let { OpeningHoursRow(it) }
     details.website?.let { url ->
         DetailRow(Icons.Default.Language, stringResource(Res.string.website), url) { uriHandler.openUri(url) }
     }

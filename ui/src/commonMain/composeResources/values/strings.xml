@@ -77,6 +77,20 @@
     <string name="privacy_detail">There is no account and no tracking. Searches and routes are sent to Transitous, place details are looked up on Nominatim, and map tiles come from OpenFreeMap. Your location only leaves the device as part of these requests.</string>
 
     <string name="opening_hours">Opening hours</string>
+    <string name="open_now">Open</string>
+    <string name="closed_now">Closed</string>
+    <string name="closes_at">closes %1$s</string>
+    <string name="opens_at">opens %1$s</string>
+    <string name="opens_on">opens %1$s %2$s</string>
+    <string name="open_24_hours">24 hours</string>
+    <string name="closed_day">Closed</string>
+    <string name="weekday_mon">Mon</string>
+    <string name="weekday_tue">Tue</string>
+    <string name="weekday_wed">Wed</string>
+    <string name="weekday_thu">Thu</string>
+    <string name="weekday_fri">Fri</string>
+    <string name="weekday_sat">Sat</string>
+    <string name="weekday_sun">Sun</string>
     <string name="website">Website</string>
     <string name="phone">Phone</string>
     <string name="wheelchair">Wheelchair access</string>
