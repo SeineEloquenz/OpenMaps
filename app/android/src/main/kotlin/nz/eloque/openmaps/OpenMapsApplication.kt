@@ -27,6 +27,6 @@ class OpenMapsApplication : Application() {
     }
 
     private companion object {
-        const val USER_AGENT = "OpenMaps/${BuildConfig.VERSION_NAME}"
+        const val USER_AGENT = "OpenMaps/${BuildConfig.VERSION_NAME} (https://github.com/SeineEloquenz/openmaps)"
     }
 }
