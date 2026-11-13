@@ -47,6 +47,8 @@ data class DeparturesResult(
 )
 
 interface TransitRepository {
+    suspend fun stopsIn(bounds: GeoBounds): List<SearchResult.Stop>
+
     suspend fun plan(request: PlanRequest): PlanResult
 
     suspend fun departures(

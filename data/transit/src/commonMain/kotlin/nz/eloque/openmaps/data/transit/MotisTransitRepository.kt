@@ -6,10 +6,12 @@ import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
 import nz.eloque.openmaps.core.model.DeparturesResult
+import nz.eloque.openmaps.core.model.GeoBounds
 import nz.eloque.openmaps.core.model.LatLng
 import nz.eloque.openmaps.core.model.PlanRequest
 import nz.eloque.openmaps.core.model.PlanResult
 import nz.eloque.openmaps.core.model.PlanTarget
+import nz.eloque.openmaps.core.model.SearchResult
 import nz.eloque.openmaps.core.model.TransitRepository
 import kotlin.time.Instant
 
@@ -17,6 +19,20 @@ internal class MotisTransitRepository(
     private val client: HttpClient,
     private val baseUrl: String,
 ) : TransitRepository {
+    override suspend fun stopsIn(bounds: GeoBounds): List<SearchResult.Stop> {
+        val stops: List<PlaceDto> =
+            client
+                .get("$baseUrl/v6/map/stops") {
+                    parameter("min", "${bounds.south},${bounds.east}")
+                    parameter("max", "${bounds.north},${bounds.west}")
+                    parameter("grouped", true)
+                }.body()
+        return stops.mapNotNull { stop ->
+            val id = stop.stopId ?: return@mapNotNull null
+            SearchResult.Stop(id, stop.name, LatLng(stop.lat, stop.lon), null, stop.modes.map(::transportMode).toSet())
+        }
+    }
+
     override suspend fun plan(request: PlanRequest): PlanResult {
         val response: PlanResponseDto =
             client

@@ -55,6 +55,7 @@ import nz.eloque.openmaps.map.MapController
 import nz.eloque.openmaps.map.OpenMap
 import nz.eloque.openmaps.map.rememberMapController
 import nz.eloque.openmaps.ui.about.AboutSheet
+import nz.eloque.openmaps.ui.components.StopsOnMap
 import nz.eloque.openmaps.ui.directions.DirectionsSheet
 import nz.eloque.openmaps.ui.directions.RouteSheet
 import nz.eloque.openmaps.ui.home.HomeSheet
@@ -125,6 +126,11 @@ fun App(version: String) {
                 }
             }
             onDispose { map.onLongPress = null }
+        }
+        StopsOnMap(map) { stop ->
+            val top = backStack.lastOrNull()
+            if (top is StopKey || (top as? PlaceKey)?.pinned == true) backStack.removeLastOrNull()
+            backStack.add(stop.toKey())
         }
 
         BottomSheetScaffold(

@@ -16,13 +16,20 @@ import androidx.compose.ui.UiComposable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
+import nz.eloque.openmaps.core.model.GeoBounds
 import nz.eloque.openmaps.core.model.LatLng
+import nz.eloque.openmaps.core.model.SearchResult
 import org.maplibre.compose.camera.CameraFit
 import org.maplibre.compose.camera.CameraPosition
 import org.maplibre.compose.camera.CameraUpdate
 import org.maplibre.compose.expressions.dsl.const
 import org.maplibre.compose.expressions.value.LineCap
 import org.maplibre.compose.expressions.value.LineJoin
+import org.maplibre.compose.interaction.ClickResult
 import org.maplibre.compose.layers.CircleLayer
 import org.maplibre.compose.layers.LineLayer
 import org.maplibre.compose.layers.LocationIndicatorLayer
@@ -36,6 +43,8 @@ import org.maplibre.compose.sources.rememberGeoJsonSource
 import org.maplibre.compose.style.BaseStyle
 import org.maplibre.compose.util.DpPadding
 import org.maplibre.spatialk.geojson.BoundingBox
+import org.maplibre.spatialk.geojson.Feature
+import org.maplibre.spatialk.geojson.FeatureCollection
 import org.maplibre.spatialk.geojson.LineString
 import org.maplibre.spatialk.geojson.Point
 import org.maplibre.spatialk.geojson.Position
@@ -55,6 +64,7 @@ class MapController internal constructor(
     internal val location: LocationState,
     private val markerState: MutableState<LatLng?>,
     private val linesState: MutableState<List<MapLine>>,
+    private val stopsState: MutableState<List<SearchResult.Stop>>,
 ) {
     val isLocationPermissionGranted: Boolean
         get() = location.permission is LocationPermission.Granted
@@ -71,6 +81,24 @@ class MapController internal constructor(
     var lines: List<MapLine> by linesState
 
     var onLongPress: ((LatLng) -> Unit)? by mutableStateOf(null)
+
+    /** Stops drawn as tappable dots. */
+    var stops: List<SearchResult.Stop> by stopsState
+
+    var onStopClick: ((SearchResult.Stop) -> Unit)? by mutableStateOf(null)
+
+    val isMoving: Boolean
+        get() = mapState.isCameraMoving
+
+    val zoom: Double
+        get() = mapState.cameraPosition.zoom
+
+    /** Null until the map has been laid out. */
+    val visibleBounds: GeoBounds?
+        get() =
+            mapState.viewport?.visibleBounds?.let {
+                GeoBounds(it.southwest.latitude, it.southwest.longitude, it.northeast.latitude, it.northeast.longitude)
+            }
 
     fun requestLocationPermission() = location.requestPermission()
 
@@ -113,6 +141,8 @@ fun rememberMapController(dark: Boolean = isSystemInDarkTheme()): MapController 
     val casingColor = if (dark) Color.Black else Color.White
     val markerState = remember { mutableStateOf<LatLng?>(null, referentialEqualityPolicy()) }
     val linesState = remember { mutableStateOf<List<MapLine>>(emptyList(), referentialEqualityPolicy()) }
+    val stopsState = remember { mutableStateOf<List<SearchResult.Stop>>(emptyList()) }
+    val controllerRef = remember { arrayOfNulls<MapController>(1) }
     val mapState =
         rememberMapState(
             baseStyle = BaseStyle.Uri(if (dark) DARK_STYLE else LIGHT_STYLE),
@@ -141,6 +171,34 @@ fun rememberMapController(dark: Boolean = isSystemInDarkTheme()): MapController 
                     )
                 }
             }
+            val stops = stopsState.value
+            if (stops.isNotEmpty()) {
+                val features =
+                    stops.mapIndexed { index, stop ->
+                        Feature(Point(stop.location.toPosition()), buildJsonObject { put(STOP_INDEX, index) })
+                    }
+                val source = rememberGeoJsonSource(GeoJsonData.Features(FeatureCollection(features)))
+                CircleLayer(
+                    id = "stops",
+                    source = source,
+                    minZoom = STOPS_MIN_ZOOM.toFloat(),
+                    color = const(Color.White),
+                    radius = const(5.dp),
+                    strokeColor = const(markerColor),
+                    strokeWidth = const(2.dp),
+                    onClick = { clicked ->
+                        val index = clicked.firstOrNull()?.properties?.get(STOP_INDEX)?.jsonPrimitive?.intOrNull
+                        val stop = index?.let(stops::getOrNull)
+                        val handler = controllerRef[0]?.onStopClick
+                        if (stop == null || handler == null) {
+                            ClickResult.Pass
+                        } else {
+                            handler(stop)
+                            ClickResult.Consume
+                        }
+                    },
+                )
+            }
             LocationIndicatorLayer(id = "user-location", locationState = location)
             markerState.value?.let { marker ->
                 val source = rememberGeoJsonSource(GeoJsonData.Features(Point(marker.toPosition())))
@@ -154,7 +212,8 @@ fun rememberMapController(dark: Boolean = isSystemInDarkTheme()): MapController 
                 )
             }
         }
-    return remember(mapState, location) { MapController(mapState, location, markerState, linesState) }
+    return remember(mapState, location) { MapController(mapState, location, markerState, linesState, stopsState) }
+        .also { controllerRef[0] = it }
 }
 
 internal fun Position.toLatLng() = LatLng(latitude = latitude, longitude = longitude)
@@ -165,5 +224,9 @@ private const val LIGHT_STYLE = "https://tiles.openfreemap.org/styles/liberty"
 private const val DARK_STYLE = "https://tiles.openfreemap.org/styles/dark"
 private const val USER_ZOOM = 15.0
 private const val PLACE_ZOOM = 16.0
+private const val STOP_INDEX = "i"
+
+/** Below this zoom there are too many stops in view to load or draw. */
+const val STOPS_MIN_ZOOM = 14.0
 private val FIT_MARGIN = 48.dp
 private val EUROPE = Position(longitude = 10.0, latitude = 50.0)

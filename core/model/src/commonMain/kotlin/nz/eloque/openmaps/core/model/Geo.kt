@@ -40,3 +40,10 @@ data class OsmId(
         }
     }
 }
+
+data class GeoBounds(
+    val south: Double,
+    val west: Double,
+    val north: Double,
+    val east: Double,
+)

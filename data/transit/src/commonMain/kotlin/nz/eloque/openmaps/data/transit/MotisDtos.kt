@@ -42,6 +42,7 @@ internal data class PlaceDto(
     val scheduledTrack: String? = null,
     val cancelled: Boolean = false,
     val alerts: List<AlertDto> = emptyList(),
+    val modes: List<String> = emptyList(),
 )
 
 @Serializable

@@ -10,6 +10,7 @@ import io.ktor.http.headersOf
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
+import nz.eloque.openmaps.core.model.GeoBounds
 import nz.eloque.openmaps.core.model.LatLng
 import nz.eloque.openmaps.core.model.Leg
 import nz.eloque.openmaps.core.model.OsmId
@@ -94,6 +95,20 @@ class MotisClientTest {
             assertEquals(8.minutes, intercity.time.delay)
             assertEquals("2a", intercity.platform)
             assertTrue(intercity.time.isRealTime)
+        }
+
+    @Test
+    fun stopsInSendsCornersAndMapsModes() =
+        runTest {
+            val body =
+                """[{"name":"Karlsruhe Barbarossaplatz","stopId":"de-KVV_Pde:08212:5003","lat":48.9949,"lon":8.3896,
+                "tz":"Europe/Berlin","vertexType":"TRANSIT","modes":["TRAM","BUS"]},{"name":"No id","lat":1.0,"lon":2.0}]"""
+            val repository = MotisTransitRepository(client(body), TRANSITOUS_API)
+            val stops = repository.stopsIn(GeoBounds(south = 48.99, west = 8.385, north = 49.002, east = 8.41))
+
+            assertEquals(setOf(TransportMode.TRAM, TransportMode.BUS), stops.single().modes)
+            assertEquals("48.99,8.41", requests.single().parameters["min"])
+            assertEquals("49.002,8.385", requests.single().parameters["max"])
         }
 
     @Test

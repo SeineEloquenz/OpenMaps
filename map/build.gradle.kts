@@ -6,6 +6,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(libs.maplibre.compose)
+            implementation(libs.kotlinx.serialization.json)
             implementation(project(":core:model"))
         }
         androidMain.dependencies {
