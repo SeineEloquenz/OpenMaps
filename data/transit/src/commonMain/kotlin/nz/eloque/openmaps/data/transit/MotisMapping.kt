@@ -119,7 +119,7 @@ internal fun LegDto.toLeg(): Leg {
 
 internal fun ItineraryDto.toItinerary(): Itinerary =
     Itinerary(
-        id = id,
+        id = id.ifBlank { "$startTime/$endTime/${legs.joinToString(",") { it.mode + it.from.name }}" },
         start = Instant.parse(startTime),
         end = Instant.parse(endTime),
         transfers = transfers.toInt(),

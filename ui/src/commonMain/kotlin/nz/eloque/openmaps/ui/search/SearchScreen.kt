@@ -52,11 +52,13 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun SearchScreen(
     near: LatLng?,
+    stopsFirst: Boolean,
     onDismiss: () -> Unit,
     onSelect: (SearchResult) -> Unit,
 ) {
     val viewModel = koinViewModel<SearchViewModel>()
     viewModel.near = near
+    viewModel.stopsFirst = stopsFirst
     val query by viewModel.query.collectAsStateWithLifecycle()
     val results by viewModel.results.collectAsStateWithLifecycle()
     val focus = remember { FocusRequester() }

@@ -49,11 +49,17 @@ import kotlinx.serialization.modules.subclass
 import nz.eloque.openmaps.map.MapController
 import nz.eloque.openmaps.map.OpenMap
 import nz.eloque.openmaps.map.rememberMapController
+import nz.eloque.openmaps.ui.directions.DirectionsSheet
+import nz.eloque.openmaps.ui.directions.RouteSheet
 import nz.eloque.openmaps.ui.home.HomeSheet
+import nz.eloque.openmaps.ui.navigation.DirectionsField
+import nz.eloque.openmaps.ui.navigation.DirectionsKey
 import nz.eloque.openmaps.ui.navigation.HomeKey
 import nz.eloque.openmaps.ui.navigation.PlaceKey
+import nz.eloque.openmaps.ui.navigation.RouteKey
 import nz.eloque.openmaps.ui.navigation.SearchKey
 import nz.eloque.openmaps.ui.navigation.StopKey
+import nz.eloque.openmaps.ui.navigation.toEndpoint
 import nz.eloque.openmaps.ui.navigation.toKey
 import nz.eloque.openmaps.ui.place.PlaceSheet
 import nz.eloque.openmaps.ui.resources.Res
@@ -75,6 +81,8 @@ private val navConfiguration =
                     subclass(SearchKey::class)
                     subclass(PlaceKey::class)
                     subclass(StopKey::class)
+                    subclass(DirectionsKey::class)
+                    subclass(RouteKey::class)
                 }
             }
     }
@@ -108,18 +116,49 @@ fun App() {
                     entryProvider =
                         entryProvider {
                             entry<HomeKey> { HomeSheet(map, onOpenStop = backStack::add) }
-                            entry<SearchKey> {
+                            entry<SearchKey> { search ->
                                 SearchScreen(
                                     near = map.userLocation,
+                                    stopsFirst = search.field != null,
                                     onDismiss = { backStack.removeLastOrNull() },
                                     onSelect = { result ->
                                         backStack.removeLastOrNull()
-                                        backStack.add(result.toKey())
+                                        val field = search.field
+                                        val index = backStack.indexOfLast { it is DirectionsKey }
+                                        if (field == null || index < 0) {
+                                            backStack.add(result.toKey())
+                                        } else {
+                                            val directions = backStack[index] as DirectionsKey
+                                            backStack[index] =
+                                                when (field) {
+                                                    DirectionsField.FROM -> directions.copy(from = result.toEndpoint())
+                                                    DirectionsField.TO -> directions.copy(to = result.toEndpoint())
+                                                }
+                                        }
                                     },
                                 )
                             }
-                            entry<PlaceKey> { PlaceSheet(it, map) }
-                            entry<StopKey> { StopSheet(it, map) }
+                            entry<PlaceKey> { place ->
+                                PlaceSheet(place, map, onDirections = {
+                                    backStack.add(DirectionsKey(from = null, to = place.toEndpoint()))
+                                })
+                            }
+                            entry<StopKey> { stop ->
+                                StopSheet(stop, map, onDirections = { backStack.add(DirectionsKey(from = null, to = stop.toEndpoint())) })
+                            }
+                            entry<DirectionsKey> { directions ->
+                                DirectionsSheet(
+                                    directions = directions,
+                                    map = map,
+                                    onEditField = { backStack.add(SearchKey(it)) },
+                                    onSwap = {
+                                        val index = backStack.indexOf(directions)
+                                        if (index >= 0) backStack[index] = DirectionsKey(from = directions.to, to = directions.from)
+                                    },
+                                    onOpenRoute = { backStack.add(RouteKey(it.id, directions.to?.name)) },
+                                )
+                            }
+                            entry<RouteKey> { RouteSheet(it, map) }
                         },
                 )
             },
@@ -127,7 +166,7 @@ fun App() {
             MapLayer(
                 map = map,
                 showSearchBar = backStack.lastOrNull() == HomeKey,
-                onSearch = { backStack.add(SearchKey) },
+                onSearch = { backStack.add(SearchKey()) },
                 snackbar = snackbar,
             )
         }

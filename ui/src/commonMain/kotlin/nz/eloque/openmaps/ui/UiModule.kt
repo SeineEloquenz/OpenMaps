@@ -1,5 +1,7 @@
 package nz.eloque.openmaps.ui
 
+import nz.eloque.openmaps.ui.directions.DirectionsViewModel
+import nz.eloque.openmaps.ui.directions.ItineraryCache
 import nz.eloque.openmaps.ui.home.HomeViewModel
 import nz.eloque.openmaps.ui.place.PlaceViewModel
 import nz.eloque.openmaps.ui.search.SearchViewModel
@@ -14,4 +16,6 @@ val uiModule =
         viewModelOf(::SearchViewModel)
         viewModel { params -> StopViewModel(get(), params.get()) }
         viewModel { params -> PlaceViewModel(get(), params.getOrNull()) }
+        single { ItineraryCache() }
+        viewModel { params -> DirectionsViewModel(get(), get(), params.get()) }
     }

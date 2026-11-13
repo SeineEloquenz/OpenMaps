@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import nz.eloque.openmaps.map.MapController
 import nz.eloque.openmaps.ui.components.DepartureGroupRow
+import nz.eloque.openmaps.ui.components.DirectionsButton
 import nz.eloque.openmaps.ui.components.FocusOnMap
 import nz.eloque.openmaps.ui.components.LoadState
 import nz.eloque.openmaps.ui.components.LoadStateContent
@@ -30,6 +31,7 @@ import org.koin.core.parameter.parametersOf
 fun StopSheet(
     stop: StopKey,
     map: MapController,
+    onDirections: () -> Unit,
 ) {
     val viewModel = koinViewModel<StopViewModel> { parametersOf(stop.id) }
     val departures by viewModel.departures.collectAsStateWithLifecycle()
@@ -39,6 +41,7 @@ fun StopSheet(
     LazyColumn(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
         item {
             Text(stop.name, style = MaterialTheme.typography.headlineSmall)
+            DirectionsButton(onDirections, Modifier.padding(top = 8.dp))
             Text(
                 stringResource(Res.string.departures),
                 style = MaterialTheme.typography.titleSmall,

@@ -26,6 +26,7 @@ class SearchViewModel(
     val query: StateFlow<String> = _query.asStateFlow()
 
     var near: LatLng? = null
+    var stopsFirst: Boolean = false
 
     /** Null while the query is too short to search. */
     val results: StateFlow<LoadState<List<SearchResult>>?> =
@@ -38,7 +39,7 @@ class SearchViewModel(
                         emit(null)
                     } else {
                         emit(LoadState.Loading)
-                        emit(loadOnce { geocoder.search(trimmed, near) })
+                        emit(loadOnce { geocoder.search(trimmed, near, stopsFirst) })
                     }
                 }
             }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)

@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import nz.eloque.openmaps.core.model.PlaceDetails
 import nz.eloque.openmaps.map.MapController
+import nz.eloque.openmaps.ui.components.DirectionsButton
 import nz.eloque.openmaps.ui.components.FocusOnMap
 import nz.eloque.openmaps.ui.components.LoadStateContent
 import nz.eloque.openmaps.ui.navigation.PlaceKey
@@ -47,6 +48,7 @@ import org.koin.core.parameter.parametersOf
 fun PlaceSheet(
     place: PlaceKey,
     map: MapController,
+    onDirections: () -> Unit,
 ) {
     val viewModel = koinViewModel<PlaceViewModel> { parametersOf(place.parsedOsmId) }
     val details by viewModel.details.collectAsStateWithLifecycle()
@@ -58,6 +60,7 @@ fun PlaceSheet(
         if (subtitle.isNotEmpty()) {
             Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
+        DirectionsButton(onDirections, Modifier.padding(top = 8.dp))
         HorizontalDivider(Modifier.padding(top = 12.dp))
         LoadStateContent(details, onRetry = viewModel::load) { it?.let { DetailRows(it) } }
     }

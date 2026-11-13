@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -65,6 +66,7 @@ val TransportMode.icon: ImageVector
 fun LineChip(
     line: Line,
     modifier: Modifier = Modifier,
+    minWidth: Dp = 72.dp,
 ) {
     val background = line.color?.let { Color(it) } ?: MaterialTheme.colorScheme.secondaryContainer
     val content =
@@ -79,7 +81,7 @@ fun LineChip(
     Row(
         modifier =
             modifier
-                .widthIn(min = 72.dp)
+                .widthIn(min = minWidth)
                 .background(background, RoundedCornerShape(6.dp))
                 .padding(horizontal = 6.dp, vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -170,7 +172,7 @@ private fun DepartureTime(
 private val OnTime = Color(0xFF2E9E5B)
 
 /** Some feeds repeat the line in the headsign, such as `6 Arbeitsagentur` for tram 6. */
-private fun String.withoutLinePrefix(line: Line): String =
+fun String.withoutLinePrefix(line: Line): String =
     line.label
         .takeIf { it.isNotEmpty() && startsWith("$it ") }
         ?.let { removePrefix("$it ") }
