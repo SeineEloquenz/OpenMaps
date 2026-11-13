@@ -1,0 +1,1 @@
+OpenMaps is an open source maps app focused on public transit and walking. It uses OpenStreetMap data, OpenFreeMap tiles and routing from Transitous, and runs without Google services.

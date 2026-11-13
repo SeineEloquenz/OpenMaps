@@ -1,0 +1,23 @@
+# Gradle / Kotlin
+.gradle/
+build/
+**/build/
+local.properties
+.kotlin/
+captures/
+keystore.jks
+
+# Xcode / iOS
+iosApp/build/
+*.xcuserstate
+xcuserdata/
+
+# Nix / direnv
+.direnv/
+result
+result-*
+
+# IDE
+.idea/
+*.iml
+.vscode/
