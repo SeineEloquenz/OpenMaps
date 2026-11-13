@@ -91,6 +91,9 @@ data class Itinerary(
 }
 
 data class Departure(
+    val stopId: String?,
+    val stopName: String,
+    val stopLocation: LatLng,
     val line: Line,
     val headsign: String?,
     val time: EventTime,

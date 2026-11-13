@@ -129,6 +129,9 @@ internal fun ItineraryDto.toItinerary(): Itinerary =
 internal fun StopTimeDto.toDeparture(): Departure? {
     val time = eventTime(place.scheduledDeparture, place.departure, realTime) ?: return null
     return Departure(
+        stopId = place.stopId,
+        stopName = place.name,
+        stopLocation = LatLng(place.lat, place.lon),
         line = line(mode, routeShortName, displayName, routeLongName, routeColor, routeTextColor, agencyName),
         headsign = headsign,
         time = time,

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="search_hint">Search here</string>
+    <string name="search_placeholder">Place, address or stop</string>
+    <string name="back">Back</string>
+    <string name="clear">Clear</string>
+    <string name="no_results">No results</string>
+    <string name="my_location">My location</string>
+    <string name="waiting_for_location">Waiting for location</string>
+    <string name="load_failed">Couldn\'t load. Check your connection.</string>
+    <string name="retry">Retry</string>
+
+    <string name="nearby_departures">Departures nearby</string>
+    <string name="nearby_needs_location">Allow location access to see departures near you.</string>
+    <string name="allow_location">Allow location</string>
+    <string name="departures">Departures</string>
+    <string name="no_departures">No upcoming departures</string>
+    <string name="platform">Platform %1$s</string>
+    <string name="cancelled">Cancelled</string>
+    <string name="now">now</string>
+    <string name="minutes">%1$d min</string>
+
+    <string name="opening_hours">Opening hours</string>
+    <string name="website">Website</string>
+    <string name="phone">Phone</string>
+    <string name="wheelchair">Wheelchair access</string>
+    <string name="wheelchair_yes">Accessible</string>
+    <string name="wheelchair_limited">Partly accessible</string>
+    <string name="wheelchair_no">Not accessible</string>
+</resources>

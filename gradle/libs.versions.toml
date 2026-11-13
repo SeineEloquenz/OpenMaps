@@ -11,6 +11,8 @@ kotlinxCoroutines = "1.11.0"
 kotlinxSerialization = "1.12.0"
 kotlinxDatetime = "0.8.0"
 ktor = "3.6.1"
+nav3 = "1.2.0"
+nav3Lifecycle = "2.11.0"
 composeKit = "v0.6.0"
 maplibreCompose = "0.20.0"
 ktlint = "14.2.0"
@@ -28,6 +30,11 @@ compose-foundation = { module = "org.jetbrains.compose.foundation:foundation", v
 compose-material3 = { module = "org.jetbrains.compose.material3:material3", version.ref = "composeMaterial3" }
 compose-material-icons-extended = { module = "org.jetbrains.compose.material:material-icons-extended", version.ref = "composeMaterialIconsExtended" }
 compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "composeMultiplatform" }
+compose-components-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "composeMultiplatform" }
+
+# Navigation 3
+nav3-ui = { module = "org.jetbrains.androidx.navigation3:navigation3-ui", version.ref = "nav3" }
+nav3-viewmodel = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-navigation3", version.ref = "nav3Lifecycle" }
 
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidxActivity" }
 

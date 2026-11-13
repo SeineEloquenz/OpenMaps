@@ -47,6 +47,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     compileOptions {
@@ -64,6 +65,10 @@ android {
 
 dependencies {
     implementation(project(":ui"))
+    implementation(project(":core:platform"))
+    implementation(project(":data:transit"))
+    implementation(project(":data:geocoding"))
     implementation(libs.androidx.activity.compose)
     implementation(libs.compose.runtime)
+    implementation(libs.koin.android)
 }

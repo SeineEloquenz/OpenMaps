@@ -1,9 +1,29 @@
 package nz.eloque.openmaps.core.model
 
+import kotlin.math.PI
+import kotlin.math.asin
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.math.sqrt
+
 data class LatLng(
     val latitude: Double,
     val longitude: Double,
-)
+) {
+    /** Great-circle distance in meters. */
+    fun distanceTo(other: LatLng): Double {
+        val dLat = (other.latitude - latitude).toRadians()
+        val dLon = (other.longitude - longitude).toRadians()
+        val a =
+            sin(dLat / 2).let { it * it } +
+                cos(latitude.toRadians()) * cos(other.latitude.toRadians()) * sin(dLon / 2).let { it * it }
+        return 2 * EARTH_RADIUS_METERS * asin(sqrt(a))
+    }
+}
+
+private const val EARTH_RADIUS_METERS = 6_371_000.0
+
+private fun Double.toRadians() = this * PI / 180
 
 enum class OsmType { NODE, WAY, RELATION }
 
