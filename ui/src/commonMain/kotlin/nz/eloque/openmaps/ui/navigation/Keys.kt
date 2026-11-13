@@ -9,6 +9,9 @@ import nz.eloque.openmaps.core.model.SearchResult
 @Serializable
 data object HomeKey : NavKey
 
+@Serializable
+data object AboutKey : NavKey
+
 enum class DirectionsField { FROM, TO }
 
 /** Search for the main map, or for one end of the directions when [field] is set. */

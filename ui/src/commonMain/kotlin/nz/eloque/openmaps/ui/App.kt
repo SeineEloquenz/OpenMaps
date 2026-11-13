@@ -19,10 +19,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -49,9 +51,11 @@ import kotlinx.serialization.modules.subclass
 import nz.eloque.openmaps.map.MapController
 import nz.eloque.openmaps.map.OpenMap
 import nz.eloque.openmaps.map.rememberMapController
+import nz.eloque.openmaps.ui.about.AboutSheet
 import nz.eloque.openmaps.ui.directions.DirectionsSheet
 import nz.eloque.openmaps.ui.directions.RouteSheet
 import nz.eloque.openmaps.ui.home.HomeSheet
+import nz.eloque.openmaps.ui.navigation.AboutKey
 import nz.eloque.openmaps.ui.navigation.DirectionsField
 import nz.eloque.openmaps.ui.navigation.DirectionsKey
 import nz.eloque.openmaps.ui.navigation.HomeKey
@@ -63,6 +67,7 @@ import nz.eloque.openmaps.ui.navigation.toEndpoint
 import nz.eloque.openmaps.ui.navigation.toKey
 import nz.eloque.openmaps.ui.place.PlaceSheet
 import nz.eloque.openmaps.ui.resources.Res
+import nz.eloque.openmaps.ui.resources.about
 import nz.eloque.openmaps.ui.resources.my_location
 import nz.eloque.openmaps.ui.resources.search_hint
 import nz.eloque.openmaps.ui.resources.waiting_for_location
@@ -78,6 +83,7 @@ private val navConfiguration =
             SerializersModule {
                 polymorphic(NavKey::class) {
                     subclass(HomeKey::class)
+                    subclass(AboutKey::class)
                     subclass(SearchKey::class)
                     subclass(PlaceKey::class)
                     subclass(StopKey::class)
@@ -92,7 +98,7 @@ private val ControlMargin = 16.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun App() {
+fun App(version: String) {
     OpenMapsTheme {
         val backStack = rememberNavBackStack(navConfiguration, HomeKey)
         val map = rememberMapController()
@@ -116,6 +122,7 @@ fun App() {
                     entryProvider =
                         entryProvider {
                             entry<HomeKey> { HomeSheet(map, onOpenStop = backStack::add) }
+                            entry<AboutKey> { AboutSheet(version) }
                             entry<SearchKey> { search ->
                                 SearchScreen(
                                     near = map.userLocation,
@@ -167,6 +174,7 @@ fun App() {
                 map = map,
                 showSearchBar = backStack.lastOrNull() == HomeKey,
                 onSearch = { backStack.add(SearchKey()) },
+                onAbout = { backStack.add(AboutKey) },
                 snackbar = snackbar,
             )
         }
@@ -178,6 +186,7 @@ private fun MapLayer(
     map: MapController,
     showSearchBar: Boolean,
     onSearch: () -> Unit,
+    onAbout: () -> Unit,
     snackbar: SnackbarHostState,
 ) {
     val scope = rememberCoroutineScope()
@@ -195,7 +204,7 @@ private fun MapLayer(
         OpenMap(map, Modifier.fillMaxSize(), contentPadding = mapPadding)
 
         if (showSearchBar) {
-            SearchPill(onSearch, Modifier.statusBarsPadding().padding(ControlMargin))
+            SearchPill(onSearch, onAbout, Modifier.statusBarsPadding().padding(ControlMargin))
         }
 
         FloatingActionButton(
@@ -221,6 +230,7 @@ private val FabSize = 56.dp
 @Composable
 private fun SearchPill(
     onClick: () -> Unit,
+    onAbout: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -230,13 +240,16 @@ private fun SearchPill(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
     ) {
-        Row(Modifier.padding(horizontal = 20.dp, vertical = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.padding(start = 20.dp, end = 4.dp, top = 4.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Default.Search, contentDescription = null)
             Text(
                 stringResource(Res.string.search_hint),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = 12.dp),
+                modifier = Modifier.weight(1f).padding(start = 12.dp),
             )
+            IconButton(onClick = onAbout) {
+                Icon(Icons.Outlined.Info, contentDescription = stringResource(Res.string.about))
+            }
         }
     }
 }

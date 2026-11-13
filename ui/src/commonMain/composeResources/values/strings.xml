@@ -50,6 +50,21 @@
     <string name="route_expired">This route is no longer available.</string>
     <string name="towards">towards %1$s</string>
 
+    <string name="about">About</string>
+    <string name="about_app">OpenMaps %1$s</string>
+    <string name="about_licence">Free software under the GNU AGPL 3.0</string>
+    <string name="data_sources">Data sources</string>
+    <string name="source_transit">Public transport data</string>
+    <string name="source_transit_detail">Routing and departures by Transitous, from these data sources</string>
+    <string name="source_map">Map data</string>
+    <string name="source_map_detail">© OpenStreetMap contributors</string>
+    <string name="source_tiles">Map tiles</string>
+    <string name="source_tiles_detail">OpenFreeMap, built with OpenMapTiles</string>
+    <string name="source_places">Place details</string>
+    <string name="source_places_detail">Nominatim, from OpenStreetMap data</string>
+    <string name="privacy">Privacy</string>
+    <string name="privacy_detail">There is no account and no tracking. Searches and routes are sent to Transitous, place details are looked up on Nominatim, and map tiles come from OpenFreeMap. Your location only leaves the device as part of these requests.</string>
+
     <string name="opening_hours">Opening hours</string>
     <string name="website">Website</string>
     <string name="phone">Phone</string>
