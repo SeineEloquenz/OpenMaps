@@ -204,7 +204,7 @@ fun App(version: String) {
                                     onOpenRoute = { backStack.add(RouteKey(it.id, directions.to?.name)) },
                                 )
                             }
-                            entry<RouteKey> { RouteSheet(it, map) }
+                            entry<RouteKey> { RouteSheet(it, map, snackbar) }
                         },
                 )
             },

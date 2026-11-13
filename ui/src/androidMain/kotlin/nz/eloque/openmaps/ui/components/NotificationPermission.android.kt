@@ -1,0 +1,34 @@
+package nz.eloque.openmaps.ui.components
+
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+
+@Composable
+actual fun rememberNotificationPermissionRequest(): (onResult: (Boolean) -> Unit) -> Unit {
+    val context = LocalContext.current
+    val pending = remember { arrayOfNulls<(Boolean) -> Unit>(1) }
+    val launcher =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            pending[0]?.invoke(granted)
+            pending[0] = null
+        }
+    return remember(context, launcher) {
+        { onResult ->
+            val granted =
+                Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+                    context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+            if (granted) {
+                onResult(true)
+            } else {
+                pending[0] = onResult
+                launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+    }
+}

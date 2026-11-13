@@ -1,10 +1,12 @@
 package nz.eloque.openmaps
 
 import android.app.Application
+import nz.eloque.openmaps.core.platform.ReminderScheduler
 import nz.eloque.openmaps.core.platform.createHttpClient
 import nz.eloque.openmaps.data.geocoding.geocodingModule
 import nz.eloque.openmaps.data.storage.storageModule
 import nz.eloque.openmaps.data.transit.transitModule
+import nz.eloque.openmaps.reminder.AndroidReminderScheduler
 import nz.eloque.openmaps.ui.uiModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
@@ -17,7 +19,10 @@ class OpenMapsApplication : Application() {
         startKoin {
             androidContext(this@OpenMapsApplication)
             modules(
-                module { single { createHttpClient(USER_AGENT) } },
+                module {
+                    single { createHttpClient(USER_AGENT) }
+                    single<ReminderScheduler> { AndroidReminderScheduler(androidContext()) }
+                },
                 transitModule(language = { Locale.getDefault().language }),
                 geocodingModule(),
                 storageModule,

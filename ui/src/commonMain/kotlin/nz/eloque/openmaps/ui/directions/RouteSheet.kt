@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -57,6 +58,7 @@ import org.koin.compose.koinInject
 fun RouteSheet(
     route: RouteKey,
     map: MapController,
+    snackbar: SnackbarHostState,
 ) {
     val itinerary = koinInject<ItineraryCache>()[route.itineraryId]
     ShowItineraryOnMap(map, itinerary)
@@ -68,13 +70,14 @@ fun RouteSheet(
         )
         return
     }
-    RouteTimeline(itinerary, route.destinationName ?: stringResource(Res.string.your_location))
+    RouteTimeline(itinerary, route.destinationName ?: stringResource(Res.string.your_location), snackbar)
 }
 
 @Composable
 private fun RouteTimeline(
     itinerary: Itinerary,
     destinationName: String,
+    snackbar: SnackbarHostState,
 ) {
     LazyColumn(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
         item {
@@ -86,6 +89,7 @@ private fun RouteTimeline(
                 )
                 Text(formatDuration(itinerary.duration), style = MaterialTheme.typography.titleMedium)
             }
+            ReminderButton(itinerary, destinationName, snackbar, Modifier.padding(bottom = 8.dp))
             HorizontalDivider()
         }
         items(itinerary.legs) { leg ->

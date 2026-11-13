@@ -14,9 +14,14 @@ kotlin {
         }
     }
 
+    sourceSets.androidMain.dependencies {
+        implementation(libs.androidx.activity.compose)
+    }
+
     sourceSets.commonMain.dependencies {
         implementation(project(":core:model"))
         implementation(project(":map"))
+        implementation(project(":core:platform"))
         implementation(libs.compose.kit)
         implementation(libs.compose.material.icons.extended)
         implementation(libs.compose.components.resources)
