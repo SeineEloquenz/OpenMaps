@@ -1,6 +1,13 @@
 package nz.eloque.openmaps.map
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -9,12 +16,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import kotlinx.coroutines.flow.first
 import nz.eloque.openmaps.core.model.LatLng
 import org.maplibre.compose.interaction.ClickResult
 import org.maplibre.compose.interaction.MapInteractions
 import org.maplibre.compose.map.MaplibreMap
+import org.maplibre.compose.overlay.DisappearingCompassButton
+import org.maplibre.compose.overlay.DisappearingScaleBar
+import org.maplibre.compose.overlay.MapOverlay
+import org.maplibre.compose.overlay.MaplibreLogo
 
 /** [contentPadding] is the area covered by UI on top of the map. Controls and the camera center stay clear of it. */
 @Composable
@@ -57,5 +69,23 @@ fun OpenMap(
         state = controller.mapState,
         viewportInsets = contentPadding,
         interactions = interactions,
-    )
+    ) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .padding(contentPadding)
+                .consumeWindowInsets(contentPadding)
+                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .padding(MapOverlay.Spacing),
+        ) {
+            DisappearingScaleBar(
+                metersPerDp = { controller.mapState.viewport?.metersPerDpAtCenter ?: 0.0 },
+                zoom = { controller.mapState.cameraPosition.zoom },
+                modifier = Modifier.align(Alignment.TopStart),
+            )
+            DisappearingCompassButton(Modifier.align(Alignment.TopEnd))
+            MaplibreLogo(Modifier.align(Alignment.BottomStart))
+            MapAttribution(Modifier.align(Alignment.BottomEnd))
+        }
+    }
 }
