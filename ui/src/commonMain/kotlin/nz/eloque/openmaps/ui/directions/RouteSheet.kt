@@ -26,6 +26,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
@@ -177,13 +178,14 @@ private fun TransitLegItem(leg: Leg.Transit) {
 }
 
 @Composable
-private fun StopLine(
+internal fun StopLine(
     time: EventTime,
     waypoint: Waypoint,
     emphasized: Boolean,
+    dimmed: Boolean = false,
 ) {
     val delayed = time.isRealTime && time.delay.inWholeMinutes >= 1
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 2.dp)) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 2.dp).alpha(if (dimmed) 0.5f else 1f)) {
         Column(Modifier.width(56.dp)) {
             Text(
                 clockTime(time.actual),

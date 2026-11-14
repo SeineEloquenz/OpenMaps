@@ -126,11 +126,17 @@ fun DepartureGroupRow(
     group: DepartureGroup,
     now: Instant,
     modifier: Modifier = Modifier,
+    onOpenTrip: ((tripId: String) -> Unit)? = null,
 ) {
     val alerts = group.departures.flatMap { it.alerts }.distinctBy { it.header }
     var showAlerts by rememberSaveable { mutableStateOf(false) }
-    Column(modifier.fillMaxWidth().clickable(enabled = alerts.isNotEmpty()) { showAlerts = !showAlerts }) {
-        DepartureGroupSummary(group, now, hasAlerts = alerts.isNotEmpty())
+    val tripId = group.departures.first().tripId
+    Column(
+        modifier.fillMaxWidth().clickable(enabled = onOpenTrip != null && tripId != null) {
+            if (tripId != null) onOpenTrip?.invoke(tripId)
+        },
+    ) {
+        DepartureGroupSummary(group, now, hasAlerts = alerts.isNotEmpty(), onToggleAlerts = { showAlerts = !showAlerts })
         if (showAlerts) {
             alerts.forEach { alert ->
                 Text(
@@ -149,6 +155,7 @@ private fun DepartureGroupSummary(
     group: DepartureGroup,
     now: Instant,
     hasAlerts: Boolean,
+    onToggleAlerts: () -> Unit,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
@@ -170,7 +177,7 @@ private fun DepartureGroupSummary(
                         Icons.Default.Warning,
                         contentDescription = stringResource(Res.string.has_alerts),
                         tint = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.padding(start = 6.dp).size(18.dp),
+                        modifier = Modifier.clickable(onClick = onToggleAlerts).padding(horizontal = 6.dp, vertical = 4.dp).size(18.dp),
                     )
                 }
             }

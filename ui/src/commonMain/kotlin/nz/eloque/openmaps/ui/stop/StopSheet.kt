@@ -36,6 +36,7 @@ fun StopSheet(
     stop: StopKey,
     map: MapController,
     onDirections: () -> Unit,
+    onOpenTrip: (tripId: String) -> Unit,
 ) {
     val viewModel = koinViewModel<StopViewModel> { parametersOf(stop.id) }
     val departures by viewModel.departures.collectAsStateWithLifecycle()
@@ -68,7 +69,7 @@ fun StopSheet(
                         )
                     }
                 } else {
-                    items(state.value) { DepartureGroupRow(it, now) }
+                    items(state.value) { DepartureGroupRow(it, now, onOpenTrip = onOpenTrip) }
                 }
             else -> item { LoadStateContent(state, onRetry = viewModel::retry) {} }
         }

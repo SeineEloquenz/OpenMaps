@@ -7,6 +7,7 @@ import io.ktor.client.request.get
 import io.ktor.client.request.parameter
 import nz.eloque.openmaps.core.model.DeparturesResult
 import nz.eloque.openmaps.core.model.GeoBounds
+import nz.eloque.openmaps.core.model.Itinerary
 import nz.eloque.openmaps.core.model.LatLng
 import nz.eloque.openmaps.core.model.PlanRequest
 import nz.eloque.openmaps.core.model.PlanResult
@@ -50,6 +51,11 @@ internal class MotisTransitRepository(
             earlierCursor = response.previousPageCursor,
             laterCursor = response.nextPageCursor,
         )
+    }
+
+    override suspend fun trip(tripId: String): Itinerary {
+        val response: ItineraryDto = client.get("$baseUrl/v6/trip") { parameter("tripId", tripId) }.body()
+        return response.toItinerary()
     }
 
     override suspend fun departures(

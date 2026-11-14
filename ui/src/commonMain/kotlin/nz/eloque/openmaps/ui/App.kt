@@ -58,6 +58,7 @@ import nz.eloque.openmaps.ui.about.AboutSheet
 import nz.eloque.openmaps.ui.components.StopsOnMap
 import nz.eloque.openmaps.ui.directions.DirectionsSheet
 import nz.eloque.openmaps.ui.directions.RouteSheet
+import nz.eloque.openmaps.ui.directions.TripSheet
 import nz.eloque.openmaps.ui.home.HomeSheet
 import nz.eloque.openmaps.ui.navigation.AboutKey
 import nz.eloque.openmaps.ui.navigation.DirectionsField
@@ -67,6 +68,7 @@ import nz.eloque.openmaps.ui.navigation.PlaceKey
 import nz.eloque.openmaps.ui.navigation.RouteKey
 import nz.eloque.openmaps.ui.navigation.SearchKey
 import nz.eloque.openmaps.ui.navigation.StopKey
+import nz.eloque.openmaps.ui.navigation.TripKey
 import nz.eloque.openmaps.ui.navigation.toEndpoint
 import nz.eloque.openmaps.ui.navigation.toKey
 import nz.eloque.openmaps.ui.place.PlaceSheet
@@ -95,6 +97,7 @@ private val navConfiguration =
                     subclass(StopKey::class)
                     subclass(DirectionsKey::class)
                     subclass(RouteKey::class)
+                    subclass(TripKey::class)
                 }
             }
     }
@@ -155,6 +158,7 @@ fun App(version: String) {
                                     onOpenStop = backStack::add,
                                     onDirectionsTo = { backStack.add(DirectionsKey(from = null, to = it.toEndpoint())) },
                                     onSetFavourite = { backStack.add(SearchKey(saveAs = it)) },
+                                    onOpenTrip = { tripId, stopName -> backStack.add(TripKey(tripId, stopName)) },
                                 )
                             }
                             entry<AboutKey> { AboutSheet(version) }
@@ -190,7 +194,12 @@ fun App(version: String) {
                                 })
                             }
                             entry<StopKey> { stop ->
-                                StopSheet(stop, map, onDirections = { backStack.add(DirectionsKey(from = null, to = stop.toEndpoint())) })
+                                StopSheet(
+                                    stop = stop,
+                                    map = map,
+                                    onDirections = { backStack.add(DirectionsKey(from = null, to = stop.toEndpoint())) },
+                                    onOpenTrip = { backStack.add(TripKey(it, stop.name)) },
+                                )
                             }
                             entry<DirectionsKey> { directions ->
                                 DirectionsSheet(
@@ -205,6 +214,7 @@ fun App(version: String) {
                                 )
                             }
                             entry<RouteKey> { RouteSheet(it, map, snackbar) }
+                            entry<TripKey> { TripSheet(it, map) }
                         },
                 )
             },

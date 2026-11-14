@@ -52,6 +52,9 @@ interface TransitRepository {
 
     suspend fun plan(request: PlanRequest): PlanResult
 
+    /** The whole run of one vehicle, as an itinerary with a single transit leg. */
+    suspend fun trip(tripId: String): Itinerary
+
     suspend fun departures(
         stopId: String,
         time: Instant? = null,

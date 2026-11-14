@@ -99,3 +99,10 @@ fun SearchResult.toKey(): NavKey =
     }
 
 val PlaceKey.parsedOsmId: OsmId? get() = osmId?.let(OsmId::parse)
+
+/** One vehicle's run. [stopName] is the stop it was opened from, which is highlighted. */
+@Serializable
+data class TripKey(
+    val tripId: String,
+    val stopName: String?,
+) : NavKey

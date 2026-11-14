@@ -52,6 +52,7 @@ fun HomeSheet(
     onOpenStop: (StopKey) -> Unit,
     onDirectionsTo: (SearchResult) -> Unit,
     onSetFavourite: (FavouriteLabel) -> Unit,
+    onOpenTrip: (tripId: String, stopName: String) -> Unit,
 ) {
     val viewModel = koinViewModel<HomeViewModel>()
     val nearby by viewModel.nearby.collectAsStateWithLifecycle()
@@ -88,7 +89,7 @@ fun HomeSheet(
                     item { Text(stringResource(Res.string.no_departures), color = MaterialTheme.colorScheme.onSurfaceVariant) }
                 } else {
                     items(state.value, key = { it.name }) { stop ->
-                        NearbyStopCard(stop, now, onClick = {
+                        NearbyStopCard(stop, now, onOpenTrip = onOpenTrip, onClick = {
                             stop.id?.let { onOpenStop(StopKey(it, stop.name, stop.location.latitude, stop.location.longitude)) }
                         })
                     }
@@ -129,6 +130,7 @@ private fun NearbyStopCard(
     stop: NearbyStop,
     now: kotlin.time.Instant,
     onClick: () -> Unit,
+    onOpenTrip: (tripId: String, stopName: String) -> Unit,
 ) {
     Column(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
         Row(
@@ -138,7 +140,7 @@ private fun NearbyStopCard(
             Text(stop.name, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
             Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
         }
-        stop.groups.forEach { DepartureGroupRow(it, now) }
+        stop.groups.forEach { DepartureGroupRow(it, now, onOpenTrip = { onOpenTrip(it, stop.name) }) }
         HorizontalDivider(Modifier.padding(top = 8.dp))
     }
 }
