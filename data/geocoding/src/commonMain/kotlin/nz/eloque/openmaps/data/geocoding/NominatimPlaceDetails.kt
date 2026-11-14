@@ -17,12 +17,12 @@ internal data class LookupResultDto(
 
 internal class NominatimPlaceDetails(
     private val client: HttpClient,
-    private val baseUrl: String,
+    private val baseUrl: () -> String,
 ) : PlaceDetailsSource {
     override suspend fun details(osmId: OsmId): PlaceDetails? {
         val results: List<LookupResultDto> =
             client
-                .get("$baseUrl/lookup") {
+                .get("${baseUrl()}/lookup") {
                     parameter("osm_ids", osmId.asLookupId())
                     parameter("format", "jsonv2")
                     parameter("extratags", 1)

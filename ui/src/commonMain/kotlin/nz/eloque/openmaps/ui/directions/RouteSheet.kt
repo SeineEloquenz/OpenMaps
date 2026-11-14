@@ -20,6 +20,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -30,9 +31,11 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import nz.eloque.openmaps.core.model.DistanceUnit
 import nz.eloque.openmaps.core.model.EventTime
 import nz.eloque.openmaps.core.model.Itinerary
 import nz.eloque.openmaps.core.model.Leg
+import nz.eloque.openmaps.core.model.SettingsStore
 import nz.eloque.openmaps.core.model.TransportMode
 import nz.eloque.openmaps.core.model.Waypoint
 import nz.eloque.openmaps.map.MapController
@@ -80,6 +83,7 @@ private fun RouteTimeline(
     destinationName: String,
     snackbar: SnackbarHostState,
 ) {
+    val unit by koinInject<SettingsStore>().distanceUnit.collectAsState()
     LazyColumn(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
         item {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 8.dp)) {
@@ -96,7 +100,7 @@ private fun RouteTimeline(
         items(itinerary.legs) { leg ->
             when (leg) {
                 is Leg.Transit -> TransitLegItem(leg)
-                is Leg.Street -> StreetLegItem(leg)
+                is Leg.Street -> StreetLegItem(leg, unit)
             }
         }
         itinerary.legs.lastOrNull()?.let { last ->
@@ -108,9 +112,12 @@ private fun RouteTimeline(
 }
 
 @Composable
-private fun StreetLegItem(leg: Leg.Street) {
+private fun StreetLegItem(
+    leg: Leg.Street,
+    unit: DistanceUnit,
+) {
     val duration = formatDuration(leg.end.actual - leg.start.actual)
-    val label = listOfNotNull(duration, leg.distanceMeters?.let(::formatDistance)).joinToString(" · ")
+    val label = listOfNotNull(duration, leg.distanceMeters?.let { formatDistance(it, unit) }).joinToString(" · ")
     Row(Modifier.padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
         Icon(leg.mode.icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(

@@ -44,7 +44,7 @@ class MotisClientTest {
     @Test
     fun geocodeMapsPlacesStopsAndOsmIds() =
         runTest {
-            val geocoder = MotisGeocoder(client(GEOCODE_JSON), TRANSITOUS_API) { "nl" }
+            val geocoder = MotisGeocoder(client(GEOCODE_JSON), { TRANSITOUS_API }) { "nl" }
             val results = geocoder.search("Rijksmuseum", near = LatLng(52.36, 4.89))
 
             val place = assertIs<SearchResult.Place>(results.first())
@@ -58,7 +58,7 @@ class MotisClientTest {
     @Test
     fun stopsFirstMovesStopsToTheTop() =
         runTest {
-            val geocoder = MotisGeocoder(client(GEOCODE_JSON), TRANSITOUS_API) { null }
+            val geocoder = MotisGeocoder(client(GEOCODE_JSON), { TRANSITOUS_API }) { null }
             val results = geocoder.search("Rijksmuseum", near = null, stopsFirst = true)
             assertIs<SearchResult.Stop>(results.first())
         }
@@ -66,7 +66,7 @@ class MotisClientTest {
     @Test
     fun planMapsWalkAndTransitLegs() =
         runTest {
-            val repository = MotisTransitRepository(client(PLAN_JSON), TRANSITOUS_API)
+            val repository = MotisTransitRepository(client(PLAN_JSON), { TRANSITOUS_API })
             val result =
                 repository.plan(
                     PlanRequest(
@@ -90,7 +90,7 @@ class MotisClientTest {
     @Test
     fun departuresKeepScheduledAndRealtimeTimes() =
         runTest {
-            val repository = MotisTransitRepository(client(STOP_TIMES_JSON), TRANSITOUS_API)
+            val repository = MotisTransitRepository(client(STOP_TIMES_JSON), { TRANSITOUS_API })
             val result = repository.departures("de-DELFI_000008400058")
 
             val intercity = result.departures.first()
@@ -106,7 +106,7 @@ class MotisClientTest {
             val body =
                 """[{"name":"Karlsruhe Barbarossaplatz","stopId":"de-KVV_Pde:08212:5003","lat":48.9949,"lon":8.3896,
                 "tz":"Europe/Berlin","vertexType":"TRANSIT","modes":["TRAM","BUS"]},{"name":"No id","lat":1.0,"lon":2.0}]"""
-            val repository = MotisTransitRepository(client(body), TRANSITOUS_API)
+            val repository = MotisTransitRepository(client(body), { TRANSITOUS_API })
             val stops = repository.stopsIn(GeoBounds(south = 48.99, west = 8.385, north = 49.002, east = 8.41))
 
             assertEquals(setOf(TransportMode.TRAM, TransportMode.BUS), stops.single().modes)
@@ -117,7 +117,7 @@ class MotisClientTest {
     @Test
     fun planSendsRouteOptions() =
         runTest {
-            val repository = MotisTransitRepository(client(PLAN_JSON), TRANSITOUS_API)
+            val repository = MotisTransitRepository(client(PLAN_JSON), { TRANSITOUS_API })
             val target = PlanTarget.Coordinates(LatLng(1.0, 2.0))
             repository.plan(PlanRequest(target, target, time = null))
             repository.plan(

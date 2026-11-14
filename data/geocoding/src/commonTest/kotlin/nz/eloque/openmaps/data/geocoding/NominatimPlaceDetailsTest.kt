@@ -35,7 +35,7 @@ class NominatimPlaceDetailsTest {
             ) {
                 install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
             },
-            NOMINATIM_API,
+            { NOMINATIM_API },
         )
 
     @Test

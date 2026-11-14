@@ -19,7 +19,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -67,18 +67,20 @@ import nz.eloque.openmaps.ui.navigation.HomeKey
 import nz.eloque.openmaps.ui.navigation.PlaceKey
 import nz.eloque.openmaps.ui.navigation.RouteKey
 import nz.eloque.openmaps.ui.navigation.SearchKey
+import nz.eloque.openmaps.ui.navigation.SettingsKey
 import nz.eloque.openmaps.ui.navigation.StopKey
 import nz.eloque.openmaps.ui.navigation.TripKey
 import nz.eloque.openmaps.ui.navigation.toEndpoint
 import nz.eloque.openmaps.ui.navigation.toKey
 import nz.eloque.openmaps.ui.place.PlaceSheet
 import nz.eloque.openmaps.ui.resources.Res
-import nz.eloque.openmaps.ui.resources.about
 import nz.eloque.openmaps.ui.resources.dropped_pin
 import nz.eloque.openmaps.ui.resources.my_location
 import nz.eloque.openmaps.ui.resources.search_hint
+import nz.eloque.openmaps.ui.resources.settings
 import nz.eloque.openmaps.ui.resources.waiting_for_location
 import nz.eloque.openmaps.ui.search.SearchScreen
+import nz.eloque.openmaps.ui.settings.SettingsSheet
 import nz.eloque.openmaps.ui.stop.StopSheet
 import nz.eloque.openmaps.ui.theme.OpenMapsTheme
 import org.jetbrains.compose.resources.getString
@@ -92,6 +94,7 @@ private val navConfiguration =
                 polymorphic(NavKey::class) {
                     subclass(HomeKey::class)
                     subclass(AboutKey::class)
+                    subclass(SettingsKey::class)
                     subclass(SearchKey::class)
                     subclass(PlaceKey::class)
                     subclass(StopKey::class)
@@ -162,6 +165,7 @@ fun App(version: String) {
                                 )
                             }
                             entry<AboutKey> { AboutSheet(version) }
+                            entry<SettingsKey> { SettingsSheet(onOpenAbout = { backStack.add(AboutKey) }) }
                             entry<SearchKey> { search ->
                                 SearchScreen(
                                     near = map.userLocation,
@@ -223,7 +227,7 @@ fun App(version: String) {
                 map = map,
                 showSearchBar = backStack.lastOrNull() == HomeKey,
                 onSearch = { backStack.add(SearchKey()) },
-                onAbout = { backStack.add(AboutKey) },
+                onSettings = { backStack.add(SettingsKey) },
                 snackbar = snackbar,
             )
         }
@@ -235,7 +239,7 @@ private fun MapLayer(
     map: MapController,
     showSearchBar: Boolean,
     onSearch: () -> Unit,
-    onAbout: () -> Unit,
+    onSettings: () -> Unit,
     snackbar: SnackbarHostState,
 ) {
     val scope = rememberCoroutineScope()
@@ -253,7 +257,7 @@ private fun MapLayer(
         OpenMap(map, Modifier.fillMaxSize(), contentPadding = mapPadding)
 
         if (showSearchBar) {
-            SearchPill(onSearch, onAbout, Modifier.statusBarsPadding().padding(ControlMargin))
+            SearchPill(onSearch, onSettings, Modifier.statusBarsPadding().padding(ControlMargin))
         }
 
         FloatingActionButton(
@@ -279,7 +283,7 @@ private val FabSize = 56.dp
 @Composable
 private fun SearchPill(
     onClick: () -> Unit,
-    onAbout: () -> Unit,
+    onSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -296,8 +300,8 @@ private fun SearchPill(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.weight(1f).padding(start = 12.dp),
             )
-            IconButton(onClick = onAbout) {
-                Icon(Icons.Outlined.Info, contentDescription = stringResource(Res.string.about))
+            IconButton(onClick = onSettings) {
+                Icon(Icons.Outlined.Settings, contentDescription = stringResource(Res.string.settings))
             }
         }
     }

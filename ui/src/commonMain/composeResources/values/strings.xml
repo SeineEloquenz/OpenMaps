@@ -93,6 +93,17 @@
     <string name="favourites">Favourites</string>
     <string name="recent">Recent</string>
 
+    <string name="settings">Settings</string>
+    <string name="settings_routes">Routes</string>
+    <string name="units">Distances</string>
+    <string name="units_metric">Kilometres</string>
+    <string name="units_imperial">Miles</string>
+    <string name="servers">Servers</string>
+    <string name="servers_detail">Leave empty to use the public services. Set an address to use your own MOTIS or Nominatim server.</string>
+    <string name="server_transit">Routing and departures (MOTIS)</string>
+    <string name="server_place_details">Place details (Nominatim)</string>
+    <string name="server_invalid">Must start with https:// or http://</string>
+
     <string name="about">About</string>
     <string name="about_app">OpenMaps %1$s</string>
     <string name="about_licence">Free software under the GNU AGPL 3.0</string>

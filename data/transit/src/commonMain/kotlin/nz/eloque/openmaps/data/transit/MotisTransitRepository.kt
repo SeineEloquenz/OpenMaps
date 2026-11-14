@@ -22,12 +22,12 @@ import kotlin.time.Instant
 
 internal class MotisTransitRepository(
     private val client: HttpClient,
-    private val baseUrl: String,
+    private val baseUrl: () -> String,
 ) : TransitRepository {
     override suspend fun stopsIn(bounds: GeoBounds): List<SearchResult.Stop> {
         val stops: List<PlaceDto> =
             client
-                .get("$baseUrl/v6/map/stops") {
+                .get("${baseUrl()}/v6/map/stops") {
                     parameter("min", "${bounds.south},${bounds.east}")
                     parameter("max", "${bounds.north},${bounds.west}")
                     parameter("grouped", true)
@@ -41,7 +41,7 @@ internal class MotisTransitRepository(
     override suspend fun plan(request: PlanRequest): PlanResult {
         val response: PlanResponseDto =
             client
-                .get("$baseUrl/v6/plan") {
+                .get("${baseUrl()}/v6/plan") {
                     parameter("fromPlace", request.from.asParameter())
                     parameter("toPlace", request.to.asParameter())
                     request.time?.let { parameter("time", it.toString()) }
@@ -59,7 +59,7 @@ internal class MotisTransitRepository(
     }
 
     override suspend fun trip(tripId: String): Itinerary {
-        val response: ItineraryDto = client.get("$baseUrl/v6/trip") { parameter("tripId", tripId) }.body()
+        val response: ItineraryDto = client.get("${baseUrl()}/v6/trip") { parameter("tripId", tripId) }.body()
         return response.toItinerary()
     }
 
@@ -89,7 +89,7 @@ internal class MotisTransitRepository(
         }
 
     private suspend fun stopTimes(block: HttpRequestBuilder.() -> Unit): DeparturesResult {
-        val response: StopTimesResponseDto = client.get("$baseUrl/v6/stoptimes", block).body()
+        val response: StopTimesResponseDto = client.get("${baseUrl()}/v6/stoptimes", block).body()
         return DeparturesResult(
             departures = response.stopTimes.mapNotNull { it.toDeparture() },
             laterCursor = response.nextPageCursor,

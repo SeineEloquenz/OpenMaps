@@ -10,7 +10,7 @@ import nz.eloque.openmaps.core.model.SearchResult
 
 internal class MotisGeocoder(
     private val client: HttpClient,
-    private val baseUrl: String,
+    private val baseUrl: () -> String,
     private val language: () -> String?,
 ) : Geocoder {
     override suspend fun search(
@@ -20,7 +20,7 @@ internal class MotisGeocoder(
     ): List<SearchResult> {
         val matches: List<MatchDto> =
             client
-                .get("$baseUrl/v1/geocode") {
+                .get("${baseUrl()}/v1/geocode") {
                     parameter("text", query)
                     near?.let { parameter("place", it.asParameter()) }
                     language()?.let { parameter("language", it) }
@@ -32,7 +32,7 @@ internal class MotisGeocoder(
     override suspend fun reverse(location: LatLng): SearchResult? {
         val matches: List<MatchDto> =
             client
-                .get("$baseUrl/v1/reverse-geocode") {
+                .get("${baseUrl()}/v1/reverse-geocode") {
                     parameter("place", location.asParameter())
                     parameter("numResults", 1)
                     parameter("type", "ADDRESS")

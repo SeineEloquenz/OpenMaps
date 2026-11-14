@@ -26,8 +26,24 @@ data class RouteOptions(
         get() = this == RouteOptions()
 }
 
+enum class DistanceUnit { METRIC, IMPERIAL }
+
 interface SettingsStore {
     val routeOptions: StateFlow<RouteOptions>
 
     fun setRouteOptions(options: RouteOptions)
+
+    val distanceUnit: StateFlow<DistanceUnit>
+
+    fun setDistanceUnit(unit: DistanceUnit)
+
+    /** Base URL of a self-hosted MOTIS API, or null for Transitous. */
+    val transitUrl: StateFlow<String?>
+
+    fun setTransitUrl(url: String?)
+
+    /** Base URL of a self-hosted Nominatim, or null for the public one. */
+    val placeDetailsUrl: StateFlow<String?>
+
+    fun setPlaceDetailsUrl(url: String?)
 }

@@ -14,6 +14,9 @@ data object HomeKey : NavKey
 @Serializable
 data object AboutKey : NavKey
 
+@Serializable
+data object SettingsKey : NavKey
+
 enum class DirectionsField { FROM, TO }
 
 /** Search for the main map, for one end of the directions when [field] is set, or to save a favourite when [saveAs] is set. */

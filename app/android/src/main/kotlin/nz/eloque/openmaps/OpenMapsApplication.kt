@@ -26,7 +26,7 @@ class OpenMapsApplication : Application() {
                     single<ReminderScheduler> { reminders }
                 },
                 transitModule(language = { Locale.getDefault().language }),
-                geocodingModule(),
+                geocodingModule,
                 storageModule,
                 uiModule,
             )

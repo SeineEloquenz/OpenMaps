@@ -1,6 +1,7 @@
 package nz.eloque.openmaps.ui.components
 
 import androidx.compose.runtime.Composable
+import nz.eloque.openmaps.core.model.DistanceUnit
 import nz.eloque.openmaps.ui.resources.Res
 import nz.eloque.openmaps.ui.resources.duration_hours
 import nz.eloque.openmaps.ui.resources.duration_minutes
@@ -18,10 +19,23 @@ fun formatDuration(duration: Duration): String {
     }
 }
 
-fun formatDistance(meters: Double): String =
-    if (meters < 1000) {
-        "${(meters / 10).roundToInt() * 10} m"
-    } else {
-        val tenths = (meters / 100).roundToInt()
-        "${tenths / 10}.${tenths % 10} km"
+fun formatDistance(
+    meters: Double,
+    unit: DistanceUnit = DistanceUnit.METRIC,
+): String =
+    when (unit) {
+        DistanceUnit.METRIC ->
+            if (meters < 1000) "${(meters / 10).roundToInt() * 10} m" else "${oneDecimal(meters / 1000)} km"
+        DistanceUnit.IMPERIAL -> {
+            val feet = meters / METERS_PER_FOOT
+            if (feet < 1000) "${(feet / 50).roundToInt().coerceAtLeast(1) * 50} ft" else "${oneDecimal(meters / METERS_PER_MILE)} mi"
+        }
     }
+
+private fun oneDecimal(value: Double): String {
+    val tenths = (value * 10).roundToInt()
+    return "${tenths / 10}.${tenths % 10}"
+}
+
+private const val METERS_PER_FOOT = 0.3048
+private const val METERS_PER_MILE = 1609.344
