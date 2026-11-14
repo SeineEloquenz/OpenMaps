@@ -5,6 +5,8 @@ import kotlinx.coroutines.flow.map
 import nz.eloque.openmaps.core.model.Favourite
 import nz.eloque.openmaps.core.model.FavouriteLabel
 import nz.eloque.openmaps.core.model.PlacesStore
+import nz.eloque.openmaps.core.model.RouteEnd
+import nz.eloque.openmaps.core.model.SavedRoute
 import nz.eloque.openmaps.core.model.SearchResult
 import nz.eloque.openmaps.core.model.storageKey
 import kotlin.time.Clock
@@ -16,7 +18,7 @@ internal class RoomPlacesStore(
         dao.favourites().map { rows ->
             rows.map { row ->
                 val label = FavouriteLabel.entries.firstOrNull { it.name == row.label } ?: FavouriteLabel.OTHER
-                Favourite(row.id, label, row.place.toSearchResult())
+                Favourite(row.id, label, row.place.toSearchResult(), row.customName)
             }
         }
 
@@ -37,6 +39,23 @@ internal class RoomPlacesStore(
         dao.upsertRecent(RecentEntity(place.storageKey, place.toColumns(), Clock.System.now().toEpochMilliseconds()))
         dao.trimRecents(KEPT_RECENTS)
     }
+
+    override suspend fun renameFavourite(
+        id: Long,
+        name: String?,
+    ) = dao.renameFavourite(id, name?.trim()?.takeIf { it.isNotEmpty() })
+
+    override val savedRoutes: Flow<List<SavedRoute>> =
+        dao.savedRoutes().map { rows -> rows.map { SavedRoute(it.id, it.from?.toRouteEnd(), it.to?.toRouteEnd()) } }
+
+    override suspend fun saveRoute(
+        from: RouteEnd?,
+        to: RouteEnd?,
+    ) {
+        dao.insertRoute(SavedRouteEntity(from = from?.toColumns(), to = to?.toColumns()))
+    }
+
+    override suspend fun removeRoute(id: Long) = dao.deleteRoute(id)
 
     private companion object {
         const val SHOWN_RECENTS = 15

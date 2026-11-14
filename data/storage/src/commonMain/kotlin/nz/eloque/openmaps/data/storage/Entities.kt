@@ -5,6 +5,7 @@ import androidx.room3.Entity
 import androidx.room3.PrimaryKey
 import nz.eloque.openmaps.core.model.LatLng
 import nz.eloque.openmaps.core.model.OsmId
+import nz.eloque.openmaps.core.model.RouteEnd
 import nz.eloque.openmaps.core.model.SearchResult
 import nz.eloque.openmaps.core.model.TransportMode
 
@@ -29,6 +30,7 @@ data class FavouriteEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val label: String,
     @Embedded val place: PlaceColumns,
+    val customName: String? = null,
 )
 
 @Entity(tableName = "recent")
@@ -75,3 +77,22 @@ internal fun PlaceColumns.toSearchResult(): SearchResult {
 private const val KIND_STOP = "stop"
 private const val KIND_PLACE = "place"
 private const val KIND_ADDRESS = "address"
+
+data class RouteEndColumns(
+    val name: String,
+    val latitude: Double,
+    val longitude: Double,
+    val stopId: String? = null,
+)
+
+/** A null end is the user's location. */
+@Entity(tableName = "saved_route")
+data class SavedRouteEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    @Embedded(prefix = "from_") val from: RouteEndColumns?,
+    @Embedded(prefix = "to_") val to: RouteEndColumns?,
+)
+
+internal fun RouteEnd.toColumns() = RouteEndColumns(name, location.latitude, location.longitude, stopId)
+
+internal fun RouteEndColumns.toRouteEnd() = RouteEnd(name, LatLng(latitude, longitude), stopId)

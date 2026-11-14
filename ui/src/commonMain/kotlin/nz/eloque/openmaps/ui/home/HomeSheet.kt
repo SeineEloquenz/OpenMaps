@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.outlined.Bookmarks
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
@@ -41,6 +42,7 @@ import nz.eloque.openmaps.ui.resources.allow_location
 import nz.eloque.openmaps.ui.resources.nearby_departures
 import nz.eloque.openmaps.ui.resources.nearby_needs_location
 import nz.eloque.openmaps.ui.resources.no_departures
+import nz.eloque.openmaps.ui.resources.saved
 import nz.eloque.openmaps.ui.search.titleRes
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
@@ -52,6 +54,7 @@ fun HomeSheet(
     onOpenStop: (StopKey) -> Unit,
     onDirectionsTo: (SearchResult) -> Unit,
     onSetFavourite: (FavouriteLabel) -> Unit,
+    onOpenSaved: () -> Unit,
     onOpenTrip: (tripId: String, stopName: String) -> Unit,
 ) {
     val viewModel = koinViewModel<HomeViewModel>()
@@ -63,7 +66,7 @@ fun HomeSheet(
 
     LazyColumn(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
         item {
-            FavouritesRow(favourites, onDirectionsTo, onSetFavourite)
+            FavouritesRow(favourites, onDirectionsTo, onSetFavourite, onOpenSaved)
         }
         item {
             Text(
@@ -105,13 +108,14 @@ private fun FavouritesRow(
     favourites: List<Favourite>,
     onDirectionsTo: (SearchResult) -> Unit,
     onSetFavourite: (FavouriteLabel) -> Unit,
+    onOpenSaved: () -> Unit,
 ) {
     val missing = listOf(FavouriteLabel.HOME, FavouriteLabel.WORK).filter { label -> favourites.none { it.label == label } }
     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         items(favourites, key = { it.id }) { favourite ->
             AssistChip(
                 onClick = { onDirectionsTo(favourite.place) },
-                label = { Text(favourite.label.titleRes?.let { stringResource(it) } ?: favourite.place.name, maxLines = 1) },
+                label = { Text(favourite.label.titleRes?.let { stringResource(it) } ?: favourite.displayName, maxLines = 1) },
                 leadingIcon = { Icon(favourite.label.icon, contentDescription = null) },
             )
         }
@@ -120,6 +124,13 @@ private fun FavouritesRow(
                 onClick = { onSetFavourite(label) },
                 label = { Text(label.titleRes?.let { stringResource(it) }.orEmpty()) },
                 leadingIcon = { Icon(Icons.Default.Add, contentDescription = null) },
+            )
+        }
+        item {
+            AssistChip(
+                onClick = onOpenSaved,
+                label = { Text(stringResource(Res.string.saved)) },
+                leadingIcon = { Icon(Icons.Outlined.Bookmarks, contentDescription = null) },
             )
         }
     }

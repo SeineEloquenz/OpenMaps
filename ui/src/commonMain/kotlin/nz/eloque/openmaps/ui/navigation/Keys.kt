@@ -5,6 +5,7 @@ import kotlinx.serialization.Serializable
 import nz.eloque.openmaps.core.model.FavouriteLabel
 import nz.eloque.openmaps.core.model.LatLng
 import nz.eloque.openmaps.core.model.OsmId
+import nz.eloque.openmaps.core.model.RouteEnd
 import nz.eloque.openmaps.core.model.SearchResult
 import nz.eloque.openmaps.core.model.TransportMode
 
@@ -109,3 +110,10 @@ data class TripKey(
     val tripId: String,
     val stopName: String?,
 ) : NavKey
+
+@Serializable
+data object SavedKey : NavKey
+
+fun Endpoint.toRouteEnd(): RouteEnd = RouteEnd(name, location, stopId)
+
+fun RouteEnd.toEndpoint(): Endpoint = Endpoint(name, location.latitude, location.longitude, stopId)

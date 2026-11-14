@@ -14,11 +14,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material.icons.filled.TripOrigin
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -35,6 +37,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -43,8 +46,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.launch
 import nz.eloque.openmaps.core.model.Itinerary
 import nz.eloque.openmaps.core.model.Leg
+import nz.eloque.openmaps.core.model.PlacesStore
 import nz.eloque.openmaps.core.model.SettingsStore
 import nz.eloque.openmaps.map.MapController
 import nz.eloque.openmaps.ui.components.LineChip
@@ -56,6 +61,7 @@ import nz.eloque.openmaps.ui.components.icon
 import nz.eloque.openmaps.ui.navigation.DirectionsField
 import nz.eloque.openmaps.ui.navigation.DirectionsKey
 import nz.eloque.openmaps.ui.navigation.Endpoint
+import nz.eloque.openmaps.ui.navigation.toRouteEnd
 import nz.eloque.openmaps.ui.resources.Res
 import nz.eloque.openmaps.ui.resources.allow_location
 import nz.eloque.openmaps.ui.resources.departs_from
@@ -66,7 +72,9 @@ import nz.eloque.openmaps.ui.resources.no_routes
 import nz.eloque.openmaps.ui.resources.no_transfers
 import nz.eloque.openmaps.ui.resources.one_transfer
 import nz.eloque.openmaps.ui.resources.platform
+import nz.eloque.openmaps.ui.resources.remove_saved_route
 import nz.eloque.openmaps.ui.resources.route_options
+import nz.eloque.openmaps.ui.resources.save_route
 import nz.eloque.openmaps.ui.resources.swap
 import nz.eloque.openmaps.ui.resources.transfers
 import nz.eloque.openmaps.ui.resources.walk_only
@@ -107,6 +115,7 @@ fun DirectionsSheet(
     LazyColumn(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         item {
             EndpointsCard(directions.from, directions.to, onEditField, onSwap)
+            SaveRouteButton(directions)
         }
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
@@ -281,5 +290,27 @@ private fun LegSummary(legs: List<Leg>) {
                     }
             }
         }
+    }
+}
+
+/** Saves the start and destination to plan again later. When already saved, a tap removes it. */
+@Composable
+private fun SaveRouteButton(directions: DirectionsKey) {
+    val store = koinInject<PlacesStore>()
+    val routes by store.savedRoutes.collectAsStateWithLifecycle(emptyList())
+    val scope = rememberCoroutineScope()
+    val from = directions.from?.toRouteEnd()
+    val to = directions.to?.toRouteEnd()
+    val saved = routes.firstOrNull { it.from == from && it.to == to }
+    TextButton(
+        onClick = {
+            scope.launch { if (saved != null) store.removeRoute(saved.id) else store.saveRoute(from, to) }
+        },
+    ) {
+        Icon(if (saved != null) Icons.Default.Bookmark else Icons.Outlined.BookmarkBorder, contentDescription = null)
+        Text(
+            stringResource(if (saved != null) Res.string.remove_saved_route else Res.string.save_route),
+            modifier = Modifier.padding(start = 8.dp),
+        )
     }
 }

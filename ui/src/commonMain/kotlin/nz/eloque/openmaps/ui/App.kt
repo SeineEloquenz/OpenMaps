@@ -66,6 +66,7 @@ import nz.eloque.openmaps.ui.navigation.DirectionsKey
 import nz.eloque.openmaps.ui.navigation.HomeKey
 import nz.eloque.openmaps.ui.navigation.PlaceKey
 import nz.eloque.openmaps.ui.navigation.RouteKey
+import nz.eloque.openmaps.ui.navigation.SavedKey
 import nz.eloque.openmaps.ui.navigation.SearchKey
 import nz.eloque.openmaps.ui.navigation.SettingsKey
 import nz.eloque.openmaps.ui.navigation.StopKey
@@ -79,6 +80,7 @@ import nz.eloque.openmaps.ui.resources.my_location
 import nz.eloque.openmaps.ui.resources.search_hint
 import nz.eloque.openmaps.ui.resources.settings
 import nz.eloque.openmaps.ui.resources.waiting_for_location
+import nz.eloque.openmaps.ui.saved.SavedSheet
 import nz.eloque.openmaps.ui.search.SearchScreen
 import nz.eloque.openmaps.ui.settings.SettingsSheet
 import nz.eloque.openmaps.ui.stop.StopSheet
@@ -94,6 +96,7 @@ private val navConfiguration =
                 polymorphic(NavKey::class) {
                     subclass(HomeKey::class)
                     subclass(AboutKey::class)
+                    subclass(SavedKey::class)
                     subclass(SettingsKey::class)
                     subclass(SearchKey::class)
                     subclass(PlaceKey::class)
@@ -161,10 +164,17 @@ fun App(version: String) {
                                     onOpenStop = backStack::add,
                                     onDirectionsTo = { backStack.add(DirectionsKey(from = null, to = it.toEndpoint())) },
                                     onSetFavourite = { backStack.add(SearchKey(saveAs = it)) },
+                                    onOpenSaved = { backStack.add(SavedKey) },
                                     onOpenTrip = { tripId, stopName -> backStack.add(TripKey(tripId, stopName)) },
                                 )
                             }
                             entry<AboutKey> { AboutSheet(version) }
+                            entry<SavedKey> {
+                                SavedSheet(
+                                    onOpenPlace = { backStack.add(it.toKey()) },
+                                    onOpenRoute = { backStack.add(DirectionsKey(it.from?.toEndpoint(), it.to?.toEndpoint())) },
+                                )
+                            }
                             entry<SettingsKey> { SettingsSheet(onOpenAbout = { backStack.add(AboutKey) }) }
                             entry<SearchKey> { search ->
                                 SearchScreen(

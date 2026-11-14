@@ -127,8 +127,8 @@ private fun SuggestionList(
         items(suggestions.favourites, key = { "favourite-${it.id}" }) { favourite ->
             val label = favourite.label.titleRes
             ResultRow(
-                headline = label?.let { stringResource(it) } ?: favourite.place.name,
-                supporting = if (label != null) favourite.place.name else favourite.place.area,
+                headline = label?.let { stringResource(it) } ?: favourite.displayName,
+                supporting = if (label != null) favourite.displayName else favourite.place.area,
                 icon = favourite.label.icon,
                 onClick = { onSelect(favourite.place) },
             )

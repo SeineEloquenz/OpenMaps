@@ -8,6 +8,25 @@ data class Favourite(
     val id: Long,
     val label: FavouriteLabel,
     val place: SearchResult,
+    /** A name chosen by the user, shown in place of the place name. */
+    val customName: String? = null,
+) {
+    val displayName: String
+        get() = customName ?: place.name
+}
+
+/** One end of a saved route. Stops route by id, everything else by coordinates. */
+data class RouteEnd(
+    val name: String,
+    val location: LatLng,
+    val stopId: String?,
+)
+
+/** A start and destination to plan again later. A null end means the user's location. */
+data class SavedRoute(
+    val id: Long,
+    val from: RouteEnd?,
+    val to: RouteEnd?,
 )
 
 /** Identifies the same place across searches, so it can be matched against saved places. */
@@ -40,4 +59,20 @@ interface PlacesStore {
     suspend fun removeFavourite(id: Long)
 
     suspend fun addRecent(place: SearchResult)
+
+    /** A null or blank name restores the place name. */
+    suspend fun renameFavourite(
+        id: Long,
+        name: String?,
+    )
+
+    /** Newest first. */
+    val savedRoutes: Flow<List<SavedRoute>>
+
+    suspend fun saveRoute(
+        from: RouteEnd?,
+        to: RouteEnd?,
+    )
+
+    suspend fun removeRoute(id: Long)
 }
