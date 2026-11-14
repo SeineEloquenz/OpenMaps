@@ -116,10 +116,7 @@ private fun HttpRequestBuilder.routeOptions(options: RouteOptions) {
         WalkingSpeed.FAST -> parameter("pedestrianSpeed", FAST_WALK_METERS_PER_SECOND)
         WalkingSpeed.NORMAL -> Unit
     }
-    if (options.wheelchair) {
-        parameter("pedestrianProfile", "WHEELCHAIR")
-        parameter("useRoutedTransfers", true)
-    }
+    if (options.wheelchair) parameter("pedestrianProfile", "WHEELCHAIR")
 }
 
 private fun motisMode(mode: TransportMode): String =

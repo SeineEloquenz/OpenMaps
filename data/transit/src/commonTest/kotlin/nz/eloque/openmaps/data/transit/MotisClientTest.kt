@@ -145,6 +145,7 @@ class MotisClientTest {
             assertEquals("0", custom["maxTransfers"])
             assertEquals("0.9", custom["pedestrianSpeed"])
             assertEquals("WHEELCHAIR", custom["pedestrianProfile"])
+            assertEquals(null, custom["useRoutedTransfers"], "Transitous finds almost no wheelchair routes with routed transfers")
         }
 
     @Test
