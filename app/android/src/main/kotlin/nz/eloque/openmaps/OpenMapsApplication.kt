@@ -16,12 +16,14 @@ import java.util.Locale
 class OpenMapsApplication : Application() {
     override fun onCreate() {
         super.onCreate()
+        val reminders = AndroidReminderScheduler(this)
+        reminders.restore()
         startKoin {
             androidContext(this@OpenMapsApplication)
             modules(
                 module {
                     single { createHttpClient(USER_AGENT) }
-                    single<ReminderScheduler> { AndroidReminderScheduler(androidContext()) }
+                    single<ReminderScheduler> { reminders }
                 },
                 transitModule(language = { Locale.getDefault().language }),
                 geocodingModule(),
