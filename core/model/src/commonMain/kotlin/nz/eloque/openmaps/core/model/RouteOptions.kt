@@ -46,4 +46,9 @@ interface SettingsStore {
     val placeDetailsUrl: StateFlow<String?>
 
     fun setPlaceDetailsUrl(url: String?)
+
+    /** Base URL of a self-hosted Photon, or null for the public one. */
+    val categorySearchUrl: StateFlow<String?>
+
+    fun setCategorySearchUrl(url: String?)
 }

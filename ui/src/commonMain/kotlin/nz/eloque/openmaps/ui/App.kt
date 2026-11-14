@@ -4,6 +4,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
@@ -33,9 +34,11 @@ import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -52,17 +55,22 @@ import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass
 import nz.eloque.openmaps.core.model.Geocoder
+import nz.eloque.openmaps.core.model.PlaceCategory
 import nz.eloque.openmaps.core.model.PlacesStore
 import nz.eloque.openmaps.map.MapController
 import nz.eloque.openmaps.map.OpenMap
 import nz.eloque.openmaps.map.rememberMapController
 import nz.eloque.openmaps.ui.about.AboutSheet
+import nz.eloque.openmaps.ui.category.CategoryChips
+import nz.eloque.openmaps.ui.category.CategoryChipsHeight
+import nz.eloque.openmaps.ui.category.CategorySheet
 import nz.eloque.openmaps.ui.components.StopsOnMap
 import nz.eloque.openmaps.ui.directions.DirectionsSheet
 import nz.eloque.openmaps.ui.directions.RouteSheet
 import nz.eloque.openmaps.ui.directions.TripSheet
 import nz.eloque.openmaps.ui.home.HomeSheet
 import nz.eloque.openmaps.ui.navigation.AboutKey
+import nz.eloque.openmaps.ui.navigation.CategoryKey
 import nz.eloque.openmaps.ui.navigation.DirectionsField
 import nz.eloque.openmaps.ui.navigation.DirectionsKey
 import nz.eloque.openmaps.ui.navigation.HomeKey
@@ -106,6 +114,7 @@ private val navConfiguration =
                     subclass(StopKey::class)
                     subclass(DirectionsKey::class)
                     subclass(RouteKey::class)
+                    subclass(CategoryKey::class)
                     subclass(TripKey::class)
                 }
             }
@@ -158,6 +167,9 @@ fun App(version: String) {
                 backStack.add(place.toKey())
             }
             onDispose { map.onPlaceClick = null }
+        }
+        LaunchedEffect(map) {
+            snapshotFlow { backStack.any { it is CategoryKey } }.collect { if (!it) map.results = emptyList() }
         }
 
         BottomSheetScaffold(
@@ -246,14 +258,21 @@ fun App(version: String) {
                                 )
                             }
                             entry<RouteKey> { RouteSheet(it, map, snackbar) }
+                            entry<CategoryKey> { CategorySheet(it, map, onOpenPlace = { place -> backStack.add(place.toKey()) }) }
                             entry<TripKey> { TripSheet(it, map) }
                         },
                 )
             },
         ) {
+            val top = backStack.lastOrNull()
             MapLayer(
                 map = map,
-                showSearchBar = backStack.lastOrNull() == HomeKey,
+                showSearchBar = top == HomeKey || top is CategoryKey,
+                category = (top as? CategoryKey)?.category,
+                onCategory = { category ->
+                    if (top is CategoryKey) backStack.removeLastOrNull()
+                    if (category != null) backStack.add(CategoryKey(category))
+                },
                 onSearch = { backStack.add(SearchKey()) },
                 onSettings = { backStack.add(SettingsKey) },
                 snackbar = snackbar,
@@ -266,6 +285,8 @@ fun App(version: String) {
 private fun MapLayer(
     map: MapController,
     showSearchBar: Boolean,
+    category: PlaceCategory?,
+    onCategory: (PlaceCategory?) -> Unit,
     onSearch: () -> Unit,
     onSettings: () -> Unit,
     snackbar: SnackbarHostState,
@@ -276,7 +297,7 @@ private fun MapLayer(
     val mapPadding =
         PaddingValues(
             start = safe.calculateStartPadding(direction),
-            top = safe.calculateTopPadding() + if (showSearchBar) SearchBarHeight + ControlMargin else 0.dp,
+            top = safe.calculateTopPadding() + if (showSearchBar) SearchBarHeight + CategoryChipsHeight + ControlMargin * 2 else 0.dp,
             end = safe.calculateEndPadding(direction),
             bottom = SheetPeekHeight + FabSize + ControlMargin,
         )
@@ -285,7 +306,15 @@ private fun MapLayer(
         OpenMap(map, Modifier.fillMaxSize(), contentPadding = mapPadding)
 
         if (showSearchBar) {
-            SearchPill(onSearch, onSettings, Modifier.statusBarsPadding().padding(ControlMargin))
+            Column(Modifier.statusBarsPadding().padding(top = ControlMargin)) {
+                SearchPill(onSearch, onSettings, Modifier.padding(horizontal = ControlMargin))
+                CategoryChips(
+                    selected = category,
+                    onSelect = onCategory,
+                    contentPadding = PaddingValues(horizontal = ControlMargin),
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+            }
         }
 
         FloatingActionButton(

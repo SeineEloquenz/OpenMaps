@@ -111,5 +111,7 @@ private fun DetailRow(
     )
 }
 
-/** MOTIS reports OSM Carto icon names such as `museum_16`. */
-private fun String.toCategoryLabel(): String = substringBeforeLast('_').replace('_', ' ').replaceFirstChar { it.uppercase() }
+/** Turns an OSM tag value such as `fast_food`, or a MOTIS icon name such as `museum_16`, into a label. */
+fun String.toCategoryLabel(): String = replace(IconSizeSuffix, "").replace('_', ' ').replaceFirstChar { it.uppercase() }
+
+private val IconSizeSuffix = Regex("_\\d+$")

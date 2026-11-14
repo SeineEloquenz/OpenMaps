@@ -82,6 +82,7 @@ class MapController internal constructor(
     private val markerState: MutableState<LatLng?>,
     private val linesState: MutableState<List<MapLine>>,
     private val stopsState: MutableState<List<SearchResult.Stop>>,
+    private val resultsState: MutableState<List<SearchResult.Place>>,
 ) {
     val isLocationPermissionGranted: Boolean
         get() = location.permission is LocationPermission.Granted
@@ -104,7 +105,14 @@ class MapController internal constructor(
 
     var onStopClick: ((SearchResult.Stop) -> Unit)? by mutableStateOf(null)
 
+    /** Places tapped on the map or among [results]. */
     var onPlaceClick: ((SearchResult.Place) -> Unit)? by mutableStateOf(null)
+
+    /** Search results drawn as pins. */
+    var results: List<SearchResult.Place> by resultsState
+
+    val center: LatLng
+        get() = mapState.cameraPosition.center.toLatLng()
 
     val isMoving: Boolean
         get() = mapState.isCameraMoving
@@ -161,6 +169,7 @@ fun rememberMapController(dark: Boolean = isSystemInDarkTheme()): MapController 
     val markerState = remember { mutableStateOf<LatLng?>(null, referentialEqualityPolicy()) }
     val linesState = remember { mutableStateOf<List<MapLine>>(emptyList(), referentialEqualityPolicy()) }
     val stopsState = remember { mutableStateOf<List<SearchResult.Stop>>(emptyList()) }
+    val resultsState = remember { mutableStateOf<List<SearchResult.Place>>(emptyList()) }
     val controllerRef = remember { arrayOfNulls<MapController>(1) }
     val stopIcons =
         StopIcon.entries.associateWith { icon ->
@@ -172,6 +181,7 @@ fun rememberMapController(dark: Boolean = isSystemInDarkTheme()): MapController 
             initialCameraPosition = CameraPosition(center = EUROPE, zoom = 3.5),
         ) {
             PlaceLayers(dark) { place -> controllerRef[0]?.onPlaceClick?.invoke(place) }
+            ResultLayers(resultsState.value, dark) { place -> controllerRef[0]?.onPlaceClick?.invoke(place) }
             linesState.value.forEachIndexed { index, line ->
                 key(index, line) {
                     // Old and new layers coexist briefly while the list changes, so ids must not repeat across contents.
@@ -256,7 +266,7 @@ fun rememberMapController(dark: Boolean = isSystemInDarkTheme()): MapController 
                 )
             }
         }
-    return remember(mapState, location) { MapController(mapState, location, markerState, linesState, stopsState) }
+    return remember(mapState, location) { MapController(mapState, location, markerState, linesState, stopsState, resultsState) }
         .also { controllerRef[0] = it }
 }
 

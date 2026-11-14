@@ -108,9 +108,23 @@
     <string name="units_metric">Kilometres</string>
     <string name="units_imperial">Miles</string>
     <string name="servers">Servers</string>
-    <string name="servers_detail">Leave empty to use the public services. Set an address to use your own MOTIS or Nominatim server.</string>
+    <string name="servers_detail">Leave empty to use the public services. Set an address to use your own MOTIS, Nominatim or Photon server.</string>
     <string name="server_transit">Routing and departures (MOTIS)</string>
     <string name="server_place_details">Place details (Nominatim)</string>
+    <string name="category_restaurants">Restaurants</string>
+    <string name="category_cafes">Cafés</string>
+    <string name="category_supermarkets">Supermarkets</string>
+    <string name="category_gas_stations">Gas stations</string>
+    <string name="category_bars">Bars</string>
+    <string name="category_attractions">Attractions</string>
+    <string name="category_hotels">Hotels</string>
+    <string name="category_pharmacies">Pharmacies</string>
+    <string name="category_bakeries">Bakeries</string>
+    <string name="category_atms">ATMs</string>
+    <string name="category_toilets">Toilets</string>
+    <string name="category_none">Nothing found in this area. Zoom out or move the map, then search this area.</string>
+    <string name="search_this_area">Search this area</string>
+    <string name="server_category_search">Nearby places (Photon)</string>
     <string name="server_invalid">Must start with https:// or http://</string>
 
     <string name="about">About</string>

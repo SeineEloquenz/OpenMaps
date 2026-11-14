@@ -5,6 +5,7 @@ import kotlinx.serialization.Serializable
 import nz.eloque.openmaps.core.model.FavouriteLabel
 import nz.eloque.openmaps.core.model.LatLng
 import nz.eloque.openmaps.core.model.OsmId
+import nz.eloque.openmaps.core.model.PlaceCategory
 import nz.eloque.openmaps.core.model.RouteEnd
 import nz.eloque.openmaps.core.model.SearchResult
 import nz.eloque.openmaps.core.model.TransportMode
@@ -17,6 +18,12 @@ data object AboutKey : NavKey
 
 @Serializable
 data object SettingsKey : NavKey
+
+/** Places of one category in the visible map area. */
+@Serializable
+data class CategoryKey(
+    val category: PlaceCategory,
+) : NavKey
 
 enum class DirectionsField { FROM, TO }
 

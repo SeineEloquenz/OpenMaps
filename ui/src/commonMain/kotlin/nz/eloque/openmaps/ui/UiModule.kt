@@ -1,5 +1,6 @@
 package nz.eloque.openmaps.ui
 
+import nz.eloque.openmaps.ui.category.CategoryViewModel
 import nz.eloque.openmaps.ui.directions.DirectionsViewModel
 import nz.eloque.openmaps.ui.directions.ItineraryCache
 import nz.eloque.openmaps.ui.directions.TripViewModel
@@ -20,4 +21,5 @@ val uiModule =
         single { ItineraryCache() }
         viewModel { params -> DirectionsViewModel(get(), get(), get(), params.get()) }
         viewModel { params -> TripViewModel(get(), params.get()) }
+        viewModel { params -> CategoryViewModel(get(), params.get()) }
     }

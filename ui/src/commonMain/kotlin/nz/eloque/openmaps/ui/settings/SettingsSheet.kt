@@ -38,6 +38,7 @@ import nz.eloque.openmaps.core.model.DistanceUnit
 import nz.eloque.openmaps.core.model.SettingsStore
 import nz.eloque.openmaps.ui.resources.Res
 import nz.eloque.openmaps.ui.resources.about
+import nz.eloque.openmaps.ui.resources.server_category_search
 import nz.eloque.openmaps.ui.resources.server_invalid
 import nz.eloque.openmaps.ui.resources.server_place_details
 import nz.eloque.openmaps.ui.resources.server_transit
@@ -54,6 +55,7 @@ import org.koin.compose.koinInject
 
 private const val DEFAULT_TRANSIT_URL = "https://api.transitous.org/api"
 private const val DEFAULT_PLACE_DETAILS_URL = "https://nominatim.openstreetmap.org"
+private const val DEFAULT_CATEGORY_SEARCH_URL = "https://photon.komoot.io"
 
 @Composable
 fun SettingsSheet(onOpenAbout: () -> Unit) {
@@ -62,6 +64,7 @@ fun SettingsSheet(onOpenAbout: () -> Unit) {
     val distanceUnit by settings.distanceUnit.collectAsStateWithLifecycle()
     val transitUrl by settings.transitUrl.collectAsStateWithLifecycle()
     val placeDetailsUrl by settings.placeDetailsUrl.collectAsStateWithLifecycle()
+    val categorySearchUrl by settings.categorySearchUrl.collectAsStateWithLifecycle()
 
     Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
         Text(
@@ -98,6 +101,7 @@ fun SettingsSheet(onOpenAbout: () -> Unit) {
         )
         ServerUrlField(Res.string.server_transit, transitUrl, DEFAULT_TRANSIT_URL, settings::setTransitUrl)
         ServerUrlField(Res.string.server_place_details, placeDetailsUrl, DEFAULT_PLACE_DETAILS_URL, settings::setPlaceDetailsUrl)
+        ServerUrlField(Res.string.server_category_search, categorySearchUrl, DEFAULT_CATEGORY_SEARCH_URL, settings::setCategorySearchUrl)
         HorizontalDivider(Modifier.padding(vertical = 8.dp))
 
         ListItem(

@@ -56,7 +56,10 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
 import nz.eloque.openmaps.core.model.LatLng
 import nz.eloque.openmaps.core.model.OsmId
 import nz.eloque.openmaps.core.model.OsmType
@@ -77,9 +80,12 @@ import org.maplibre.compose.expressions.value.SymbolAnchor
 import org.maplibre.compose.interaction.ClickResult
 import org.maplibre.compose.layers.FeaturesClickHandler
 import org.maplibre.compose.layers.SymbolLayer
+import org.maplibre.compose.sources.GeoJsonData
 import org.maplibre.compose.sources.VectorTileSource
 import org.maplibre.compose.sources.getBaseSource
+import org.maplibre.compose.sources.rememberGeoJsonSource
 import org.maplibre.spatialk.geojson.Feature
+import org.maplibre.spatialk.geojson.FeatureCollection
 import org.maplibre.spatialk.geojson.Point
 
 /** Colour families for places, after the groups people know from other maps. */
@@ -96,7 +102,7 @@ private enum class PlaceGroup(
     SERVICES(Color(0xFF5F6B7A), Color(0xFFAEB8C4)),
 }
 
-/** The OpenMapTiles `poi` classes drawn on the map. Classes not listed here, such as benches or bollards, stay hidden. */
+/** OpenMapTiles `poi` classes and OSM tag values with their icon. Tile classes not listed here, such as benches or bollards, stay hidden. */
 private enum class PlaceIcon(
     val vector: ImageVector,
     val group: PlaceGroup,
@@ -106,10 +112,10 @@ private enum class PlaceIcon(
     FAST_FOOD(Icons.Default.Fastfood, PlaceGroup.FOOD, listOf("fast_food")),
     CAFE(Icons.Default.LocalCafe, PlaceGroup.FOOD, listOf("cafe")),
     BAR(Icons.Default.LocalBar, PlaceGroup.FOOD, listOf("bar")),
-    PUB(Icons.Default.SportsBar, PlaceGroup.FOOD, listOf("beer")),
+    PUB(Icons.Default.SportsBar, PlaceGroup.FOOD, listOf("beer", "pub", "biergarten")),
     ICE_CREAM(Icons.Default.Icecream, PlaceGroup.FOOD, listOf("ice_cream")),
-    BAKERY(Icons.Default.BakeryDining, PlaceGroup.FOOD, listOf("bakery")),
-    GROCERY(Icons.Default.LocalGroceryStore, PlaceGroup.SHOPPING, listOf("grocery", "butcher")),
+    BAKERY(Icons.Default.BakeryDining, PlaceGroup.FOOD, listOf("bakery", "pastry")),
+    GROCERY(Icons.Default.LocalGroceryStore, PlaceGroup.SHOPPING, listOf("grocery", "butcher", "supermarket", "convenience")),
     CLOTHES(Icons.Default.Checkroom, PlaceGroup.SHOPPING, listOf("clothing_store")),
     LIQUOR(Icons.Default.Liquor, PlaceGroup.SHOPPING, listOf("alcohol_shop")),
     BICYCLE(Icons.AutoMirrored.Filled.DirectionsBike, PlaceGroup.SHOPPING, listOf("bicycle")),
@@ -122,11 +128,11 @@ private enum class PlaceIcon(
     HOSPITAL(Icons.Default.LocalHospital, PlaceGroup.HEALTH, listOf("hospital")),
     DOCTOR(Icons.Default.MedicalServices, PlaceGroup.HEALTH, listOf("doctors", "dentist")),
     VET(Icons.Default.Pets, PlaceGroup.HEALTH, listOf("veterinary")),
-    HOTEL(Icons.Default.Hotel, PlaceGroup.LODGING, listOf("lodging")),
+    HOTEL(Icons.Default.Hotel, PlaceGroup.LODGING, listOf("lodging", "hotel", "hostel", "guest_house", "motel")),
     CAMPSITE(Icons.Default.Cabin, PlaceGroup.LODGING, listOf("campsite")),
-    ATTRACTION(Icons.Default.PhotoCamera, PlaceGroup.SIGHTS, listOf("attraction", "monument")),
+    ATTRACTION(Icons.Default.PhotoCamera, PlaceGroup.SIGHTS, listOf("attraction", "monument", "viewpoint", "theme_park")),
     MUSEUM(Icons.Default.Museum, PlaceGroup.SIGHTS, listOf("museum")),
-    GALLERY(Icons.Default.Palette, PlaceGroup.SIGHTS, listOf("art_gallery")),
+    GALLERY(Icons.Default.Palette, PlaceGroup.SIGHTS, listOf("art_gallery", "gallery")),
     CASTLE(Icons.Default.Castle, PlaceGroup.SIGHTS, listOf("castle")),
     THEATRE(Icons.Default.TheaterComedy, PlaceGroup.SIGHTS, listOf("theatre")),
     CINEMA(Icons.Default.Movie, PlaceGroup.SIGHTS, listOf("cinema")),
@@ -143,6 +149,11 @@ private enum class PlaceIcon(
     LIBRARY(Icons.Default.LocalLibrary, PlaceGroup.SERVICES, listOf("library")),
     SCHOOL(Icons.Default.School, PlaceGroup.SERVICES, listOf("school", "college")),
     WORSHIP(Icons.Default.Church, PlaceGroup.SERVICES, listOf("place_of_worship")),
+    ;
+
+    companion object {
+        fun of(category: String?): PlaceIcon? = entries.firstOrNull { category in it.classes }
+    }
 }
 
 /** A filled circle in [color] with [icon] drawn on it in white. */
@@ -250,3 +261,70 @@ private const val RANK_ALL = 1000f
 
 /** Zoom at which each rank band appears, paired with the rank it ends below. Matches the light base style. */
 private val RankTiers = listOf(15f to 7, 16f to 20, 17f to RANK_ALL.toInt())
+
+/** Search results drawn as labelled pins above the regular places. */
+@Composable
+internal fun ResultLayers(
+    results: List<SearchResult.Place>,
+    dark: Boolean,
+    onClick: (SearchResult.Place) -> Unit,
+) {
+    if (results.isEmpty()) return
+    val color = if (dark) ResultColorDark else ResultColorLight
+    val outline = if (dark) Color.Black else Color.White
+    val badges =
+        PlaceIcon.entries.associateWith { icon ->
+            val painter = rememberVectorPainter(icon.vector)
+            image(remember(painter, color, outline) { BadgePainter(painter, color, outline) }, size = DpSize(28.dp, 28.dp))
+        }
+    val features =
+        results.mapIndexed { index, result ->
+            Feature(
+                Point(result.location.toPosition()),
+                buildJsonObject {
+                    put(RESULT_INDEX, index)
+                    put(RESULT_NAME, result.name)
+                    put(RESULT_ICON, (PlaceIcon.of(result.category) ?: PlaceIcon.SHOP).name)
+                },
+            )
+        }
+    val source = rememberGeoJsonSource(GeoJsonData.Features(FeatureCollection(features)))
+    val handler: FeaturesClickHandler = { clicked ->
+        val index = clicked.firstOrNull()?.properties?.get(RESULT_INDEX)?.jsonPrimitive?.intOrNull
+        val result = index?.let(results::getOrNull)
+        if (result == null) {
+            ClickResult.Pass
+        } else {
+            onClick(result)
+            ClickResult.Consume
+        }
+    }
+    SymbolLayer(
+        id = "results",
+        source = source,
+        iconImage =
+            switch(
+                feature[RESULT_ICON].asString(),
+                cases = PlaceIcon.entries.map { case(it.name, badges.getValue(it)) },
+                fallback = badges.getValue(PlaceIcon.SHOP),
+            ),
+        iconAllowOverlap = const(true),
+        textField = coalesce(feature[RESULT_NAME].asString(), const("")).cast(),
+        textFont = const(listOf("Noto Sans Regular")),
+        textSize = const(0.85f.em),
+        textColor = const(color),
+        textHaloColor = const(if (dark) Color(0xFF121212) else Color.White),
+        textHaloWidth = const(1.5.dp),
+        textAnchor = const(SymbolAnchor.Left),
+        textOffset = textOffset(1.3f.em, 0f.em),
+        textMaxWidth = const(8f.em),
+        textOptional = const(true),
+        onClick = handler,
+    )
+}
+
+private const val RESULT_INDEX = "i"
+private const val RESULT_NAME = "n"
+private const val RESULT_ICON = "c"
+private val ResultColorLight = Color(0xFFD93025)
+private val ResultColorDark = Color(0xFFF28B82)

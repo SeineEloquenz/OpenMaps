@@ -44,6 +44,11 @@ internal class PreferencesSettingsStore(
 
     override fun setPlaceDetailsUrl(url: String?) = setUrl(PLACE_DETAILS_URL, _placeDetailsUrl, url)
 
+    private val _categorySearchUrl = MutableStateFlow(settings.getStringOrNull(CATEGORY_SEARCH_URL))
+    override val categorySearchUrl: StateFlow<String?> = _categorySearchUrl.asStateFlow()
+
+    override fun setCategorySearchUrl(url: String?) = setUrl(CATEGORY_SEARCH_URL, _categorySearchUrl, url)
+
     private fun setUrl(
         key: String,
         state: MutableStateFlow<String?>,
@@ -81,5 +86,6 @@ internal class PreferencesSettingsStore(
         const val DISTANCE_UNIT = "units.distance"
         const val TRANSIT_URL = "server.transit"
         const val PLACE_DETAILS_URL = "server.placeDetails"
+        const val CATEGORY_SEARCH_URL = "server.categorySearch"
     }
 }
