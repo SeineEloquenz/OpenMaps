@@ -30,8 +30,10 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetScaffoldState
+import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -88,6 +90,7 @@ import nz.eloque.openmaps.ui.theme.OpenMapsTheme
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
+import kotlin.random.Random
 
 private val navConfiguration =
     SavedStateConfiguration {
@@ -109,6 +112,9 @@ private val navConfiguration =
     }
 
 private val SheetPeekHeight = 280.dp
+
+/** Differs per app process, so a sheet position saved by an earlier process is not restored and the sheet starts collapsed. */
+private val ProcessStart = Random.nextInt()
 private val ControlMargin = 16.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -118,7 +124,11 @@ fun App(version: String) {
         val backStack = rememberNavBackStack(navConfiguration, HomeKey)
         val map = rememberMapController()
         val snackbar = remember { SnackbarHostState() }
-        val sheetState = rememberBottomSheetScaffoldState(snackbarHostState = snackbar)
+        val sheetState =
+            rememberBottomSheetScaffoldState(
+                bottomSheetState = key(ProcessStart) { rememberStandardBottomSheetState() },
+                snackbarHostState = snackbar,
+            )
         val places = koinInject<PlacesStore>()
         val scope = rememberCoroutineScope()
         val geocoder = koinInject<Geocoder>()
