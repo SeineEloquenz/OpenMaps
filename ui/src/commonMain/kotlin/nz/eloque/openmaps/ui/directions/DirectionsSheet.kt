@@ -1,6 +1,7 @@
 package nz.eloque.openmaps.ui.directions
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -10,24 +11,32 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material.icons.filled.TripOrigin
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -36,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import nz.eloque.openmaps.core.model.Itinerary
 import nz.eloque.openmaps.core.model.Leg
+import nz.eloque.openmaps.core.model.SettingsStore
 import nz.eloque.openmaps.map.MapController
 import nz.eloque.openmaps.ui.components.LineChip
 import nz.eloque.openmaps.ui.components.LoadState
@@ -56,14 +66,18 @@ import nz.eloque.openmaps.ui.resources.no_routes
 import nz.eloque.openmaps.ui.resources.no_transfers
 import nz.eloque.openmaps.ui.resources.one_transfer
 import nz.eloque.openmaps.ui.resources.platform
+import nz.eloque.openmaps.ui.resources.route_options
 import nz.eloque.openmaps.ui.resources.swap
 import nz.eloque.openmaps.ui.resources.transfers
 import nz.eloque.openmaps.ui.resources.walk_only
 import nz.eloque.openmaps.ui.resources.your_location
+import nz.eloque.openmaps.ui.settings.RouteOptionsEditor
 import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DirectionsSheet(
     directions: DirectionsKey,
@@ -81,12 +95,29 @@ fun DirectionsSheet(
     val loaded = (result as? LoadState.Loaded)?.value
     ShowItineraryOnMap(map, loaded?.itineraries?.firstOrNull() ?: loaded?.direct)
 
+    val settings = koinInject<SettingsStore>()
+    val options by settings.routeOptions.collectAsStateWithLifecycle()
+    var editingOptions by rememberSaveable { mutableStateOf(false) }
+    if (editingOptions) {
+        ModalBottomSheet(onDismissRequest = { editingOptions = false }) {
+            RouteOptionsEditor(options, settings::setRouteOptions, Modifier.padding(bottom = 24.dp))
+        }
+    }
+
     LazyColumn(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         item {
             EndpointsCard(directions.from, directions.to, onEditField, onSwap)
         }
         item {
-            TimeChoiceRow(time, viewModel::setTime)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
+                TimeChoiceRow(time, viewModel::setTime)
+                FilterChip(
+                    selected = !options.isDefault,
+                    onClick = { editingOptions = true },
+                    label = { Text(stringResource(Res.string.route_options)) },
+                    leadingIcon = { Icon(Icons.Default.Tune, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                )
+            }
         }
         when (val state = result) {
             null ->

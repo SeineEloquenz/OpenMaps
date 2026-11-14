@@ -33,6 +33,7 @@ data class PlanRequest(
     val time: Instant?,
     val arriveBy: Boolean = false,
     val pageCursor: String? = null,
+    val options: RouteOptions = RouteOptions(),
 )
 
 data class PlanResult(

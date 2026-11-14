@@ -18,6 +18,6 @@ val uiModule =
         viewModel { params -> StopViewModel(get(), params.get()) }
         viewModel { params -> PlaceViewModel(get(), params.getOrNull()) }
         single { ItineraryCache() }
-        viewModel { params -> DirectionsViewModel(get(), get(), params.get()) }
+        viewModel { params -> DirectionsViewModel(get(), get(), get(), params.get()) }
         viewModel { params -> TripViewModel(get(), params.get()) }
     }

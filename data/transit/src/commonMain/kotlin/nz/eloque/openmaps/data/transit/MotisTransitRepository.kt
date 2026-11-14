@@ -9,11 +9,15 @@ import nz.eloque.openmaps.core.model.DeparturesResult
 import nz.eloque.openmaps.core.model.GeoBounds
 import nz.eloque.openmaps.core.model.Itinerary
 import nz.eloque.openmaps.core.model.LatLng
+import nz.eloque.openmaps.core.model.ModeGroup
 import nz.eloque.openmaps.core.model.PlanRequest
 import nz.eloque.openmaps.core.model.PlanResult
 import nz.eloque.openmaps.core.model.PlanTarget
+import nz.eloque.openmaps.core.model.RouteOptions
 import nz.eloque.openmaps.core.model.SearchResult
 import nz.eloque.openmaps.core.model.TransitRepository
+import nz.eloque.openmaps.core.model.TransportMode
+import nz.eloque.openmaps.core.model.WalkingSpeed
 import kotlin.time.Instant
 
 internal class MotisTransitRepository(
@@ -44,6 +48,7 @@ internal class MotisTransitRepository(
                     parameter("arriveBy", request.arriveBy)
                     parameter("directModes", "WALK")
                     request.pageCursor?.let { parameter("pageCursor", it) }
+                    routeOptions(request.options)
                 }.body()
         return PlanResult(
             itineraries = response.itineraries.map { it.toItinerary() },
@@ -99,3 +104,31 @@ private fun PlanTarget.asParameter(): String =
         is PlanTarget.Coordinates -> location.asParameter()
         is PlanTarget.Stop -> id
     }
+
+private fun HttpRequestBuilder.routeOptions(options: RouteOptions) {
+    if (options.modes.size < ModeGroup.entries.size) {
+        val modes = options.modes.flatMap { it.modes }.map(::motisMode) + MINOR_MODES
+        parameter("transitModes", modes.joinToString(","))
+    }
+    options.maxTransfers?.let { parameter("maxTransfers", it) }
+    when (options.walkingSpeed) {
+        WalkingSpeed.SLOW -> parameter("pedestrianSpeed", SLOW_WALK_METERS_PER_SECOND)
+        WalkingSpeed.FAST -> parameter("pedestrianSpeed", FAST_WALK_METERS_PER_SECOND)
+        WalkingSpeed.NORMAL -> Unit
+    }
+    if (options.wheelchair) {
+        parameter("pedestrianProfile", "WHEELCHAIR")
+        parameter("useRoutedTransfers", true)
+    }
+}
+
+private fun motisMode(mode: TransportMode): String =
+    when (mode) {
+        TransportMode.LONG_DISTANCE_RAIL -> "LONG_DISTANCE"
+        else -> mode.name
+    }
+
+/** Rare modes without a group of their own stay allowed when the user restricts the main ones. */
+private val MINOR_MODES = listOf("FUNICULAR", "AERIAL_LIFT", "OTHER")
+private const val SLOW_WALK_METERS_PER_SECOND = 0.9
+private const val FAST_WALK_METERS_PER_SECOND = 1.6

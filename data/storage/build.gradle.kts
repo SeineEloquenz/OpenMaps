@@ -13,7 +13,11 @@ kotlin {
         commonMain.dependencies {
             implementation(project(":core:model"))
             implementation(libs.room.runtime)
+            implementation(libs.multiplatform.settings)
             implementation(libs.koin.core)
+        }
+        commonTest.dependencies {
+            implementation(libs.multiplatform.settings.test)
         }
         androidMain.dependencies {
             implementation(libs.androidx.sqlite.bundled)

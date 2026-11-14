@@ -13,12 +13,15 @@ import kotlinx.serialization.json.Json
 import nz.eloque.openmaps.core.model.GeoBounds
 import nz.eloque.openmaps.core.model.LatLng
 import nz.eloque.openmaps.core.model.Leg
+import nz.eloque.openmaps.core.model.ModeGroup
 import nz.eloque.openmaps.core.model.OsmId
 import nz.eloque.openmaps.core.model.OsmType
 import nz.eloque.openmaps.core.model.PlanRequest
 import nz.eloque.openmaps.core.model.PlanTarget
+import nz.eloque.openmaps.core.model.RouteOptions
 import nz.eloque.openmaps.core.model.SearchResult
 import nz.eloque.openmaps.core.model.TransportMode
+import nz.eloque.openmaps.core.model.WalkingSpeed
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -109,6 +112,38 @@ class MotisClientTest {
             assertEquals(setOf(TransportMode.TRAM, TransportMode.BUS), stops.single().modes)
             assertEquals("48.99,8.41", requests.single().parameters["min"])
             assertEquals("49.002,8.385", requests.single().parameters["max"])
+        }
+
+    @Test
+    fun planSendsRouteOptions() =
+        runTest {
+            val repository = MotisTransitRepository(client(PLAN_JSON), TRANSITOUS_API)
+            val target = PlanTarget.Coordinates(LatLng(1.0, 2.0))
+            repository.plan(PlanRequest(target, target, time = null))
+            repository.plan(
+                PlanRequest(
+                    target,
+                    target,
+                    time = null,
+                    options =
+                        RouteOptions(
+                            modes = setOf(ModeGroup.LONG_DISTANCE_TRAIN, ModeGroup.BUS),
+                            maxTransfers = 0,
+                            walkingSpeed = WalkingSpeed.SLOW,
+                            wheelchair = true,
+                        ),
+                ),
+            )
+
+            val defaults = requests[0].parameters
+            assertEquals(null, defaults["transitModes"])
+            assertEquals(null, defaults["maxTransfers"])
+            assertEquals(null, defaults["pedestrianProfile"])
+            val custom = requests[1].parameters
+            assertEquals("HIGHSPEED_RAIL,LONG_DISTANCE,NIGHT_RAIL,BUS,COACH,FUNICULAR,AERIAL_LIFT,OTHER", custom["transitModes"])
+            assertEquals("0", custom["maxTransfers"])
+            assertEquals("0.9", custom["pedestrianSpeed"])
+            assertEquals("WHEELCHAIR", custom["pedestrianProfile"])
         }
 
     @Test

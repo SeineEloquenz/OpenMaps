@@ -7,6 +7,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import nz.eloque.openmaps.core.model.Itinerary
@@ -14,6 +15,7 @@ import nz.eloque.openmaps.core.model.LatLng
 import nz.eloque.openmaps.core.model.PlanRequest
 import nz.eloque.openmaps.core.model.PlanResult
 import nz.eloque.openmaps.core.model.PlanTarget
+import nz.eloque.openmaps.core.model.SettingsStore
 import nz.eloque.openmaps.core.model.TransitRepository
 import nz.eloque.openmaps.ui.components.LoadState
 import nz.eloque.openmaps.ui.components.loadOnce
@@ -43,6 +45,7 @@ data class DirectionsResult(
 class DirectionsViewModel(
     private val transit: TransitRepository,
     private val cache: ItineraryCache,
+    private val settings: SettingsStore,
     directions: DirectionsKey,
 ) : ViewModel() {
     private val from: Endpoint? = directions.from
@@ -63,6 +66,7 @@ class DirectionsViewModel(
 
     init {
         if (!needsUserLocation) plan()
+        viewModelScope.launch { settings.routeOptions.drop(1).collect { plan() } }
     }
 
     fun setUserLocation(location: LatLng) {
@@ -136,6 +140,7 @@ class DirectionsViewModel(
                 },
             arriveBy = time is TimeChoice.ArriveBy,
             pageCursor = pageCursor,
+            options = settings.routeOptions.value,
         )
     }
 

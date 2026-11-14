@@ -5,10 +5,11 @@ import androidx.sqlite.SQLiteDriver
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import nz.eloque.openmaps.core.model.PlacesStore
+import nz.eloque.openmaps.core.model.SettingsStore
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
-/** Provides the platform's [RoomDatabase.Builder] and [SQLiteDriver]. */
+/** Provides the platform's [RoomDatabase.Builder], [SQLiteDriver] and key-value Settings. */
 internal expect val platformStorageModule: Module
 
 val storageModule =
@@ -21,4 +22,5 @@ val storageModule =
                 .build()
         }
         single<PlacesStore> { RoomPlacesStore(get<OpenMapsDatabase>().placesDao()) }
+        single<SettingsStore> { PreferencesSettingsStore(get()) }
     }
