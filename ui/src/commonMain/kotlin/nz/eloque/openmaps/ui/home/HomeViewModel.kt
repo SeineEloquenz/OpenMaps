@@ -12,19 +12,10 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import nz.eloque.openmaps.core.model.LatLng
 import nz.eloque.openmaps.core.model.TransitRepository
-import nz.eloque.openmaps.ui.components.DepartureGroup
 import nz.eloque.openmaps.ui.components.LoadState
-import nz.eloque.openmaps.ui.components.groupDepartures
+import nz.eloque.openmaps.ui.components.NearbyStop
+import nz.eloque.openmaps.ui.components.nearbyStops
 import nz.eloque.openmaps.ui.components.refreshing
-import kotlin.time.Clock
-import kotlin.time.Duration.Companion.hours
-
-data class NearbyStop(
-    val id: String?,
-    val name: String,
-    val location: LatLng,
-    val groups: List<DepartureGroup>,
-)
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class HomeViewModel(
@@ -56,27 +47,10 @@ class HomeViewModel(
         retries.value++
     }
 
-    private suspend fun loadNearby(location: LatLng): List<NearbyStop> {
-        val latest = Clock.System.now() + LOOKAHEAD
-        return transit
-            .departuresNear(location, radiusMeters = SEARCH_RADIUS_METERS, count = 60)
-            .departures
-            .filter { it.time.actual <= latest }
-            .groupBy { it.stopName }
-            .values
-            .sortedBy { it.first().stopLocation.distanceTo(location) }
-            .take(MAX_STOPS)
-            .map { departures ->
-                val first = departures.first()
-                NearbyStop(first.stopId, first.stopName, first.stopLocation, groupDepartures(departures).take(MAX_LINES))
-            }
-    }
+    private suspend fun loadNearby(location: LatLng): List<NearbyStop> = transit.nearbyStops(location, maxStops = MAX_STOPS)
 
     private companion object {
-        val LOOKAHEAD = 2.hours
         const val RELOAD_DISTANCE_METERS = 150.0
-        const val SEARCH_RADIUS_METERS = 500
         const val MAX_STOPS = 4
-        const val MAX_LINES = 5
     }
 }

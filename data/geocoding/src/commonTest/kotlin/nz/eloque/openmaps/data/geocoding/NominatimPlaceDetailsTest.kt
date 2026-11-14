@@ -20,7 +20,8 @@ import kotlin.test.assertNull
 private const val LOOKUP_JSON =
     """[{"place_id":156692351,"osm_type":"way","osm_id":29989787,"name":"Rijksmuseum",
     "extratags":{"fee":"yes","website":"https://www.rijksmuseum.nl/","wheelchair":"yes",
-    "opening_hours":"Mo-Su 09:00-17:00"}}]"""
+    "opening_hours":"Mo-Su 09:00-17:00"},"address":{"tourism":"Rijksmuseum","house_number":"1",
+    "road":"Museumstraat","city":"Amsterdam","postcode":"1071 XX","country":"Nederland"}}]"""
 
 class NominatimPlaceDetailsTest {
     private val requests = mutableListOf<Url>()
@@ -46,6 +47,7 @@ class NominatimPlaceDetailsTest {
             assertEquals("Mo-Su 09:00-17:00", details?.openingHours)
             assertEquals("https://www.rijksmuseum.nl/", details?.website)
             assertEquals("yes", details?.wheelchair)
+            assertEquals("Museumstraat 1, 1071 XX Amsterdam", details?.address)
             assertEquals("W29989787", requests.single().parameters["osm_ids"])
             assertEquals("1", requests.single().parameters["extratags"])
         }

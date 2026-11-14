@@ -34,6 +34,8 @@ sealed interface SearchResult {
 }
 
 data class PlaceDetails(
+    /** Street address on one line, such as `Augustastraße 13, 76137 Karlsruhe`. */
+    val address: String?,
     val openingHours: String?,
     val website: String?,
     val phone: String?,

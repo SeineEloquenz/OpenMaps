@@ -13,6 +13,7 @@ import nz.eloque.openmaps.core.model.PlaceDetailsSource
 @Serializable
 internal data class LookupResultDto(
     val extratags: Map<String, String>? = null,
+    val address: Map<String, String>? = null,
 )
 
 internal class NominatimPlaceDetails(
@@ -26,15 +27,25 @@ internal class NominatimPlaceDetails(
                     parameter("osm_ids", osmId.asLookupId())
                     parameter("format", "jsonv2")
                     parameter("extratags", 1)
+                    parameter("addressdetails", 1)
                 }.body()
-        val tags = results.firstOrNull()?.extratags ?: return null
+        val result = results.firstOrNull() ?: return null
+        val tags = result.extratags.orEmpty()
         return PlaceDetails(
+            address = result.address?.let(::formatAddress),
             openingHours = tags["opening_hours"],
             website = tags["website"] ?: tags["contact:website"],
             phone = tags["phone"] ?: tags["contact:phone"],
             wheelchair = tags["wheelchair"],
         )
     }
+}
+
+private fun formatAddress(address: Map<String, String>): String? {
+    val street = listOfNotNull(address["road"] ?: address["pedestrian"], address["house_number"]).joinToString(" ")
+    val locality = address["city"] ?: address["town"] ?: address["village"] ?: address["municipality"]
+    val place = listOfNotNull(address["postcode"], locality).joinToString(" ")
+    return listOf(street, place).filter { it.isNotBlank() }.joinToString(", ").takeIf { it.isNotEmpty() }
 }
 
 private fun OsmId.asLookupId(): String {

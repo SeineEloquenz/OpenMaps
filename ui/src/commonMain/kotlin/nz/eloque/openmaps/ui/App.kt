@@ -233,9 +233,13 @@ fun App(version: String) {
                                 )
                             }
                             entry<PlaceKey> { place ->
-                                PlaceSheet(place, map, onDirections = {
-                                    backStack.add(DirectionsKey(from = null, to = place.toEndpoint()))
-                                })
+                                PlaceSheet(
+                                    place,
+                                    map,
+                                    onDirections = { backStack.add(DirectionsKey(from = null, to = place.toEndpoint())) },
+                                    onOpenStop = backStack::add,
+                                    onOpenTrip = { tripId, stopName -> backStack.add(TripKey(tripId, stopName)) },
+                                )
                             }
                             entry<StopKey> { stop ->
                                 StopSheet(

@@ -1,28 +1,23 @@
 package nz.eloque.openmaps.ui.home
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.Bookmarks
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -31,9 +26,9 @@ import nz.eloque.openmaps.core.model.FavouriteLabel
 import nz.eloque.openmaps.core.model.PlacesStore
 import nz.eloque.openmaps.core.model.SearchResult
 import nz.eloque.openmaps.map.MapController
-import nz.eloque.openmaps.ui.components.DepartureGroupRow
 import nz.eloque.openmaps.ui.components.LoadState
 import nz.eloque.openmaps.ui.components.LoadStateContent
+import nz.eloque.openmaps.ui.components.NearbyStopCard
 import nz.eloque.openmaps.ui.components.icon
 import nz.eloque.openmaps.ui.components.rememberNow
 import nz.eloque.openmaps.ui.navigation.StopKey
@@ -133,25 +128,5 @@ private fun FavouritesRow(
                 leadingIcon = { Icon(Icons.Outlined.Bookmarks, contentDescription = null) },
             )
         }
-    }
-}
-
-@Composable
-private fun NearbyStopCard(
-    stop: NearbyStop,
-    now: kotlin.time.Instant,
-    onClick: () -> Unit,
-    onOpenTrip: (tripId: String, stopName: String) -> Unit,
-) {
-    Column(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-        Row(
-            Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(stop.name, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
-            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
-        }
-        stop.groups.forEach { DepartureGroupRow(it, now, onOpenTrip = { onOpenTrip(it, stop.name) }) }
-        HorizontalDivider(Modifier.padding(top = 8.dp))
     }
 }

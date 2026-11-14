@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Accessible
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
@@ -30,12 +31,18 @@ import nz.eloque.openmaps.core.model.PlaceDetails
 import nz.eloque.openmaps.map.MapController
 import nz.eloque.openmaps.ui.components.DirectionsButton
 import nz.eloque.openmaps.ui.components.FocusOnMap
+import nz.eloque.openmaps.ui.components.LoadState
 import nz.eloque.openmaps.ui.components.LoadStateContent
+import nz.eloque.openmaps.ui.components.NearbyStopCard
 import nz.eloque.openmaps.ui.components.SaveButton
+import nz.eloque.openmaps.ui.components.rememberNow
 import nz.eloque.openmaps.ui.navigation.PlaceKey
+import nz.eloque.openmaps.ui.navigation.StopKey
 import nz.eloque.openmaps.ui.navigation.parsedOsmId
 import nz.eloque.openmaps.ui.navigation.toSearchResult
 import nz.eloque.openmaps.ui.resources.Res
+import nz.eloque.openmaps.ui.resources.address
+import nz.eloque.openmaps.ui.resources.nearby_departures
 import nz.eloque.openmaps.ui.resources.phone
 import nz.eloque.openmaps.ui.resources.website
 import nz.eloque.openmaps.ui.resources.wheelchair
@@ -51,9 +58,13 @@ fun PlaceSheet(
     place: PlaceKey,
     map: MapController,
     onDirections: () -> Unit,
+    onOpenStop: (StopKey) -> Unit,
+    onOpenTrip: (tripId: String, stopName: String) -> Unit,
 ) {
-    val viewModel = koinViewModel<PlaceViewModel> { parametersOf(place.parsedOsmId) }
+    val viewModel = koinViewModel<PlaceViewModel> { parametersOf(place.parsedOsmId, place.location) }
     val details by viewModel.details.collectAsStateWithLifecycle()
+    val nearby by viewModel.nearby.collectAsStateWithLifecycle()
+    val now by rememberNow()
     FocusOnMap(map, place.location, zoomIn = !place.pinned)
 
     Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
@@ -68,12 +79,23 @@ fun PlaceSheet(
         }
         HorizontalDivider(Modifier.padding(top = 12.dp))
         LoadStateContent(details, onRetry = viewModel::load) { it?.let { DetailRows(it) } }
+        val stops = (nearby as? LoadState.Loaded)?.value.orEmpty()
+        if (stops.isNotEmpty()) {
+            HorizontalDivider(Modifier.padding(vertical = 8.dp))
+            Text(stringResource(Res.string.nearby_departures), style = MaterialTheme.typography.titleMedium)
+            stops.forEach { stop ->
+                NearbyStopCard(stop, now, onOpenTrip = onOpenTrip, onClick = {
+                    stop.id?.let { onOpenStop(StopKey(it, stop.name, stop.location.latitude, stop.location.longitude)) }
+                })
+            }
+        }
     }
 }
 
 @Composable
 private fun DetailRows(details: PlaceDetails) {
     val uriHandler = LocalUriHandler.current
+    details.address?.let { DetailRow(Icons.Outlined.Place, stringResource(Res.string.address), it) }
     details.openingHours?.let { OpeningHoursRow(it) }
     details.website?.let { url ->
         DetailRow(Icons.Default.Language, stringResource(Res.string.website), url) { uriHandler.openUri(url) }
