@@ -27,6 +27,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Instant
 
 class MotisClientTest {
     private val requests = mutableListOf<Url>()
@@ -144,6 +145,14 @@ class MotisClientTest {
             assertEquals("0", custom["maxTransfers"])
             assertEquals("0.9", custom["pedestrianSpeed"])
             assertEquals("WHEELCHAIR", custom["pedestrianProfile"])
+        }
+
+    @Test
+    fun timesAreSentInWholeSeconds() =
+        runTest {
+            val repository = MotisTransitRepository(client(STOP_TIMES_JSON), { TRANSITOUS_API })
+            repository.departures("stop", time = Instant.parse("2026-11-14T15:42:25.123456Z"))
+            assertEquals("2026-11-14T15:42:25Z", requests.single().parameters["time"])
         }
 
     @Test

@@ -44,7 +44,7 @@ internal class MotisTransitRepository(
                 .get("${baseUrl()}/v6/plan") {
                     parameter("fromPlace", request.from.asParameter())
                     parameter("toPlace", request.to.asParameter())
-                    request.time?.let { parameter("time", it.toString()) }
+                    request.time?.let { parameter("time", it.asParameter()) }
                     parameter("arriveBy", request.arriveBy)
                     parameter("directModes", "WALK")
                     request.pageCursor?.let { parameter("pageCursor", it) }
@@ -72,7 +72,7 @@ internal class MotisTransitRepository(
         stopTimes {
             parameter("stopId", stopId)
             parameter("withAlerts", true)
-            time?.let { parameter("time", it.toString()) }
+            time?.let { parameter("time", it.asParameter()) }
             parameter("n", count)
             pageCursor?.let { parameter("pageCursor", it) }
         }
@@ -132,3 +132,6 @@ private fun motisMode(mode: TransportMode): String =
 private val MINOR_MODES = listOf("FUNICULAR", "AERIAL_LIFT", "OTHER")
 private const val SLOW_WALK_METERS_PER_SECOND = 0.9
 private const val FAST_WALK_METERS_PER_SECOND = 1.6
+
+/** MOTIS misreads timestamps with more than millisecond precision, so times are sent in whole seconds. */
+internal fun Instant.asParameter(): String = Instant.fromEpochSeconds(epochSeconds).toString()

@@ -103,7 +103,7 @@ private fun OptionGroup(
     }
 }
 
-private val ModeGroup.label: StringResource
+val ModeGroup.label: StringResource
     get() =
         when (this) {
             ModeGroup.LONG_DISTANCE_TRAIN -> Res.string.mode_long_distance

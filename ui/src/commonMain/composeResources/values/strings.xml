@@ -16,6 +16,8 @@
     <string name="allow_location">Allow location</string>
     <string name="departures">Departures</string>
     <string name="no_departures">No upcoming departures</string>
+    <string name="board_now">Now</string>
+    <string name="board_from">From %1$s</string>
     <string name="platform">Platform %1$s</string>
     <string name="cancelled">Cancelled</string>
     <string name="has_alerts">Service alerts, tap to show</string>
