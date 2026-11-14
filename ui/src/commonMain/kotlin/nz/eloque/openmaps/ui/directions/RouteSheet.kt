@@ -44,6 +44,7 @@ import nz.eloque.openmaps.ui.components.clockTime
 import nz.eloque.openmaps.ui.components.formatDistance
 import nz.eloque.openmaps.ui.components.formatDuration
 import nz.eloque.openmaps.ui.components.icon
+import nz.eloque.openmaps.ui.components.timeRange
 import nz.eloque.openmaps.ui.components.withoutLinePrefix
 import nz.eloque.openmaps.ui.navigation.RouteKey
 import nz.eloque.openmaps.ui.resources.Res
@@ -88,7 +89,7 @@ private fun RouteTimeline(
         item {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 8.dp)) {
                 Text(
-                    "${clockTime(itinerary.start)} – ${clockTime(itinerary.end)}",
+                    timeRange(itinerary.start, itinerary.end),
                     style = MaterialTheme.typography.headlineSmall,
                     modifier = Modifier.weight(1f),
                 )

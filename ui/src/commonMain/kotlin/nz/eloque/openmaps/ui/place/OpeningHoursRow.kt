@@ -28,6 +28,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import nz.eloque.openmaps.core.model.OpenStatus
 import nz.eloque.openmaps.core.model.OpeningHours
+import nz.eloque.openmaps.ui.components.Weekdays
 import nz.eloque.openmaps.ui.components.rememberNow
 import nz.eloque.openmaps.ui.resources.Res
 import nz.eloque.openmaps.ui.resources.closed_day
@@ -38,25 +39,7 @@ import nz.eloque.openmaps.ui.resources.open_now
 import nz.eloque.openmaps.ui.resources.opening_hours
 import nz.eloque.openmaps.ui.resources.opens_at
 import nz.eloque.openmaps.ui.resources.opens_on
-import nz.eloque.openmaps.ui.resources.weekday_fri
-import nz.eloque.openmaps.ui.resources.weekday_mon
-import nz.eloque.openmaps.ui.resources.weekday_sat
-import nz.eloque.openmaps.ui.resources.weekday_sun
-import nz.eloque.openmaps.ui.resources.weekday_thu
-import nz.eloque.openmaps.ui.resources.weekday_tue
-import nz.eloque.openmaps.ui.resources.weekday_wed
 import org.jetbrains.compose.resources.stringResource
-
-private val Weekdays =
-    listOf(
-        Res.string.weekday_mon,
-        Res.string.weekday_tue,
-        Res.string.weekday_wed,
-        Res.string.weekday_thu,
-        Res.string.weekday_fri,
-        Res.string.weekday_sat,
-        Res.string.weekday_sun,
-    )
 
 private val OpenColor = Color(0xFF2E9E5B)
 

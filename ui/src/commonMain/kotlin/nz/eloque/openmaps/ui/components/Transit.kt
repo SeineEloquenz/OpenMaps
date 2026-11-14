@@ -51,7 +51,15 @@ import nz.eloque.openmaps.ui.resources.has_alerts
 import nz.eloque.openmaps.ui.resources.minutes
 import nz.eloque.openmaps.ui.resources.now
 import nz.eloque.openmaps.ui.resources.platform
+import nz.eloque.openmaps.ui.resources.weekday_fri
+import nz.eloque.openmaps.ui.resources.weekday_mon
+import nz.eloque.openmaps.ui.resources.weekday_sat
+import nz.eloque.openmaps.ui.resources.weekday_sun
+import nz.eloque.openmaps.ui.resources.weekday_thu
+import nz.eloque.openmaps.ui.resources.weekday_tue
+import nz.eloque.openmaps.ui.resources.weekday_wed
 import org.jetbrains.compose.resources.stringResource
+import kotlin.time.Clock
 import kotlin.time.Instant
 
 val TransportMode.icon: ImageVector
@@ -244,3 +252,33 @@ fun clockTime(time: Instant): String {
     val local = time.toLocalDateTime(TimeZone.currentSystemDefault())
     return "${local.hour.toString().padStart(2, '0')}:${local.minute.toString().padStart(2, '0')}"
 }
+
+/** The clock time, prefixed with the weekday unless it falls on the same day as [after]. */
+@Composable
+fun dayTime(
+    time: Instant,
+    after: Instant = Clock.System.now(),
+): String {
+    val zone = TimeZone.currentSystemDefault()
+    val date = time.toLocalDateTime(zone).date
+    if (date == after.toLocalDateTime(zone).date) return clockTime(time)
+    return "${stringResource(Weekdays[date.dayOfWeek.ordinal])} ${clockTime(time)}"
+}
+
+/** A start to end range showing the weekday only where it changes. */
+@Composable
+fun timeRange(
+    start: Instant,
+    end: Instant,
+): String = "${dayTime(start)} – ${dayTime(end, after = start)}"
+
+val Weekdays =
+    listOf(
+        Res.string.weekday_mon,
+        Res.string.weekday_tue,
+        Res.string.weekday_wed,
+        Res.string.weekday_thu,
+        Res.string.weekday_fri,
+        Res.string.weekday_sat,
+        Res.string.weekday_sun,
+    )

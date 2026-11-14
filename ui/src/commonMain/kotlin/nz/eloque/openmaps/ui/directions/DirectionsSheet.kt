@@ -58,6 +58,7 @@ import nz.eloque.openmaps.ui.components.LoadStateContent
 import nz.eloque.openmaps.ui.components.clockTime
 import nz.eloque.openmaps.ui.components.formatDuration
 import nz.eloque.openmaps.ui.components.icon
+import nz.eloque.openmaps.ui.components.timeRange
 import nz.eloque.openmaps.ui.navigation.DirectionsField
 import nz.eloque.openmaps.ui.navigation.DirectionsKey
 import nz.eloque.openmaps.ui.navigation.Endpoint
@@ -215,7 +216,7 @@ private fun ItineraryCard(
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    "${clockTime(itinerary.start)} – ${clockTime(itinerary.end)}",
+                    timeRange(itinerary.start, itinerary.end),
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.weight(1f),
                 )

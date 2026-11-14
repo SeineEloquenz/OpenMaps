@@ -20,7 +20,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atTime
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
-import nz.eloque.openmaps.ui.components.clockTime
+import nz.eloque.openmaps.ui.components.dayTime
 import nz.eloque.openmaps.ui.resources.Res
 import nz.eloque.openmaps.ui.resources.arrive
 import nz.eloque.openmaps.ui.resources.arrive_by
@@ -52,7 +52,7 @@ fun TimeChoiceRow(
             onClick = { picking = false },
             label = {
                 Text(
-                    (choice as? TimeChoice.DepartAt)?.let { stringResource(Res.string.depart_at, clockTime(it.time)) }
+                    (choice as? TimeChoice.DepartAt)?.let { stringResource(Res.string.depart_at, dayTime(it.time)) }
                         ?: stringResource(Res.string.depart),
                 )
             },
@@ -62,7 +62,7 @@ fun TimeChoiceRow(
             onClick = { picking = true },
             label = {
                 Text(
-                    (choice as? TimeChoice.ArriveBy)?.let { stringResource(Res.string.arrive_by, clockTime(it.time)) }
+                    (choice as? TimeChoice.ArriveBy)?.let { stringResource(Res.string.arrive_by, dayTime(it.time)) }
                         ?: stringResource(Res.string.arrive),
                 )
             },
