@@ -104,6 +104,8 @@ class MapController internal constructor(
 
     var onStopClick: ((SearchResult.Stop) -> Unit)? by mutableStateOf(null)
 
+    var onPlaceClick: ((SearchResult.Place) -> Unit)? by mutableStateOf(null)
+
     val isMoving: Boolean
         get() = mapState.isCameraMoving
 
@@ -169,6 +171,7 @@ fun rememberMapController(dark: Boolean = isSystemInDarkTheme()): MapController 
             baseStyle = BaseStyle.Uri(if (dark) DARK_STYLE else LIGHT_STYLE),
             initialCameraPosition = CameraPosition(center = EUROPE, zoom = 3.5),
         ) {
+            PlaceLayers(dark) { place -> controllerRef[0]?.onPlaceClick?.invoke(place) }
             linesState.value.forEachIndexed { index, line ->
                 key(index, line) {
                     // Old and new layers coexist briefly while the list changes, so ids must not repeat across contents.

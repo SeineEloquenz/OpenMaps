@@ -19,6 +19,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import kotlinx.coroutines.flow.first
+import kotlinx.serialization.json.JsonPrimitive
 import nz.eloque.openmaps.core.model.LatLng
 import org.maplibre.compose.interaction.ClickResult
 import org.maplibre.compose.interaction.MapInteractions
@@ -40,6 +41,16 @@ fun OpenMap(
         if (centeredOnFirstFix) return@LaunchedEffect
         snapshotFlow { controller.hasLocationFix }.first { it }
         centeredOnFirstFix = controller.centerOnUser()
+    }
+
+    LaunchedEffect(controller) {
+        snapshotFlow { controller.mapState.style.loadState }.collect {
+            BaseStylePlaceLayers.forEach { id ->
+                controller.mapState.style.layers[id]
+                    ?.asMutable
+                    ?.setLayoutProperty("visibility", JsonPrimitive("none"))
+            }
+        }
     }
 
     val interactions =

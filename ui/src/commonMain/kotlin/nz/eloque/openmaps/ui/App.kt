@@ -151,6 +151,14 @@ fun App(version: String) {
             if (top is StopKey || (top as? PlaceKey)?.pinned == true) backStack.removeLastOrNull()
             backStack.add(stop.toKey())
         }
+        DisposableEffect(map) {
+            map.onPlaceClick = { place ->
+                val top = backStack.lastOrNull()
+                if (top is StopKey || top is PlaceKey) backStack.removeLastOrNull()
+                backStack.add(place.toKey())
+            }
+            onDispose { map.onPlaceClick = null }
+        }
 
         BottomSheetScaffold(
             scaffoldState = sheetState,
