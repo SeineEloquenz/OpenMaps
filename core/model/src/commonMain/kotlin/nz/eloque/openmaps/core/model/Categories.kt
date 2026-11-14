@@ -29,7 +29,7 @@ enum class PlaceCategory(
 }
 
 interface CategorySearch {
-    /** Places of [category] inside [bounds], nearest to [center] first. */
+    /** Places of [category] inside [bounds], nearest to [center] first. Unnamed places have an empty name. */
     suspend fun search(
         category: PlaceCategory,
         center: LatLng,

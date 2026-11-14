@@ -14,6 +14,7 @@ import nz.eloque.openmaps.core.model.PlaceCategory
 import nz.eloque.openmaps.core.model.SearchResult
 import nz.eloque.openmaps.ui.components.LoadState
 import nz.eloque.openmaps.ui.components.loadOnce
+import nz.eloque.openmaps.ui.place.toCategoryLabel
 
 class CategoryViewModel(
     private val search: CategorySearch,
@@ -40,13 +41,18 @@ class CategoryViewModel(
         _searchedArea.value = bounds
         _results.value = LoadState.Loading
         job?.cancel()
-        job = viewModelScope.launch { _results.value = loadOnce { search.search(category, center, bounds) } }
+        job =
+            viewModelScope.launch {
+                _results.value = loadOnce { search.search(category, center, bounds).map { it.withName() } }
+            }
     }
 
     /** Treats [bounds] as searched, for when the camera moved to show the results already found. */
     fun showing(bounds: GeoBounds) {
         _searchedArea.value = bounds
     }
+
+    private fun SearchResult.Place.withName() = if (name.isBlank()) copy(name = category?.toCategoryLabel().orEmpty()) else this
 
     fun retry() {
         val center = center ?: return

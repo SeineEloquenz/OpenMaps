@@ -124,6 +124,7 @@
     <string name="category_toilets">Toilets</string>
     <string name="category_none">Nothing found in this area. Zoom out or move the map, then search this area.</string>
     <string name="address">Address</string>
+    <string name="category_nearby">%1$s nearby</string>
     <string name="search_this_area">Search this area</string>
     <string name="server_category_search">Nearby places (Photon)</string>
     <string name="server_invalid">Must start with https:// or http://</string>

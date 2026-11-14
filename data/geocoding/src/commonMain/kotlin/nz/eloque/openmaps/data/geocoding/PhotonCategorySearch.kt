@@ -68,7 +68,7 @@ internal class PhotonCategorySearch(
 }
 
 private fun PhotonFeatureDto.toPlace(): SearchResult.Place? {
-    val name = properties.name ?: return null
+    val name = properties.name.orEmpty()
     val (longitude, latitude) = geometry.coordinates.takeIf { it.size >= 2 } ?: return null
     val type =
         when (properties.osmType) {

@@ -211,6 +211,16 @@ fun App(version: String) {
                                     near = map.userLocation,
                                     stopsFirst = search.field != null,
                                     onDismiss = { backStack.removeLastOrNull() },
+                                    onCategory =
+                                        if (search.field == null && search.saveAs == null) {
+                                            { category ->
+                                                backStack.removeLastOrNull()
+                                                if (backStack.lastOrNull() is CategoryKey) backStack.removeLastOrNull()
+                                                backStack.add(CategoryKey(category))
+                                            }
+                                        } else {
+                                            null
+                                        },
                                     onSelect = { result ->
                                         backStack.removeLastOrNull()
                                         search.saveAs?.let { label ->

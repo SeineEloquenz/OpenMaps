@@ -83,7 +83,8 @@ fun CategorySheet(
         map.results = places
         if (places.isNotEmpty() && !viewModel.fitted) {
             viewModel.fitted = true
-            map.fit(places.take(FIT_COUNT).map { it.location })
+            val nearest = places.take(FIT_COUNT).map { it.location }
+            if (nearest.size == 1) map.show(nearest.single()) else map.fit(nearest)
             map.visibleBounds?.let(viewModel::showing)
         }
     }

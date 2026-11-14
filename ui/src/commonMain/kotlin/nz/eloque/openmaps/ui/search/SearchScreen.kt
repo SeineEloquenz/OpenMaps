@@ -39,11 +39,16 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import nz.eloque.compose_kit.dialog.FullscreenDialog
 import nz.eloque.openmaps.core.model.FavouriteLabel
 import nz.eloque.openmaps.core.model.LatLng
+import nz.eloque.openmaps.core.model.PlaceCategory
 import nz.eloque.openmaps.core.model.SearchResult
+import nz.eloque.openmaps.ui.category.categoriesMatching
+import nz.eloque.openmaps.ui.category.icon
+import nz.eloque.openmaps.ui.category.label
 import nz.eloque.openmaps.ui.components.LoadStateContent
 import nz.eloque.openmaps.ui.components.icon
 import nz.eloque.openmaps.ui.resources.Res
 import nz.eloque.openmaps.ui.resources.back
+import nz.eloque.openmaps.ui.resources.category_nearby
 import nz.eloque.openmaps.ui.resources.clear
 import nz.eloque.openmaps.ui.resources.favourites
 import nz.eloque.openmaps.ui.resources.home
@@ -61,6 +66,7 @@ fun SearchScreen(
     stopsFirst: Boolean,
     onDismiss: () -> Unit,
     onSelect: (SearchResult) -> Unit,
+    onCategory: ((PlaceCategory) -> Unit)? = null,
 ) {
     val viewModel = koinViewModel<SearchViewModel>()
     viewModel.near = near
@@ -103,6 +109,16 @@ fun SearchScreen(
                     }
                 }
                 HorizontalDivider()
+                if (onCategory != null) {
+                    categoriesMatching(query).take(MAX_CATEGORY_ROWS).forEach { category ->
+                        ResultRow(
+                            headline = stringResource(Res.string.category_nearby, stringResource(category.label)),
+                            supporting = null,
+                            icon = category.icon,
+                            onClick = { onCategory(category) },
+                        )
+                    }
+                }
                 when (val state = results) {
                     null -> SuggestionList(suggestions, select)
                     else ->
@@ -116,6 +132,8 @@ fun SearchScreen(
         }
     }
 }
+
+private const val MAX_CATEGORY_ROWS = 2
 
 @Composable
 private fun SuggestionList(
