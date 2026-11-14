@@ -55,6 +55,17 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    // MapLibre's native library is about 10 MB per CPU type, so releases get one APK per type next to a universal one.
+    // Debug builds stay a single APK.
+    splits {
+        abi {
+            isEnable = gradle.startParameter.taskNames.any { it.contains("Release", ignoreCase = true) }
+            reset()
+            include("arm64-v8a", "armeabi-v7a", "x86_64")
+            isUniversalApk = true
+        }
+    }
+
     // AGP must not re-strip native libraries such as MapLibre's, or builds stop being reproducible.
     packaging {
         jniLibs {
