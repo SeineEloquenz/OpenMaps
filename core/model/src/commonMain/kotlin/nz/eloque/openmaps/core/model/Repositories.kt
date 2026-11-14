@@ -9,6 +9,7 @@ interface Geocoder {
         stopsFirst: Boolean = false,
     ): List<SearchResult>
 
+    /** The address nearest to [location]. */
     suspend fun reverse(location: LatLng): SearchResult?
 }
 

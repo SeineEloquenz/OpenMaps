@@ -1,11 +1,13 @@
 package nz.eloque.openmaps.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -19,10 +21,15 @@ import androidx.compose.material.icons.filled.DirectionsSubway
 import androidx.compose.material.icons.filled.Flight
 import androidx.compose.material.icons.filled.Train
 import androidx.compose.material.icons.filled.Tram
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -40,6 +47,7 @@ import nz.eloque.openmaps.core.model.Line
 import nz.eloque.openmaps.core.model.TransportMode
 import nz.eloque.openmaps.ui.resources.Res
 import nz.eloque.openmaps.ui.resources.cancelled
+import nz.eloque.openmaps.ui.resources.has_alerts
 import nz.eloque.openmaps.ui.resources.minutes
 import nz.eloque.openmaps.ui.resources.now
 import nz.eloque.openmaps.ui.resources.platform
@@ -119,19 +127,53 @@ fun DepartureGroupRow(
     now: Instant,
     modifier: Modifier = Modifier,
 ) {
+    val alerts = group.departures.flatMap { it.alerts }.distinctBy { it.header }
+    var showAlerts by rememberSaveable { mutableStateOf(false) }
+    Column(modifier.fillMaxWidth().clickable(enabled = alerts.isNotEmpty()) { showAlerts = !showAlerts }) {
+        DepartureGroupSummary(group, now, hasAlerts = alerts.isNotEmpty())
+        if (showAlerts) {
+            alerts.forEach { alert ->
+                Text(
+                    alert.header,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 84.dp, bottom = 6.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun DepartureGroupSummary(
+    group: DepartureGroup,
+    now: Instant,
+    hasAlerts: Boolean,
+) {
     Row(
-        modifier = modifier.fillMaxWidth().padding(vertical = 6.dp),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         LineChip(group.line)
         Column(Modifier.weight(1f)) {
-            Text(
-                group.headsign?.withoutLinePrefix(group.line) ?: group.line.longName.orEmpty(),
-                style = MaterialTheme.typography.bodyLarge,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    group.headsign?.withoutLinePrefix(group.line) ?: group.line.longName.orEmpty(),
+                    style = MaterialTheme.typography.bodyLarge,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                if (hasAlerts) {
+                    Icon(
+                        Icons.Default.Warning,
+                        contentDescription = stringResource(Res.string.has_alerts),
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(start = 6.dp).size(18.dp),
+                    )
+                }
+            }
             group.departures.first().platform?.let {
                 Text(
                     stringResource(Res.string.platform, it),

@@ -18,6 +18,7 @@
     <string name="no_departures">No upcoming departures</string>
     <string name="platform">Platform %1$s</string>
     <string name="cancelled">Cancelled</string>
+    <string name="has_alerts">Service alerts, tap to show</string>
     <string name="now">now</string>
     <string name="minutes">%1$d min</string>
 

@@ -60,6 +60,7 @@ internal class MotisTransitRepository(
     ): DeparturesResult =
         stopTimes {
             parameter("stopId", stopId)
+            parameter("withAlerts", true)
             time?.let { parameter("time", it.toString()) }
             parameter("n", count)
             pageCursor?.let { parameter("pageCursor", it) }

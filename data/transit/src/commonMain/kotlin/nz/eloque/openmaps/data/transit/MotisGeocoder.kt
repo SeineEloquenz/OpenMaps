@@ -35,6 +35,7 @@ internal class MotisGeocoder(
                 .get("$baseUrl/v1/reverse-geocode") {
                     parameter("place", location.asParameter())
                     parameter("numResults", 1)
+                    parameter("type", "ADDRESS")
                 }.body()
         return matches.firstOrNull()?.toSearchResult()
     }
