@@ -7,6 +7,7 @@ kotlin {
         commonMain.dependencies {
             implementation(libs.maplibre.compose)
             implementation(libs.kotlinx.serialization.json)
+            implementation(libs.compose.material.icons.extended)
             implementation(project(":core:model"))
         }
         androidMain.dependencies {

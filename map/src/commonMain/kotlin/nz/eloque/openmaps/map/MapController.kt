@@ -1,6 +1,12 @@
 package nz.eloque.openmaps.map
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DirectionsBoat
+import androidx.compose.material.icons.filled.DirectionsBus
+import androidx.compose.material.icons.filled.DirectionsSubway
+import androidx.compose.material.icons.filled.Train
+import androidx.compose.material.icons.filled.Tram
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
@@ -14,7 +20,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.UiComposable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.intOrNull
@@ -23,16 +33,23 @@ import kotlinx.serialization.json.put
 import nz.eloque.openmaps.core.model.GeoBounds
 import nz.eloque.openmaps.core.model.LatLng
 import nz.eloque.openmaps.core.model.SearchResult
+import nz.eloque.openmaps.core.model.TransportMode
 import org.maplibre.compose.camera.CameraFit
 import org.maplibre.compose.camera.CameraPosition
 import org.maplibre.compose.camera.CameraUpdate
+import org.maplibre.compose.expressions.dsl.case
 import org.maplibre.compose.expressions.dsl.const
+import org.maplibre.compose.expressions.dsl.feature
+import org.maplibre.compose.expressions.dsl.image
+import org.maplibre.compose.expressions.dsl.switch
 import org.maplibre.compose.expressions.value.LineCap
 import org.maplibre.compose.expressions.value.LineJoin
 import org.maplibre.compose.interaction.ClickResult
 import org.maplibre.compose.layers.CircleLayer
+import org.maplibre.compose.layers.FeaturesClickHandler
 import org.maplibre.compose.layers.LineLayer
 import org.maplibre.compose.layers.LocationIndicatorLayer
+import org.maplibre.compose.layers.SymbolLayer
 import org.maplibre.compose.location.LocationPermission
 import org.maplibre.compose.location.LocationState
 import org.maplibre.compose.location.rememberLocationState
@@ -143,6 +160,10 @@ fun rememberMapController(dark: Boolean = isSystemInDarkTheme()): MapController 
     val linesState = remember { mutableStateOf<List<MapLine>>(emptyList(), referentialEqualityPolicy()) }
     val stopsState = remember { mutableStateOf<List<SearchResult.Stop>>(emptyList()) }
     val controllerRef = remember { arrayOfNulls<MapController>(1) }
+    val stopIcons =
+        StopIcon.entries.associateWith { icon ->
+            image(rememberVectorPainter(icon.vector), size = DpSize(14.dp, 14.dp), colorFilter = ColorFilter.tint(StopIconTint))
+        }
     val mapState =
         rememberMapState(
             baseStyle = BaseStyle.Uri(if (dark) DARK_STYLE else LIGHT_STYLE),
@@ -175,28 +196,48 @@ fun rememberMapController(dark: Boolean = isSystemInDarkTheme()): MapController 
             if (stops.isNotEmpty()) {
                 val features =
                     stops.mapIndexed { index, stop ->
-                        Feature(Point(stop.location.toPosition()), buildJsonObject { put(STOP_INDEX, index) })
+                        Feature(
+                            Point(stop.location.toPosition()),
+                            buildJsonObject {
+                                put(STOP_INDEX, index)
+                                put(STOP_ICON, StopIcon.of(stop.modes).name)
+                            },
+                        )
                     }
                 val source = rememberGeoJsonSource(GeoJsonData.Features(FeatureCollection(features)))
+                val onClick: FeaturesClickHandler = { clicked ->
+                    val index = clicked.firstOrNull()?.properties?.get(STOP_INDEX)?.jsonPrimitive?.intOrNull
+                    val stop = index?.let(stops::getOrNull)
+                    val handler = controllerRef[0]?.onStopClick
+                    if (stop == null || handler == null) {
+                        ClickResult.Pass
+                    } else {
+                        handler(stop)
+                        ClickResult.Consume
+                    }
+                }
                 CircleLayer(
                     id = "stops",
                     source = source,
                     minZoom = STOPS_MIN_ZOOM.toFloat(),
                     color = const(Color.White),
-                    radius = const(5.dp),
+                    radius = const(10.dp),
                     strokeColor = const(markerColor),
                     strokeWidth = const(2.dp),
-                    onClick = { clicked ->
-                        val index = clicked.firstOrNull()?.properties?.get(STOP_INDEX)?.jsonPrimitive?.intOrNull
-                        val stop = index?.let(stops::getOrNull)
-                        val handler = controllerRef[0]?.onStopClick
-                        if (stop == null || handler == null) {
-                            ClickResult.Pass
-                        } else {
-                            handler(stop)
-                            ClickResult.Consume
-                        }
-                    },
+                    onClick = onClick,
+                )
+                SymbolLayer(
+                    id = "stop-icons",
+                    source = source,
+                    minZoom = STOPS_MIN_ZOOM.toFloat(),
+                    iconImage =
+                        switch(
+                            feature[STOP_ICON],
+                            cases = StopIcon.entries.map { case(it.name, stopIcons.getValue(it)) },
+                            fallback = stopIcons.getValue(StopIcon.BUS),
+                        ),
+                    iconAllowOverlap = const(true),
+                    onClick = onClick,
                 )
             }
             LocationIndicatorLayer(id = "user-location", locationState = location)
@@ -225,8 +266,36 @@ private const val DARK_STYLE = "https://tiles.openfreemap.org/styles/dark"
 private const val USER_ZOOM = 15.0
 private const val PLACE_ZOOM = 16.0
 private const val STOP_INDEX = "i"
+private const val STOP_ICON = "m"
+private val StopIconTint = Color(0xFF303030)
 
 /** Below this zoom there are too many stops in view to load or draw. */
 const val STOPS_MIN_ZOOM = 14.0
 private val FIT_MARGIN = 48.dp
 private val EUROPE = Position(longitude = 10.0, latitude = 50.0)
+
+/** The icon drawn inside a stop dot, chosen by the most significant mode serving the stop. */
+private enum class StopIcon(
+    val vector: ImageVector,
+    val modes: Set<TransportMode>,
+) {
+    RAIL(
+        Icons.Default.Train,
+        setOf(
+            TransportMode.HIGHSPEED_RAIL,
+            TransportMode.LONG_DISTANCE_RAIL,
+            TransportMode.NIGHT_RAIL,
+            TransportMode.REGIONAL_RAIL,
+            TransportMode.SUBURBAN,
+        ),
+    ),
+    SUBWAY(Icons.Default.DirectionsSubway, setOf(TransportMode.SUBWAY)),
+    TRAM(Icons.Default.Tram, setOf(TransportMode.TRAM, TransportMode.CABLE_CAR, TransportMode.FUNICULAR)),
+    FERRY(Icons.Default.DirectionsBoat, setOf(TransportMode.FERRY)),
+    BUS(Icons.Default.DirectionsBus, emptySet()),
+    ;
+
+    companion object {
+        fun of(modes: Set<TransportMode>): StopIcon = entries.firstOrNull { icon -> icon.modes.any { it in modes } } ?: BUS
+    }
+}
