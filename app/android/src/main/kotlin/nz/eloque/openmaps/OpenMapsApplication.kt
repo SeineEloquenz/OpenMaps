@@ -10,6 +10,7 @@ import kotlinx.coroutines.launch
 import nz.eloque.openmaps.core.model.LocationUpdates
 import nz.eloque.openmaps.core.model.Navigator
 import nz.eloque.openmaps.core.model.ServiceCatalog
+import nz.eloque.openmaps.core.model.VoiceGuidance
 import nz.eloque.openmaps.core.platform.ReminderScheduler
 import nz.eloque.openmaps.core.platform.Sharer
 import nz.eloque.openmaps.core.platform.createHttpClient
@@ -21,6 +22,7 @@ import nz.eloque.openmaps.data.storage.storageModule
 import nz.eloque.openmaps.data.transit.TransitStreetRouter
 import nz.eloque.openmaps.data.transit.transitModule
 import nz.eloque.openmaps.data.transit.transitServiceSettings
+import nz.eloque.openmaps.navigation.AndroidVoiceGuidance
 import nz.eloque.openmaps.navigation.NavigationService
 import nz.eloque.openmaps.reminder.AndroidReminderScheduler
 import nz.eloque.openmaps.ui.uiModule
@@ -42,6 +44,7 @@ class OpenMapsApplication : Application() {
                     single { createHttpClient(USER_AGENT) }
                     single<ReminderScheduler> { reminders }
                     single<LocationUpdates> { AndroidLocationUpdates(this@OpenMapsApplication) }
+                    single<VoiceGuidance> { AndroidVoiceGuidance(this@OpenMapsApplication, get(), MainScope()) }
                     single { ServiceCatalog(transitServiceSettings + routingServiceSettings + geocodingServiceSettings) }
                     single<Sharer> {
                         Sharer { text ->
@@ -57,6 +60,7 @@ class OpenMapsApplication : Application() {
                 uiModule,
             )
         }
+        get<VoiceGuidance>()
         MainScope().launch {
             get<Navigator>()
                 .state

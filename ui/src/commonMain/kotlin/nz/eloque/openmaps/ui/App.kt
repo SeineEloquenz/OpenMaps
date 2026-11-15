@@ -475,7 +475,7 @@ private fun MapLayer(
 
 private val SearchBarHeight = 56.dp
 private val NavigationBannerHeight = 140.dp
-private val NavigationPeekHeight = 130.dp
+private val NavigationPeekHeight = 150.dp
 private val FabSize = 56.dp
 
 @Composable

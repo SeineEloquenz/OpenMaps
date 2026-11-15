@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeOff
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.Button
@@ -15,6 +17,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -38,6 +41,8 @@ import nz.eloque.openmaps.core.model.NavigationState
 import nz.eloque.openmaps.core.model.NavigationStatus
 import nz.eloque.openmaps.core.model.SettingsStore
 import nz.eloque.openmaps.core.model.TransportMode
+import nz.eloque.openmaps.core.model.VoiceGuidance
+import nz.eloque.openmaps.core.model.VoiceStatus
 import nz.eloque.openmaps.map.MapController
 import nz.eloque.openmaps.map.MapLine
 import nz.eloque.openmaps.map.NavigationPuck
@@ -50,11 +55,15 @@ import nz.eloque.openmaps.ui.resources.Res
 import nz.eloque.openmaps.ui.resources.navigation_arrived
 import nz.eloque.openmaps.ui.resources.navigation_end
 import nz.eloque.openmaps.ui.resources.navigation_finding_route
+import nz.eloque.openmaps.ui.resources.navigation_mute
 import nz.eloque.openmaps.ui.resources.navigation_no_route
 import nz.eloque.openmaps.ui.resources.navigation_recenter
 import nz.eloque.openmaps.ui.resources.navigation_simulated
 import nz.eloque.openmaps.ui.resources.navigation_summary
+import nz.eloque.openmaps.ui.resources.navigation_unmute
 import nz.eloque.openmaps.ui.resources.retry
+import nz.eloque.openmaps.ui.resources.voice_no_engine
+import nz.eloque.openmaps.ui.resources.voice_no_language
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
@@ -73,6 +82,9 @@ fun NavigationSheet(
     val start by viewModel.start.collectAsStateWithLifecycle()
     val unit by koinInject<SettingsStore>().distanceUnit.collectAsStateWithLifecycle()
     var following by rememberSaveable { mutableStateOf(true) }
+    val voice = koinInject<VoiceGuidance>()
+    val muted by voice.muted.collectAsStateWithLifecycle()
+    val voiceStatus by voice.status.collectAsStateWithLifecycle()
 
     val userLocation = map.userLocation
     LaunchedEffect(userLocation != null) { viewModel.begin(userLocation) }
@@ -121,12 +133,20 @@ fun NavigationSheet(
                                 style = MaterialTheme.typography.bodyLarge,
                             )
                         }
-                        if (key.simulate) {
-                            Text(
-                                stringResource(Res.string.navigation_simulated),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
+                        val problem = voiceStatus.problem
+                        when {
+                            problem != null ->
+                                Text(
+                                    stringResource(problem),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.error,
+                                )
+                            key.simulate ->
+                                Text(
+                                    stringResource(Res.string.navigation_simulated),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
                         }
                     }
                     if (!following) {
@@ -134,11 +154,31 @@ fun NavigationSheet(
                             Icon(Icons.Default.MyLocation, contentDescription = stringResource(Res.string.navigation_recenter))
                         }
                     }
+                    IconButton(onClick = { voice.setMuted(!muted) }, enabled = voiceStatus == VoiceStatus.READY) {
+                        Icon(
+                            if (muted ||
+                                voiceStatus != VoiceStatus.READY
+                            ) {
+                                Icons.AutoMirrored.Filled.VolumeOff
+                            } else {
+                                Icons.AutoMirrored.Filled.VolumeUp
+                            },
+                            contentDescription = stringResource(if (muted) Res.string.navigation_unmute else Res.string.navigation_mute),
+                        )
+                    }
                     EndButton(onEnd)
                 }
         }
     }
 }
+
+private val VoiceStatus.problem
+    get() =
+        when (this) {
+            VoiceStatus.READY -> null
+            VoiceStatus.NO_ENGINE -> Res.string.voice_no_engine
+            VoiceStatus.NO_LANGUAGE -> Res.string.voice_no_language
+        }
 
 @Composable
 private fun EndButton(onEnd: () -> Unit) {

@@ -155,6 +155,10 @@
     <string name="navigation_then">Then</string>
     <string name="navigation_summary">%1$s · arrive %2$s</string>
     <string name="navigation_simulated">Simulated trip</string>
+    <string name="navigation_mute">Mute directions</string>
+    <string name="navigation_unmute">Speak directions</string>
+    <string name="voice_no_engine">Directions are not spoken because no speech engine is installed.</string>
+    <string name="voice_no_language">Directions are not spoken because the speech engine has no voice for this language.</string>
     <string name="road_closed">Road closed</string>
     <string name="road_event_kind_roadworks">Roadworks</string>
     <string name="road_event_kind_accident">Accident</string>

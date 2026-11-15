@@ -90,3 +90,22 @@ interface Navigator {
 
     fun stop()
 }
+
+enum class VoiceStatus {
+    READY,
+
+    /** The device has no speech engine. */
+    NO_ENGINE,
+
+    /** The speech engine has no voice for the trip's language. */
+    NO_LANGUAGE,
+}
+
+/** Speaks the navigator's announcements aloud. */
+interface VoiceGuidance {
+    val muted: StateFlow<Boolean>
+
+    fun setMuted(muted: Boolean)
+
+    val status: StateFlow<VoiceStatus>
+}
