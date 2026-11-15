@@ -214,7 +214,10 @@ internal fun PlaceLayers(
             ClickResult.Consume
         }
     }
-    RankTiers.forEachIndexed { index, (minZoom, below) ->
+    // Higher layers win label collisions, so the most important tier is added last.
+    // A symbol sort key would order them within a tier, but drops panning to about 15 fps once the last tier shows.
+    RankTiers.indices.reversed().forEach { index ->
+        val (minZoom, below) = RankTiers[index]
         val above = RankTiers.getOrNull(index - 1)?.second ?: 0
         SymbolLayer(
             id = "places-$index",
@@ -222,7 +225,6 @@ internal fun PlaceLayers(
             sourceLayer = "poi",
             minZoom = minZoom,
             filter = all(shown, rank gte const(above.toFloat()), rank lt const(below.toFloat())),
-            sortKey = rank,
             iconImage = iconImage,
             textField = coalesce(feature["name"].asString(), const("")).cast(),
             textFont = const(listOf("Noto Sans Regular")),
