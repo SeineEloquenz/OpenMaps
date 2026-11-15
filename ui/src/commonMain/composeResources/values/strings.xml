@@ -156,6 +156,7 @@
     <string name="category_bakeries">Bakeries</string>
     <string name="category_atms">ATMs</string>
     <string name="category_toilets">Toilets</string>
+    <string name="category_drinking_water">Drinking water</string>
     <string name="category_shared_vehicles">Bikes &amp; scooters</string>
     <string name="category_none">Nothing found in this area. Zoom out or move the map, then search this area.</string>
     <string name="address">Address</string>
@@ -222,6 +223,7 @@
     <string name="filter_bank">Bank</string>
     <string name="filter_free">Free</string>
     <string name="filter_baby_changing">Baby changing</string>
+    <string name="filter_bottle_refill">Bottle refill</string>
     <string name="filter_stars">%1$d★ and up</string>
     <string name="filter_fuel">Fuel</string>
     <string name="filter_connector">Connector</string>

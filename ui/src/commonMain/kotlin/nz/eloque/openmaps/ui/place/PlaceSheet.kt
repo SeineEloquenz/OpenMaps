@@ -37,6 +37,7 @@ import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.TakeoutDining
+import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material.icons.filled.Wc
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material.icons.outlined.Place
@@ -100,6 +101,7 @@ import nz.eloque.openmaps.ui.resources.feature_vegan
 import nz.eloque.openmaps.ui.resources.feature_vegetarian
 import nz.eloque.openmaps.ui.resources.feature_wifi
 import nz.eloque.openmaps.ui.resources.filter_baby_changing
+import nz.eloque.openmaps.ui.resources.filter_bottle_refill
 import nz.eloque.openmaps.ui.resources.nearby_departures
 import nz.eloque.openmaps.ui.resources.operator
 import nz.eloque.openmaps.ui.resources.phone
@@ -356,6 +358,7 @@ private fun PlaceFeature.display(): Pair<ImageVector, StringResource> =
         PlaceFeature.TOILETS -> Icons.Default.Wc to Res.string.feature_toilets
         PlaceFeature.CASH_DEPOSIT -> Icons.Default.LocalAtm to Res.string.fact_cash_deposit
         PlaceFeature.CHANGING_TABLE -> Icons.Default.BabyChangingStation to Res.string.filter_baby_changing
+        PlaceFeature.BOTTLE_REFILL -> Icons.Default.WaterDrop to Res.string.filter_bottle_refill
     }
 
 @Composable

@@ -16,6 +16,7 @@ enum class PlaceCategory {
     BAKERIES,
     ATMS,
     TOILETS,
+    DRINKING_WATER,
     SHARED_VEHICLES,
 }
 

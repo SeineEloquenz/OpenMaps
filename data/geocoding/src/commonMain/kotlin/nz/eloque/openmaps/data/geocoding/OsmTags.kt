@@ -33,6 +33,7 @@ internal val PlaceCategory.osmTags: List<String>
             PlaceCategory.BAKERIES -> listOf("shop.bakery", "shop.pastry")
             PlaceCategory.ATMS -> listOf("amenity.atm")
             PlaceCategory.TOILETS -> listOf("amenity.toilets")
+            PlaceCategory.DRINKING_WATER -> listOf("amenity.drinking_water")
             PlaceCategory.SHARED_VEHICLES -> listOf("amenity.bicycle_rental", "amenity.car_sharing")
         }
 
@@ -93,6 +94,7 @@ internal fun Map<String, String>.features(): Set<PlaceFeature> {
         if (yes("toilets")) add(PlaceFeature.TOILETS)
         if (yes("cash_in")) add(PlaceFeature.CASH_DEPOSIT)
         if (yes("changing_table")) add(PlaceFeature.CHANGING_TABLE)
+        if (yes("bottle")) add(PlaceFeature.BOTTLE_REFILL)
     }
 }
 

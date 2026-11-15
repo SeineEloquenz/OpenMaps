@@ -41,6 +41,7 @@ import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material.icons.filled.SportsBar
 import androidx.compose.material.icons.filled.TheaterComedy
+import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material.icons.filled.Wc
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -147,6 +148,7 @@ private enum class PlaceIcon(
     BANK(Icons.Default.AccountBalance, PlaceGroup.SERVICES, listOf("bank", "town_hall")),
     POST(Icons.Default.LocalPostOffice, PlaceGroup.SERVICES, listOf("post")),
     TOILETS(Icons.Default.Wc, PlaceGroup.SERVICES, listOf("toilets")),
+    DRINKING_WATER(Icons.Default.WaterDrop, PlaceGroup.SERVICES, listOf("drinking_water")),
     POLICE(Icons.Default.LocalPolice, PlaceGroup.SERVICES, listOf("police")),
     LIBRARY(Icons.Default.LocalLibrary, PlaceGroup.SERVICES, listOf("library")),
     SCHOOL(Icons.Default.School, PlaceGroup.SERVICES, listOf("school", "college")),
@@ -283,6 +285,7 @@ internal val PlaceCategory.tileValues: Set<String>
             PlaceCategory.BAKERIES -> setOf("bakery", "pastry")
             PlaceCategory.ATMS -> setOf("atm")
             PlaceCategory.TOILETS -> setOf("toilets")
+            PlaceCategory.DRINKING_WATER -> setOf("drinking_water")
             PlaceCategory.SHARED_VEHICLES -> setOf("bicycle_rental", "car_sharing")
         }
 private const val RANK_ALL = 1000f

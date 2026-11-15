@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.LocalPharmacy
 import androidx.compose.material.icons.filled.PedalBike
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material.icons.filled.Wc
 import androidx.compose.material3.ElevatedFilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -40,6 +41,7 @@ import nz.eloque.openmaps.ui.resources.category_bakeries
 import nz.eloque.openmaps.ui.resources.category_bars
 import nz.eloque.openmaps.ui.resources.category_cafes
 import nz.eloque.openmaps.ui.resources.category_charging
+import nz.eloque.openmaps.ui.resources.category_drinking_water
 import nz.eloque.openmaps.ui.resources.category_gas_stations
 import nz.eloque.openmaps.ui.resources.category_hotels
 import nz.eloque.openmaps.ui.resources.category_pharmacies
@@ -66,6 +68,7 @@ val PlaceCategory.label: StringResource
             PlaceCategory.BAKERIES -> Res.string.category_bakeries
             PlaceCategory.ATMS -> Res.string.category_atms
             PlaceCategory.TOILETS -> Res.string.category_toilets
+            PlaceCategory.DRINKING_WATER -> Res.string.category_drinking_water
             PlaceCategory.SHARED_VEHICLES -> Res.string.category_shared_vehicles
         }
 
@@ -84,6 +87,7 @@ val PlaceCategory.icon: ImageVector
             PlaceCategory.BAKERIES -> Icons.Default.BakeryDining
             PlaceCategory.ATMS -> Icons.Default.LocalAtm
             PlaceCategory.TOILETS -> Icons.Default.Wc
+            PlaceCategory.DRINKING_WATER -> Icons.Default.WaterDrop
             PlaceCategory.SHARED_VEHICLES -> Icons.Default.PedalBike
         }
 
@@ -103,6 +107,8 @@ private val PlaceCategory.keywords: List<String>
             PlaceCategory.BAKERIES -> listOf("bakery", "bakeries", "backerei", "baecker", "backer")
             PlaceCategory.ATMS -> listOf("atm", "atms", "cash", "geldautomat", "bankomat")
             PlaceCategory.TOILETS -> listOf("toilet", "toilets", "wc", "restroom", "toilette")
+            PlaceCategory.DRINKING_WATER ->
+                listOf("drinking water", "water", "fountain", "water fountain", "trinkwasser", "trinkbrunnen", "brunnen", "wasser")
             PlaceCategory.SHARED_VEHICLES ->
                 listOf("bike sharing", "bikes", "scooter", "e-scooter", "car sharing", "leihrad", "fahrradverleih", "nextbike", "roller")
         }

@@ -5,6 +5,7 @@ import androidx.compose.material.icons.automirrored.filled.Accessible
 import androidx.compose.material.icons.filled.BabyChangingStation
 import androidx.compose.material.icons.filled.Deck
 import androidx.compose.material.icons.filled.TakeoutDining
+import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -30,6 +31,7 @@ import nz.eloque.openmaps.ui.resources.filter_any
 import nz.eloque.openmaps.ui.resources.filter_any_cuisine
 import nz.eloque.openmaps.ui.resources.filter_baby_changing
 import nz.eloque.openmaps.ui.resources.filter_bank
+import nz.eloque.openmaps.ui.resources.filter_bottle_refill
 import nz.eloque.openmaps.ui.resources.filter_chain
 import nz.eloque.openmaps.ui.resources.filter_connector
 import nz.eloque.openmaps.ui.resources.filter_fast_charging
@@ -238,6 +240,18 @@ internal val PlaceCategory.profile: CategoryProfile
                             Free,
                         ),
                 )
+            PlaceCategory.DRINKING_WATER ->
+                CategoryProfile(
+                    kind = { place, _ -> place.category?.toCategoryLabel() },
+                    icons = { icons(it, wheelchair = true, bottle = true) },
+                    filters =
+                        listOf(
+                            ResultFilter.Toggle("bottle", Res.string.filter_bottle_refill, Icons.Default.WaterDrop) { details, _ ->
+                                PlaceFeature.BOTTLE_REFILL in details.features
+                            },
+                            Wheelchair,
+                        ),
+                )
             PlaceCategory.SHARED_VEHICLES ->
                 CategoryProfile(kind = {
                     place,
@@ -300,6 +314,7 @@ private fun icons(
     takeaway: Boolean = false,
     wifi: Boolean = false,
     changingTable: Boolean = false,
+    bottle: Boolean = false,
 ): List<ImageVector> =
     listOfNotNull(
         Icons.AutoMirrored.Filled.Accessible.takeIf { wheelchair && details.wheelchair == Accessibility.YES },
@@ -307,6 +322,7 @@ private fun icons(
         Icons.Default.TakeoutDining.takeIf { takeaway && PlaceFeature.TAKEAWAY in details.features },
         Icons.Default.Wifi.takeIf { wifi && PlaceFeature.WIFI in details.features },
         Icons.Default.BabyChangingStation.takeIf { changingTable && PlaceFeature.CHANGING_TABLE in details.features },
+        Icons.Default.WaterDrop.takeIf { bottle && PlaceFeature.BOTTLE_REFILL in details.features },
     )
 
 private val PlaceDetails.bank: String?

@@ -76,6 +76,7 @@ enum class PlaceFeature {
     TOILETS,
     CASH_DEPOSIT,
     CHANGING_TABLE,
+    BOTTLE_REFILL,
 }
 
 enum class Fuel { DIESEL, PETROL_95, E10, PETROL_98, LPG, CNG }
