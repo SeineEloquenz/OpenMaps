@@ -121,6 +121,12 @@ data class TripKey(
 @Serializable
 data object SavedKey : NavKey
 
+/** A tapped road event, as the properties of its map feature. */
+@Serializable
+data class RoadEventKey(
+    val properties: Map<String, String>,
+) : NavKey
+
 fun Endpoint.toRouteEnd(): RouteEnd = RouteEnd(name, location, stopId)
 
 fun RouteEnd.toEndpoint(): Endpoint = Endpoint(name, location.latitude, location.longitude, stopId)

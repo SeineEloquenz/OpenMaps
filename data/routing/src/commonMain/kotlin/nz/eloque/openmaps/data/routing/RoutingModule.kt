@@ -2,6 +2,7 @@ package nz.eloque.openmaps.data.routing
 
 import kotlinx.coroutines.CancellationException
 import nz.eloque.openmaps.core.model.Itinerary
+import nz.eloque.openmaps.core.model.RoadEvents
 import nz.eloque.openmaps.core.model.ServiceRole
 import nz.eloque.openmaps.core.model.ServiceSetting
 import nz.eloque.openmaps.core.model.ServiceSettingKind
@@ -22,8 +23,18 @@ val RoutingServer =
         helpUrl = "https://github.com/valhalla/valhalla",
     )
 
+/** An open-road-incidents server for roadworks and closures on the map. */
+val RoadEventsServer =
+    ServiceSetting(
+        "server.roads",
+        ServiceRole.ROAD_EVENTS,
+        ServiceSettingKind.SERVER_URL,
+        "OpenRoadIncidents",
+        default = null,
+    )
+
 /** The settings this module's sources read. */
-val routingServiceSettings = listOf(RoutingServer)
+val routingServiceSettings = listOf(RoutingServer, RoadEventsServer)
 
 /** Asks [primary] and [fallback] for the modes [primary] has no route for, such as outside its map or when it is not set up. */
 internal class FallbackStreetRouter(
@@ -54,4 +65,5 @@ fun routingModule(fallback: Scope.() -> StreetRouter) =
                 fallback(),
             )
         }
+        single<RoadEvents> { OpenRoadIncidents(get(), get<SettingsStore>().serviceValue(RoadEventsServer.id)) }
     }

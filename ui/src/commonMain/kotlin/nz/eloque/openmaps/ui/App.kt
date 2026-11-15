@@ -74,6 +74,7 @@ import kotlinx.serialization.modules.subclass
 import nz.eloque.openmaps.core.model.Geocoder
 import nz.eloque.openmaps.core.model.PlaceCategory
 import nz.eloque.openmaps.core.model.PlacesStore
+import nz.eloque.openmaps.core.model.RoadEvents
 import nz.eloque.openmaps.map.MapController
 import nz.eloque.openmaps.map.OpenMap
 import nz.eloque.openmaps.map.rememberMapController
@@ -93,6 +94,7 @@ import nz.eloque.openmaps.ui.navigation.DirectionsField
 import nz.eloque.openmaps.ui.navigation.DirectionsKey
 import nz.eloque.openmaps.ui.navigation.HomeKey
 import nz.eloque.openmaps.ui.navigation.PlaceKey
+import nz.eloque.openmaps.ui.navigation.RoadEventKey
 import nz.eloque.openmaps.ui.navigation.RouteKey
 import nz.eloque.openmaps.ui.navigation.SavedKey
 import nz.eloque.openmaps.ui.navigation.SearchKey
@@ -109,6 +111,7 @@ import nz.eloque.openmaps.ui.resources.my_location
 import nz.eloque.openmaps.ui.resources.search_hint
 import nz.eloque.openmaps.ui.resources.settings
 import nz.eloque.openmaps.ui.resources.waiting_for_location
+import nz.eloque.openmaps.ui.roads.RoadEventSheet
 import nz.eloque.openmaps.ui.saved.SavedSheet
 import nz.eloque.openmaps.ui.search.SearchScreen
 import nz.eloque.openmaps.ui.settings.SettingsPage
@@ -136,6 +139,7 @@ private val navConfiguration =
                     subclass(RouteKey::class)
                     subclass(CategoryKey::class)
                     subclass(TripKey::class)
+                    subclass(RoadEventKey::class)
                 }
             }
     }
@@ -195,6 +199,16 @@ fun App(version: String) {
                 backStack.add(place.toKey())
             }
             onDispose { map.onPlaceClick = null }
+        }
+        val roadEvents = koinInject<RoadEvents>()
+        LaunchedEffect(map) { roadEvents.tiles.collect { map.roadEvents = it } }
+        DisposableEffect(map) {
+            map.onRoadEventClick = { properties ->
+                val top = backStack.lastOrNull()
+                if (top is StopKey || top is PlaceKey || top is RoadEventKey) backStack.removeLastOrNull()
+                backStack.add(RoadEventKey(properties))
+            }
+            onDispose { map.onRoadEventClick = null }
         }
         LaunchedEffect(map) {
             snapshotFlow { backStack.any { it is CategoryKey } }.collect { if (!it) map.results = emptyList() }
@@ -330,6 +344,7 @@ fun App(version: String) {
                                     )
                                 }
                                 entry<TripKey> { TripSheet(it, map) }
+                                entry<RoadEventKey> { RoadEventSheet(it) }
                             },
                     )
                 },

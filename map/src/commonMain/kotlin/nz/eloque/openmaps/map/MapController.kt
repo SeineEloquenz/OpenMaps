@@ -42,6 +42,7 @@ import kotlinx.serialization.json.put
 import nz.eloque.openmaps.core.model.GeoBounds
 import nz.eloque.openmaps.core.model.LatLng
 import nz.eloque.openmaps.core.model.LoadedPlaces
+import nz.eloque.openmaps.core.model.RoadEventTiles
 import nz.eloque.openmaps.core.model.SearchResult
 import nz.eloque.openmaps.core.model.TransportMode
 import org.maplibre.compose.camera.CameraFit
@@ -99,6 +100,7 @@ class MapController internal constructor(
     private val resultsState: MutableState<List<SearchResult.Place>>,
     private val sharingState: MutableState<List<SharingPin>>,
     private val routesState: MutableState<List<MapRoute>>,
+    private val roadEventsState: MutableState<RoadEventTiles?>,
 ) {
     val isLocationPermissionGranted: Boolean
         get() = location.permission is LocationPermission.Granted
@@ -136,6 +138,35 @@ class MapController internal constructor(
     var routes: List<MapRoute> by routesState
 
     var onRouteClick: ((String) -> Unit)? by mutableStateOf(null)
+
+    /** Road events drawn on the map, or null for none. */
+    var roadEvents: RoadEventTiles? by roadEventsState
+
+    /** Receives the tapped road event's properties, to read with [nz.eloque.openmaps.core.model.RoadEvents.event]. */
+    var onRoadEventClick: ((Map<String, String>) -> Unit)? by mutableStateOf(null)
+
+    /** Properties of the road events within [meters] of [route] in the tiles loaded so far. */
+    suspend fun roadEventsAlong(
+        route: List<LatLng>,
+        meters: Double = ROUTE_EVENT_DISTANCE,
+    ): List<Map<String, String>> {
+        val tiles = roadEvents ?: return emptyList()
+        if (route.isEmpty()) return emptyList()
+        val source = mapState.style.sources[roadSourceId(tiles)] as? VectorTileSourceHandle ?: return emptyList()
+        val south = route.minOf { it.latitude }
+        val north = route.maxOf { it.latitude }
+        val west = route.minOf { it.longitude }
+        val east = route.maxOf { it.longitude }
+        val margin = meters / 100_000
+        return source
+            .querySourceFeatures(setOf(tiles.layer), const(true))
+            .filter { feature ->
+                val box = feature.geometry?.bbox ?: return@filter true
+                box.north >= south - margin && box.south <= north + margin && box.east >= west - margin && box.west <= east + margin
+            }.filter { it.geometry?.near(route, meters) == true }
+            .map { it.properties?.asText().orEmpty() }
+            .distinctBy { it["id"] }
+    }
 
     val center: LatLng
         get() = mapState.cameraPosition.center.toLatLng()
@@ -238,6 +269,7 @@ fun rememberMapController(
     val resultsState = remember { mutableStateOf<List<SearchResult.Place>>(emptyList()) }
     val sharingState = remember { mutableStateOf<List<SharingPin>>(emptyList(), referentialEqualityPolicy()) }
     val routesState = remember { mutableStateOf<List<MapRoute>>(emptyList(), referentialEqualityPolicy()) }
+    val roadEventsState = remember { mutableStateOf<RoadEventTiles?>(null) }
     val routeColors =
         RouteColors(
             other = if (dark) Color(0xFF6B7280) else Color(0xFFB0B7C3),
@@ -257,6 +289,7 @@ fun rememberMapController(
             baseStyle = if (dark) darkBase ?: LoadingDarkStyle else BaseStyle.Uri(LIGHT_STYLE),
             initialCameraPosition = CameraPosition(center = EUROPE, zoom = 3.5),
         ) {
+            RoadLayers(roadEventsState.value, dark) { properties -> controllerRef[0]?.onRoadEventClick?.invoke(properties) }
             PlaceLayers(dark) { place -> controllerRef[0]?.onPlaceClick?.invoke(place) }
             ResultLayers(resultsState.value, dark) { place -> controllerRef[0]?.onPlaceClick?.invoke(place) }
             SharingLayers(sharingState.value, dark) { id -> controllerRef[0]?.onSharingClick?.invoke(id) }
@@ -347,7 +380,7 @@ fun rememberMapController(
             RouteLabels(routesState.value, routeColors) { id -> controllerRef[0]?.onRouteClick?.invoke(id) }
         }
     return remember(mapState, location) {
-        MapController(mapState, location, markerState, linesState, stopsState, resultsState, sharingState, routesState)
+        MapController(mapState, location, markerState, linesState, stopsState, resultsState, sharingState, routesState, roadEventsState)
     }
         .also { controllerRef[0] = it }
 }
@@ -402,6 +435,7 @@ private val StopIconTint = Color(0xFF303030)
 /** Below this zoom there are too many stops in view to load or draw. */
 const val STOPS_MIN_ZOOM = 14.0
 private val FIT_MARGIN = 48.dp
+private const val ROUTE_EVENT_DISTANCE = 30.0
 private val EUROPE = Position(longitude = 10.0, latitude = 50.0)
 
 /** The icon drawn inside a stop dot, chosen by the most significant mode serving the stop. */

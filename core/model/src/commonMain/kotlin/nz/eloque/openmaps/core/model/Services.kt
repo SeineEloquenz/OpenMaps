@@ -1,7 +1,7 @@
 package nz.eloque.openmaps.core.model
 
 /** What a data source provides, so settings can say what a value changes. */
-enum class ServiceRole { TRANSIT, STREET_ROUTING, PLACE_DETAILS, NEARBY_SEARCH, CHARGING_STATIONS }
+enum class ServiceRole { TRANSIT, STREET_ROUTING, ROAD_EVENTS, PLACE_DETAILS, NEARBY_SEARCH, CHARGING_STATIONS }
 
 enum class ServiceSettingKind {
     /** The address of a self-hosted server. */

@@ -142,6 +142,31 @@
     <string name="service_help">About %1$s</string>
     <string name="role_transit">Routing and departures</string>
     <string name="role_street_routing">Car, bike and walking routes</string>
+    <string name="role_road_events">Roadworks and closures</string>
+    <string name="road_closed">Road closed</string>
+    <string name="road_event_kind_roadworks">Roadworks</string>
+    <string name="road_event_kind_accident">Accident</string>
+    <string name="road_event_kind_obstruction">Obstruction</string>
+    <string name="road_event_kind_conditions">Road conditions</string>
+    <string name="road_event_kind_congestion">Congestion</string>
+    <string name="road_event_kind_restriction">Restriction</string>
+    <string name="road_event_kind_other">Road event</string>
+    <string name="road_event_period">%1$s to %2$s</string>
+    <string name="road_event_until">Until %1$s</string>
+    <string name="road_event_from">From %1$s</string>
+    <string name="road_event_lanes">Lanes restricted</string>
+    <string name="road_event_speed_limit">Speed limit %1$d km/h</string>
+    <string name="road_event_approximate">Only the start and end are known, so the line between them is approximate.</string>
+    <string name="road_event_source">Source: %1$s</string>
+    <string name="road_event_unconfirmed">The publisher has not confirmed that this data may be reused.</string>
+    <plurals name="route_closures">
+        <item quantity="one">%1$d closure on this route</item>
+        <item quantity="other">%1$d closures on this route</item>
+    </plurals>
+    <plurals name="route_roadworks">
+        <item quantity="one">Roadworks at %1$d place on this route</item>
+        <item quantity="other">Roadworks at %1$d places on this route</item>
+    </plurals>
     <string name="role_place_details">Place details</string>
     <string name="role_nearby_search">Nearby places</string>
     <string name="role_charging_stations">Charging stations</string>

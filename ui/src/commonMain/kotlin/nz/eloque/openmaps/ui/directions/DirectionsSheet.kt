@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -41,9 +42,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -52,11 +55,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import nz.eloque.openmaps.core.model.DistanceUnit
 import nz.eloque.openmaps.core.model.Itinerary
 import nz.eloque.openmaps.core.model.Leg
 import nz.eloque.openmaps.core.model.PlacesStore
+import nz.eloque.openmaps.core.model.RoadEvent
+import nz.eloque.openmaps.core.model.RoadEvents
 import nz.eloque.openmaps.core.model.SettingsStore
 import nz.eloque.openmaps.core.model.TransportMode
 import nz.eloque.openmaps.core.model.TravelMode
@@ -92,7 +99,9 @@ import nz.eloque.openmaps.ui.resources.one_transfer
 import nz.eloque.openmaps.ui.resources.platform
 import nz.eloque.openmaps.ui.resources.remove_saved_route
 import nz.eloque.openmaps.ui.resources.rental_leg
+import nz.eloque.openmaps.ui.resources.route_closures
 import nz.eloque.openmaps.ui.resources.route_options
+import nz.eloque.openmaps.ui.resources.route_roadworks
 import nz.eloque.openmaps.ui.resources.save_route
 import nz.eloque.openmaps.ui.resources.shared_routes
 import nz.eloque.openmaps.ui.resources.swap
@@ -102,8 +111,11 @@ import nz.eloque.openmaps.ui.resources.via_streets
 import nz.eloque.openmaps.ui.resources.walk_only
 import nz.eloque.openmaps.ui.resources.without_traffic
 import nz.eloque.openmaps.ui.resources.your_location
+import nz.eloque.openmaps.ui.roads.color
+import nz.eloque.openmaps.ui.roads.icon
 import nz.eloque.openmaps.ui.settings.RouteOptionsEditor
 import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
@@ -145,6 +157,18 @@ fun DirectionsSheet(
         ShowRouteChoicesOnMap(map, loaded?.itineraries.orEmpty(), selected) { selectedId = it.id }
     } else {
         ShowItineraryOnMap(map, routes[mode])
+    }
+
+    val roadEvents = koinInject<RoadEvents>()
+    val streetRoute = routes[mode].takeIf { mode != TravelMode.TRANSIT }
+    val eventsOnRoute by produceState(emptyList<RoadEvent>(), streetRoute, map.roadEvents) {
+        value = emptyList()
+        val geometry = streetRoute?.legs?.flatMap { it.geometry } ?: return@produceState
+        if (map.roadEvents == null) return@produceState
+        delay(TILE_LOAD_MILLIS)
+        snapshotFlow { map.isMoving }.first { !it }
+        delay(TILE_LOAD_MILLIS)
+        value = map.roadEventsAlong(geometry).mapNotNull(roadEvents::event)
     }
 
     val settings = koinInject<SettingsStore>()
@@ -215,7 +239,7 @@ fun DirectionsSheet(
                     if (route == null) {
                         Text(stringResource(Res.string.no_routes), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     } else {
-                        StreetRouteCard(route, mode, unit, onClick = { onOpenRoute(route) })
+                        StreetRouteCard(route, mode, unit, eventsOnRoute, onClick = { onOpenRoute(route) })
                     }
                 }
         }
@@ -253,7 +277,14 @@ private fun ModeTabs(
                 selected = mode == selected,
                 onClick = { onSelect(mode) },
                 icon = { Icon(mode.icon, contentDescription = stringResource(mode.label)) },
-                text = { Text(durations[mode]?.let { formatDuration(it) } ?: "", maxLines = 1) },
+                text = {
+                    Text(
+                        durations[mode]?.let { formatDuration(it) } ?: "",
+                        maxLines = 1,
+                        softWrap = false,
+                        modifier = Modifier.wrapContentWidth(unbounded = true),
+                    )
+                },
             )
         }
     }
@@ -264,6 +295,7 @@ private fun StreetRouteCard(
     itinerary: Itinerary,
     mode: TravelMode,
     unit: DistanceUnit,
+    events: List<RoadEvent>,
     onClick: () -> Unit,
 ) {
     val legs = itinerary.legs.filterIsInstance<Leg.Street>()
@@ -297,9 +329,23 @@ private fun StreetRouteCard(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            val closures = events.count { it.closed }
+            val works = events.size - closures
+            listOfNotNull(
+                events.firstOrNull { it.closed }?.let { it to pluralStringResource(Res.plurals.route_closures, closures, closures) },
+                events.firstOrNull { !it.closed }?.let { it to pluralStringResource(Res.plurals.route_roadworks, works, works) },
+            ).forEach { (event, text) ->
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Icon(event.icon, contentDescription = null, tint = event.color, modifier = Modifier.size(18.dp))
+                    Text(text, style = MaterialTheme.typography.bodyMedium, color = event.color)
+                }
+            }
         }
     }
 }
+
+/** Time for the tiles of the fitted route view to load before road events are read from them. */
+private const val TILE_LOAD_MILLIS = 800L
 
 @Composable
 private fun SharedRouteCard(
