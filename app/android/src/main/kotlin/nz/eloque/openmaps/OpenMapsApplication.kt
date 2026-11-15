@@ -2,6 +2,7 @@ package nz.eloque.openmaps
 
 import android.app.Application
 import android.content.Intent
+import nz.eloque.openmaps.core.model.LocationUpdates
 import nz.eloque.openmaps.core.model.ServiceCatalog
 import nz.eloque.openmaps.core.platform.ReminderScheduler
 import nz.eloque.openmaps.core.platform.Sharer
@@ -32,6 +33,7 @@ class OpenMapsApplication : Application() {
                 module {
                     single { createHttpClient(USER_AGENT) }
                     single<ReminderScheduler> { reminders }
+                    single<LocationUpdates> { AndroidLocationUpdates(this@OpenMapsApplication) }
                     single { ServiceCatalog(transitServiceSettings + routingServiceSettings + geocodingServiceSettings) }
                     single<Sharer> {
                         Sharer { text ->
@@ -41,7 +43,7 @@ class OpenMapsApplication : Application() {
                     }
                 },
                 transitModule(language = { Locale.getDefault().language }),
-                routingModule(fallback = { get<TransitStreetRouter>() }),
+                routingModule(fallback = { get<TransitStreetRouter>() }, language = { Locale.getDefault().toLanguageTag() }),
                 geocodingModule(language = { Locale.getDefault().language }),
                 storageModule,
                 uiModule,

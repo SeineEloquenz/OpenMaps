@@ -10,6 +10,7 @@ kotlin {
             implementation(project(":core:platform"))
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.koin.core)
+            implementation(libs.maplibre.navigation.core)
         }
         commonTest.dependencies {
             implementation(libs.ktor.client.mock)

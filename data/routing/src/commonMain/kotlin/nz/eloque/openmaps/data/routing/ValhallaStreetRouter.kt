@@ -170,7 +170,7 @@ internal class ValhallaStreetRouter(
     }
 }
 
-private fun costing(mode: TransportMode): String? =
+internal fun costing(mode: TransportMode): String? =
     when (mode) {
         TransportMode.CAR -> "auto"
         TransportMode.BIKE -> "bicycle"
@@ -178,7 +178,7 @@ private fun costing(mode: TransportMode): String? =
         else -> null
     }
 
-private fun costingOptions(
+internal fun costingOptions(
     mode: TransportMode,
     options: RouteOptions,
 ): CostingDto =

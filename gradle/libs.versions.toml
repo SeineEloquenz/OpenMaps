@@ -19,6 +19,7 @@ nav3 = "1.2.0"
 nav3Lifecycle = "2.11.0"
 composeKit = "v0.6.0"
 maplibreCompose = "0.20.0"
+maplibreNavigation = "5.0.1"
 coil = "3.6.3"
 ktlint = "14.2.0"
 
@@ -77,6 +78,7 @@ coil-network-ktor3 = { module = "io.coil-kt.coil3:coil-network-ktor3", version.r
 compose-kit = { module = "com.github.SeineEloquenz.compose-kit:lib", version.ref = "composeKit" }
 
 maplibre-compose = { module = "org.maplibre.compose:maplibre-compose", version.ref = "maplibreCompose" }
+maplibre-navigation-core = { module = "org.maplibre.navigation:navigation-core", version.ref = "maplibreNavigation" }
 maplibre-compose-runtime-opengl-android = { module = "org.maplibre.compose:maplibre-compose-runtime-opengl-android", version.ref = "maplibreCompose" }
 
 # Gradle plugins used by build-logic

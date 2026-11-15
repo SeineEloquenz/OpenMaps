@@ -2,6 +2,8 @@ package nz.eloque.openmaps.data.routing
 
 import kotlinx.coroutines.CancellationException
 import nz.eloque.openmaps.core.model.Itinerary
+import nz.eloque.openmaps.core.model.LocationUpdates
+import nz.eloque.openmaps.core.model.Navigator
 import nz.eloque.openmaps.core.model.RoadEvents
 import nz.eloque.openmaps.core.model.ServiceRole
 import nz.eloque.openmaps.core.model.ServiceSetting
@@ -55,15 +57,32 @@ internal class FallbackStreetRouter(
     }
 }
 
-/** Routes through the server from [RoutingServer] and through [fallback] while none is set or it fails. */
-fun routingModule(fallback: Scope.() -> StreetRouter) =
-    module {
-        single<StreetRouter> {
-            val settings = get<SettingsStore>()
-            FallbackStreetRouter(
-                ValhallaStreetRouter(get(), baseUrl = { settings.serviceValue(RoutingServer.id).value?.takeIf { it.isNotBlank() } }),
-                fallback(),
-            )
-        }
-        single<RoadEvents> { OpenRoadIncidents(get(), get<SettingsStore>().serviceValue(RoadEventsServer.id)) }
+/**
+ * Routes through the server from [RoutingServer] and through [fallback] while none is set or it fails.
+ * Navigation needs the server and a [LocationUpdates] from the app. [language] is a BCP 47 tag for spoken directions.
+ */
+fun routingModule(
+    fallback: Scope.() -> StreetRouter,
+    language: () -> String? = { null },
+) = module {
+    single<StreetRouter> {
+        val settings = get<SettingsStore>()
+        FallbackStreetRouter(
+            ValhallaStreetRouter(get(), baseUrl = { settings.serviceValue(RoutingServer.id).value?.takeIf { it.isNotBlank() } }),
+            fallback(),
+        )
     }
+    single<Navigator> {
+        val settings = get<SettingsStore>()
+        ValhallaNavigator(
+            ValhallaNavigationRoutes(
+                get(),
+                baseUrl = { settings.serviceValue(RoutingServer.id).value?.takeIf { it.isNotBlank() } },
+                language = language,
+                units = { settings.distanceUnit.value },
+            ),
+            get(),
+        )
+    }
+    single<RoadEvents> { OpenRoadIncidents(get(), get<SettingsStore>().serviceValue(RoadEventsServer.id)) }
+}
