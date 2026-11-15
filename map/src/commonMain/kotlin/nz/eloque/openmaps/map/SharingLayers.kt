@@ -58,7 +58,7 @@ internal fun SharingLayers(
 ) {
     if (pins.isEmpty()) return
     val color = if (dark) SharingColorDark else SharingColorLight
-    val outline = if (dark) Color.Black else Color.White
+    val outline = if (dark) PinRingDark else Color.White
     val handler: FeaturesClickHandler = { clicked ->
         val index = clicked.firstOrNull()?.properties?.get(PIN_INDEX)?.jsonPrimitive?.intOrNull
         val pin = index?.let(pins::getOrNull)

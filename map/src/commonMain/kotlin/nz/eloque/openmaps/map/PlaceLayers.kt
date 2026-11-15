@@ -49,7 +49,6 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.inset
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -160,7 +159,7 @@ private enum class PlaceIcon(
     }
 }
 
-/** A filled circle in [color] with [icon] drawn on it in white. */
+/** A circle in [color] with a thin [outline] ring and [icon] drawn on it in white. */
 internal class BadgePainter(
     private val icon: Painter,
     private val color: Color,
@@ -169,9 +168,11 @@ internal class BadgePainter(
     override val intrinsicSize: Size = Size.Unspecified
 
     override fun DrawScope.onDraw() {
-        drawCircle(color)
-        drawCircle(outline, style = Stroke(width = size.minDimension / 14))
-        inset(size.minDimension * 0.2f) {
+        // Filled circles kept inside the bounds, as anything drawn past them is cut off without smoothing.
+        val radius = size.minDimension / 2 - 1f
+        drawCircle(outline, radius)
+        drawCircle(color, radius - size.minDimension / RING_FRACTION)
+        inset(size.minDimension * 0.26f) {
             with(icon) { draw(size, colorFilter = ColorFilter.tint(Color.White)) }
         }
     }
@@ -187,7 +188,7 @@ internal fun PlaceLayers(
     onClick: (SearchResult.Place) -> Unit,
 ) {
     val tiles = getBaseSource<VectorTileSource>(BASE_SOURCE) ?: return
-    val outline = if (dark) Color.Black else Color.White
+    val outline = if (dark) PinRingDark else Color.White
     val badges =
         PlaceIcon.entries.associateWith { icon ->
             val painter = rememberVectorPainter(icon.vector)
@@ -301,7 +302,7 @@ internal fun ResultLayers(
     onClick: (SearchResult.Place) -> Unit,
 ) {
     if (results.isEmpty()) return
-    val outline = if (dark) Color.Black else Color.White
+    val outline = if (dark) PinRingDark else Color.White
     val badges =
         PlaceIcon.entries.associateWith { icon ->
             val painter = rememberVectorPainter(icon.vector)
@@ -362,3 +363,8 @@ internal fun ResultLayers(
 private const val RESULT_INDEX = "i"
 private const val RESULT_NAME = "n"
 private const val RESULT_ICON = "c"
+
+private const val RING_FRACTION = 12f
+
+/** Light enough to set pins apart from the dark map without the glare of white. */
+internal val PinRingDark = Color(0xFFE6E1E5)
