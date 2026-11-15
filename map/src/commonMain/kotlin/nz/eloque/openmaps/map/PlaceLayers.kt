@@ -301,12 +301,12 @@ internal fun ResultLayers(
     onClick: (SearchResult.Place) -> Unit,
 ) {
     if (results.isEmpty()) return
-    val color = if (dark) ResultColorDark else ResultColorLight
     val outline = if (dark) Color.Black else Color.White
     val badges =
         PlaceIcon.entries.associateWith { icon ->
             val painter = rememberVectorPainter(icon.vector)
-            image(remember(painter, color, outline) { BadgePainter(painter, color, outline) }, size = DpSize(28.dp, 28.dp))
+            val color = if (dark) icon.group.dark else icon.group.light
+            image(remember(painter, color, outline) { BadgePainter(painter, color, outline) }, size = DpSize(22.dp, 22.dp))
         }
     val features =
         results.mapIndexed { index, result ->
@@ -342,12 +342,17 @@ internal fun ResultLayers(
         iconAllowOverlap = const(true),
         textField = coalesce(feature[RESULT_NAME].asString(), const("")).cast(),
         textFont = const(listOf("Noto Sans Regular")),
-        textSize = const(0.85f.em),
-        textColor = const(color),
+        textSize = const(0.8f.em),
+        textColor =
+            switch(
+                feature[RESULT_ICON].asString(),
+                cases = PlaceIcon.entries.map { case(it.name, const(if (dark) it.group.dark else it.group.light)) },
+                fallback = const(if (dark) PlaceGroup.SHOPPING.dark else PlaceGroup.SHOPPING.light),
+            ),
         textHaloColor = const(if (dark) Color(0xFF121212) else Color.White),
         textHaloWidth = const(1.5.dp),
         textAnchor = const(SymbolAnchor.Left),
-        textOffset = textOffset(1.3f.em, 0f.em),
+        textOffset = textOffset(1f.em, 0f.em),
         textMaxWidth = const(8f.em),
         textOptional = const(true),
         onClick = handler,
@@ -357,5 +362,3 @@ internal fun ResultLayers(
 private const val RESULT_INDEX = "i"
 private const val RESULT_NAME = "n"
 private const val RESULT_ICON = "c"
-private val ResultColorLight = Color(0xFFD93025)
-private val ResultColorDark = Color(0xFFF28B82)
