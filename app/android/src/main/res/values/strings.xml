@@ -2,4 +2,10 @@
 <resources>
     <string name="app_name">OpenMaps</string>
     <string name="reminders_channel">Reminders</string>
+    <string name="navigation_channel">Navigation</string>
+    <string name="navigation_next">In %1$s: %2$s</string>
+    <string name="navigation_left">%1$s · %2$d min left</string>
+    <string name="navigation_arrived">You have arrived</string>
+    <string name="navigation_rerouting">Finding a new route</string>
+    <string name="navigation_off_route">Return to the route</string>
 </resources>

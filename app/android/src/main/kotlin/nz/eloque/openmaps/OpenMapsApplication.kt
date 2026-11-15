@@ -2,7 +2,13 @@ package nz.eloque.openmaps
 
 import android.app.Application
 import android.content.Intent
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import nz.eloque.openmaps.core.model.LocationUpdates
+import nz.eloque.openmaps.core.model.Navigator
 import nz.eloque.openmaps.core.model.ServiceCatalog
 import nz.eloque.openmaps.core.platform.ReminderScheduler
 import nz.eloque.openmaps.core.platform.Sharer
@@ -15,8 +21,10 @@ import nz.eloque.openmaps.data.storage.storageModule
 import nz.eloque.openmaps.data.transit.TransitStreetRouter
 import nz.eloque.openmaps.data.transit.transitModule
 import nz.eloque.openmaps.data.transit.transitServiceSettings
+import nz.eloque.openmaps.navigation.NavigationService
 import nz.eloque.openmaps.reminder.AndroidReminderScheduler
 import nz.eloque.openmaps.ui.uiModule
+import org.koin.android.ext.android.get
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 import org.koin.dsl.module
@@ -48,6 +56,14 @@ class OpenMapsApplication : Application() {
                 storageModule,
                 uiModule,
             )
+        }
+        MainScope().launch {
+            get<Navigator>()
+                .state
+                .map { it != null }
+                .distinctUntilChanged()
+                .filter { it }
+                .collect { NavigationService.start(this@OpenMapsApplication) }
         }
     }
 

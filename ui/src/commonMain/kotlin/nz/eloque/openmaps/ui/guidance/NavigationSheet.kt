@@ -76,6 +76,7 @@ fun NavigationSheet(
 
     val userLocation = map.userLocation
     LaunchedEffect(userLocation != null) { viewModel.begin(userLocation) }
+    LaunchedEffect(map) { if (!key.simulate && !map.isLocationPermissionGranted) map.requestLocationPermission() }
     LaunchedEffect(map) { snapshotFlow { map.isMovedByUser }.filter { it }.collect { following = false } }
     ShowTripOnMap(map, state, following)
 
