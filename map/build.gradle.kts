@@ -10,6 +10,9 @@ kotlin {
             implementation(libs.compose.material.icons.extended)
             implementation(project(":core:model"))
         }
+        commonTest.dependencies {
+            implementation(libs.kotlinx.coroutines.test)
+        }
         androidMain.dependencies {
             runtimeOnly(libs.maplibre.compose.runtime.opengl.android)
         }

@@ -27,6 +27,10 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonPrimitive
@@ -66,6 +70,8 @@ import org.maplibre.spatialk.geojson.FeatureCollection
 import org.maplibre.spatialk.geojson.LineString
 import org.maplibre.spatialk.geojson.Point
 import org.maplibre.spatialk.geojson.Position
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 /** A line drawn on the map, such as one leg of a route. */
 @Immutable
@@ -169,8 +175,7 @@ fun rememberMapController(
     dark: Boolean = isSystemInDarkTheme(),
 ): MapController {
     val darkBase by produceState<BaseStyle?>(null, dark) {
-        if (!dark) return@produceState
-        value = runCatching { BaseStyle.Json(darkStyle(loadStyle(LIGHT_STYLE))) }.getOrElse { BaseStyle.Uri(DARK_STYLE) }
+        if (dark) darkStyles { loadStyle(LIGHT_STYLE) }.collect { value = it }
     }
     val location = rememberLocationState()
     val markerColor = MaterialTheme.colorScheme.primary
@@ -285,6 +290,34 @@ internal fun LatLng.toPosition() = Position(longitude = longitude, latitude = la
 
 private const val LIGHT_STYLE = "https://tiles.openfreemap.org/styles/liberty"
 private const val DARK_STYLE = "https://tiles.openfreemap.org/styles/dark"
+private val StyleRetryFirst = 5.seconds
+private val StyleRetryMax = 2.minutes
+
+/** The darkened [loadLight] style, with the plain dark style in its place while loading fails and is retried. */
+internal fun darkStyles(loadLight: suspend () -> String): Flow<BaseStyle> =
+    flow {
+        var pause = StyleRetryFirst
+        var fallback = false
+        while (true) {
+            val light =
+                try {
+                    loadLight()
+                } catch (error: CancellationException) {
+                    throw error
+                } catch (_: Exception) {
+                    null
+                }
+            if (light != null) {
+                emit(BaseStyle.Json(darkStyle(light)))
+                return@flow
+            }
+            if (!fallback) emit(BaseStyle.Uri(DARK_STYLE))
+            fallback = true
+            delay(pause)
+            pause = minOf(pause * 2, StyleRetryMax)
+        }
+    }
+
 private val LoadingDarkStyle =
     BaseStyle.Json(
         """{"version":8,"sources":{},"layers":[{"id":"background","type":"background","paint":{"background-color":"#1c1c1c"}}]}""",
