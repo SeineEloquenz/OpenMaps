@@ -1,5 +1,6 @@
 package nz.eloque.openmaps.ui.directions
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -130,7 +131,14 @@ fun DirectionsSheet(
             TravelMode.WALK to walk,
             TravelMode.BIKE to direct[TransportMode.BIKE],
         )
-    ShowItineraryOnMap(map, if (mode == TravelMode.TRANSIT) loaded?.itineraries?.firstOrNull() else routes[mode])
+    var selectedId by rememberSaveable { mutableStateOf<String?>(null) }
+    val selected = loaded?.itineraries?.let { list -> list.firstOrNull { it.id == selectedId } ?: list.firstOrNull() }
+    if (mode == TravelMode.TRANSIT) {
+        ShowItineraryOnMap(map, selected, fit = false)
+        ShowRouteChoicesOnMap(map, loaded?.itineraries.orEmpty(), selected) { selectedId = it.id }
+    } else {
+        ShowItineraryOnMap(map, routes[mode])
+    }
 
     val settings = koinInject<SettingsStore>()
     val options by settings.routeOptions.collectAsStateWithLifecycle()
@@ -187,7 +195,9 @@ fun DirectionsSheet(
                 if (loaded.earlierCursor != null && loaded.itineraries.isNotEmpty()) {
                     item { TextButton(onClick = viewModel::loadEarlier) { Text(stringResource(Res.string.earlier)) } }
                 }
-                items(loaded.itineraries, key = { it.id }) { ItineraryCard(it, onClick = { onOpenRoute(it) }) }
+                items(loaded.itineraries, key = { it.id }) {
+                    ItineraryCard(it, selected = it.id == selected?.id, onClick = { onOpenRoute(it) })
+                }
                 if (loaded.laterCursor != null && loaded.itineraries.isNotEmpty()) {
                     item { TextButton(onClick = viewModel::loadLater) { Text(stringResource(Res.string.later)) } }
                 }
@@ -332,10 +342,15 @@ private fun EndpointRow(
 @Composable
 private fun ItineraryCard(
     itinerary: Itinerary,
+    selected: Boolean,
     onClick: () -> Unit,
 ) {
     val firstTransit = itinerary.legs.filterIsInstance<Leg.Transit>().firstOrNull()
-    Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        border = if (selected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
+    ) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(

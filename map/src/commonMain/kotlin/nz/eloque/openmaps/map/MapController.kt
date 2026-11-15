@@ -90,6 +90,7 @@ class MapController internal constructor(
     private val linesState: MutableState<List<MapLine>>,
     private val stopsState: MutableState<List<SearchResult.Stop>>,
     private val resultsState: MutableState<List<SearchResult.Place>>,
+    private val routesState: MutableState<List<MapRoute>>,
 ) {
     val isLocationPermissionGranted: Boolean
         get() = location.permission is LocationPermission.Granted
@@ -117,6 +118,11 @@ class MapController internal constructor(
 
     /** Search results drawn as pins. */
     var results: List<SearchResult.Place> by resultsState
+
+    /** Routes to choose between, drawn in grey with a label each. */
+    var routes: List<MapRoute> by routesState
+
+    var onRouteClick: ((String) -> Unit)? by mutableStateOf(null)
 
     val center: LatLng
         get() = mapState.cameraPosition.center.toLatLng()
@@ -184,6 +190,16 @@ fun rememberMapController(
     val linesState = remember { mutableStateOf<List<MapLine>>(emptyList(), referentialEqualityPolicy()) }
     val stopsState = remember { mutableStateOf<List<SearchResult.Stop>>(emptyList()) }
     val resultsState = remember { mutableStateOf<List<SearchResult.Place>>(emptyList()) }
+    val routesState = remember { mutableStateOf<List<MapRoute>>(emptyList(), referentialEqualityPolicy()) }
+    val routeColors =
+        RouteColors(
+            other = if (dark) Color(0xFF6B7280) else Color(0xFFB0B7C3),
+            casing = casingColor,
+            label = MaterialTheme.colorScheme.surfaceContainerHigh,
+            labelText = MaterialTheme.colorScheme.onSurface,
+            selectedLabel = MaterialTheme.colorScheme.primary,
+            selectedLabelText = MaterialTheme.colorScheme.onPrimary,
+        )
     val controllerRef = remember { arrayOfNulls<MapController>(1) }
     val stopIcons =
         StopIcon.entries.associateWith { icon ->
@@ -196,6 +212,7 @@ fun rememberMapController(
         ) {
             PlaceLayers(dark) { place -> controllerRef[0]?.onPlaceClick?.invoke(place) }
             ResultLayers(resultsState.value, dark) { place -> controllerRef[0]?.onPlaceClick?.invoke(place) }
+            OtherRouteLines(routesState.value, routeColors) { id -> controllerRef[0]?.onRouteClick?.invoke(id) }
             linesState.value.forEachIndexed { index, line ->
                 key(index, line) {
                     // Old and new layers coexist briefly while the list changes, so ids must not repeat across contents.
@@ -279,8 +296,11 @@ fun rememberMapController(
                     strokeWidth = const(3.dp),
                 )
             }
+            RouteLabels(routesState.value, routeColors) { id -> controllerRef[0]?.onRouteClick?.invoke(id) }
         }
-    return remember(mapState, location) { MapController(mapState, location, markerState, linesState, stopsState, resultsState) }
+    return remember(mapState, location) {
+        MapController(mapState, location, markerState, linesState, stopsState, resultsState, routesState)
+    }
         .also { controllerRef[0] = it }
 }
 

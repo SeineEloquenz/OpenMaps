@@ -4,6 +4,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import nz.eloque.openmaps.core.model.Itinerary
@@ -11,12 +13,15 @@ import nz.eloque.openmaps.core.model.Leg
 import nz.eloque.openmaps.core.model.TransportMode
 import nz.eloque.openmaps.map.MapController
 import nz.eloque.openmaps.map.MapLine
+import nz.eloque.openmaps.map.MapRoute
+import nz.eloque.openmaps.ui.components.formatDuration
 
-/** Draws [itinerary] on the map and fits the camera to it while this is composed. */
+/** Draws [itinerary] on the map while this is composed, fitting the camera to it when [fit] is set. */
 @Composable
 fun ShowItineraryOnMap(
     map: MapController,
     itinerary: Itinerary?,
+    fit: Boolean = true,
 ) {
     val transitColor = MaterialTheme.colorScheme.primary
     val walkColor = MaterialTheme.colorScheme.outline
@@ -26,9 +31,42 @@ fun ShowItineraryOnMap(
         onDispose { if (map.lines === lines) map.lines = emptyList() }
     }
     LaunchedEffect(itinerary) {
-        itinerary?.let { map.fit(it.legs.flatMap(Leg::geometry)) }
+        if (fit) itinerary?.let { map.fit(it.legs.flatMap(Leg::geometry)) }
     }
 }
+
+/** Draws distinct routes among [itineraries] to choose from, labelled with their duration, and fits the camera to them. */
+@Composable
+fun ShowRouteChoicesOnMap(
+    map: MapController,
+    itineraries: List<Itinerary>,
+    selected: Itinerary?,
+    onSelect: (Itinerary) -> Unit,
+) {
+    val choices = (itineraries.distinctBy { it.pattern }.take(MAX_ROUTE_CHOICES) + listOfNotNull(selected)).distinctBy { it.id }
+    val routes =
+        choices.map { itinerary ->
+            MapRoute(itinerary.id, itinerary.legs.flatMap(Leg::geometry), formatDuration(itinerary.duration), itinerary.id == selected?.id)
+        }
+    val currentOnSelect by rememberUpdatedState(onSelect)
+    DisposableEffect(routes) {
+        map.routes = routes
+        map.onRouteClick = { id -> choices.firstOrNull { it.id == id }?.let(currentOnSelect) }
+        onDispose {
+            if (map.routes === routes) map.routes = emptyList()
+            map.onRouteClick = null
+        }
+    }
+    LaunchedEffect(choices.map { it.id }.toSet() - setOfNotNull(selected?.id)) {
+        map.fit(choices.flatMap { it.legs.flatMap(Leg::geometry) })
+    }
+}
+
+/** The lines a route takes, so the same route at another time counts once. */
+private val Itinerary.pattern: List<String>
+    get() = legs.map { leg -> if (leg is Leg.Transit) "${leg.line.mode}:${leg.line.shortName}:${leg.from.name}" else leg.mode.name }
+
+private const val MAX_ROUTE_CHOICES = 3
 
 private fun Leg.toMapLine(
     transitColor: Color,
