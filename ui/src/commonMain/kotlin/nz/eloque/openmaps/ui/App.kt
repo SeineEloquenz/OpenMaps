@@ -61,6 +61,8 @@ import coil3.ImageLoader
 import coil3.compose.setSingletonImageLoaderFactory
 import coil3.network.ktor3.KtorNetworkFetcherFactory
 import io.ktor.client.HttpClient
+import io.ktor.client.request.get
+import io.ktor.client.statement.bodyAsText
 import kotlinx.coroutines.launch
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
@@ -149,7 +151,7 @@ fun App(version: String) {
     }
     OpenMapsTheme {
         val backStack = rememberNavBackStack(navConfiguration, HomeKey)
-        val map = rememberMapController()
+        val map = rememberMapController(loadStyle = { url -> http.get(url).bodyAsText() })
         val snackbar = remember { SnackbarHostState() }
         val sheetState =
             rememberBottomSheetScaffoldState(

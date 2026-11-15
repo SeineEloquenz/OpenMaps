@@ -15,6 +15,7 @@ import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.referentialEqualityPolicy
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -160,9 +161,17 @@ class MapController internal constructor(
     }
 }
 
+/** [loadStyle] downloads a style document by URL, used to build the dark style from the light one. */
 @Composable
 @UiComposable
-fun rememberMapController(dark: Boolean = isSystemInDarkTheme()): MapController {
+fun rememberMapController(
+    loadStyle: suspend (String) -> String,
+    dark: Boolean = isSystemInDarkTheme(),
+): MapController {
+    val darkBase by produceState<BaseStyle?>(null, dark) {
+        if (!dark) return@produceState
+        value = runCatching { BaseStyle.Json(darkStyle(loadStyle(LIGHT_STYLE))) }.getOrElse { BaseStyle.Uri(DARK_STYLE) }
+    }
     val location = rememberLocationState()
     val markerColor = MaterialTheme.colorScheme.primary
     val casingColor = if (dark) Color.Black else Color.White
@@ -177,7 +186,7 @@ fun rememberMapController(dark: Boolean = isSystemInDarkTheme()): MapController 
         }
     val mapState =
         rememberMapState(
-            baseStyle = BaseStyle.Uri(if (dark) DARK_STYLE else LIGHT_STYLE),
+            baseStyle = if (dark) darkBase ?: LoadingDarkStyle else BaseStyle.Uri(LIGHT_STYLE),
             initialCameraPosition = CameraPosition(center = EUROPE, zoom = 3.5),
         ) {
             PlaceLayers(dark) { place -> controllerRef[0]?.onPlaceClick?.invoke(place) }
@@ -276,6 +285,10 @@ internal fun LatLng.toPosition() = Position(longitude = longitude, latitude = la
 
 private const val LIGHT_STYLE = "https://tiles.openfreemap.org/styles/liberty"
 private const val DARK_STYLE = "https://tiles.openfreemap.org/styles/dark"
+private val LoadingDarkStyle =
+    BaseStyle.Json(
+        """{"version":8,"sources":{},"layers":[{"id":"background","type":"background","paint":{"background-color":"#1c1c1c"}}]}""",
+    )
 private const val USER_ZOOM = 15.0
 private const val PLACE_ZOOM = 16.0
 private const val STOP_INDEX = "i"
