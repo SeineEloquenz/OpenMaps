@@ -33,6 +33,7 @@ internal val PlaceCategory.osmTags: List<String>
             PlaceCategory.BAKERIES -> listOf("shop.bakery", "shop.pastry")
             PlaceCategory.ATMS -> listOf("amenity.atm")
             PlaceCategory.TOILETS -> listOf("amenity.toilets")
+            PlaceCategory.SHARED_VEHICLES -> listOf("amenity.bicycle_rental", "amenity.car_sharing")
         }
 
 /** First value of the first of [keys] present, for tags that may list several values separated by `;`. */

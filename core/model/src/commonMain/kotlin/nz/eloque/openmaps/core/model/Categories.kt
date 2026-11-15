@@ -16,6 +16,7 @@ enum class PlaceCategory {
     BAKERIES,
     ATMS,
     TOILETS,
+    SHARED_VEHICLES,
 }
 
 /** A place found nearby, with its details once they are known. */

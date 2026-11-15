@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.DirectionsRailway
 import androidx.compose.material.icons.filled.DirectionsSubway
+import androidx.compose.material.icons.filled.ElectricScooter
 import androidx.compose.material.icons.filled.Flight
 import androidx.compose.material.icons.filled.Train
 import androidx.compose.material.icons.filled.Tram
@@ -68,6 +69,7 @@ val TransportMode.icon: ImageVector
             TransportMode.WALK -> Icons.AutoMirrored.Filled.DirectionsWalk
             TransportMode.BIKE -> Icons.AutoMirrored.Filled.DirectionsBike
             TransportMode.CAR -> Icons.Default.DirectionsCar
+            TransportMode.SCOOTER -> Icons.Default.ElectricScooter
             TransportMode.BUS, TransportMode.COACH -> Icons.Default.DirectionsBus
             TransportMode.TRAM, TransportMode.CABLE_CAR, TransportMode.FUNICULAR -> Icons.Default.Tram
             TransportMode.SUBWAY -> Icons.Default.DirectionsSubway

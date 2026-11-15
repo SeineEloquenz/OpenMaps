@@ -4,6 +4,7 @@ enum class TransportMode {
     WALK,
     BIKE,
     CAR,
+    SCOOTER,
     BUS,
     COACH,
     TRAM,
@@ -21,5 +22,5 @@ enum class TransportMode {
     ;
 
     val isTransit: Boolean
-        get() = this != WALK && this != BIKE && this != CAR
+        get() = this != WALK && this != BIKE && this != CAR && this != SCOOTER
 }

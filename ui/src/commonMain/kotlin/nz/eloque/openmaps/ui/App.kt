@@ -111,6 +111,7 @@ import nz.eloque.openmaps.ui.resources.waiting_for_location
 import nz.eloque.openmaps.ui.saved.SavedSheet
 import nz.eloque.openmaps.ui.search.SearchScreen
 import nz.eloque.openmaps.ui.settings.SettingsPage
+import nz.eloque.openmaps.ui.sharing.SharingSheet
 import nz.eloque.openmaps.ui.stop.StopSheet
 import nz.eloque.openmaps.ui.theme.OpenMapsTheme
 import org.jetbrains.compose.resources.getString
@@ -314,6 +315,10 @@ fun App(version: String) {
                                 }
                                 entry<RouteKey> { RouteSheet(it, map, snackbar) }
                                 entry<CategoryKey> {
+                                    if (it.category == PlaceCategory.SHARED_VEHICLES) {
+                                        SharingSheet(map)
+                                        return@entry
+                                    }
                                     CategorySheet(
                                         it,
                                         map,

@@ -10,8 +10,17 @@ import nz.eloque.openmaps.core.model.Line
 import nz.eloque.openmaps.core.model.PlaceId
 import nz.eloque.openmaps.core.model.SearchResult
 import nz.eloque.openmaps.core.model.TransportMode
+import nz.eloque.openmaps.core.model.VehicleKind
 import nz.eloque.openmaps.core.model.Waypoint
 import kotlin.time.Instant
+
+private fun rentalMode(kind: VehicleKind): TransportMode =
+    when (kind) {
+        VehicleKind.BICYCLE, VehicleKind.CARGO_BICYCLE -> TransportMode.BIKE
+        VehicleKind.SCOOTER, VehicleKind.MOPED -> TransportMode.SCOOTER
+        VehicleKind.CAR -> TransportMode.CAR
+        VehicleKind.OTHER -> TransportMode.BIKE
+    }
 
 internal fun transportMode(motisMode: String): TransportMode =
     when (motisMode) {
@@ -92,9 +101,20 @@ internal fun LegDto.toLeg(): Leg {
     val start = eventTime(scheduledStartTime, startTime, realTime)!!
     val end = eventTime(scheduledEndTime, endTime, realTime)!!
     val geometry = decodePolyline(legGeometry.points, legGeometry.precision.toInt())
-    val mode = transportMode(mode)
+    val sharedRental = rental?.takeIf { this.mode == "RENTAL" }?.toSharedRental()
+    val mode = sharedRental?.let { rentalMode(it.kind) } ?: transportMode(mode)
     if (!mode.isTransit) {
-        return Leg.Street(mode, from.toWaypoint(realTime), to.toWaypoint(realTime), start, end, geometry, distance, mainStreets(steps))
+        return Leg.Street(
+            mode,
+            from.toWaypoint(realTime),
+            to.toWaypoint(realTime),
+            start,
+            end,
+            geometry,
+            distance,
+            mainStreets(steps),
+            sharedRental,
+        )
     }
     return Leg.Transit(
         from = from.toWaypoint(realTime),

@@ -60,6 +60,8 @@ sealed interface Leg {
         val distanceMeters: Double?,
         /** Names of the streets covering most of the leg, in travel order. */
         val streets: List<String> = emptyList(),
+        /** The shared vehicle ridden on this leg, or null for the user's own feet, bike or car. */
+        val rental: SharedRental? = null,
     ) : Leg
 
     data class Transit(

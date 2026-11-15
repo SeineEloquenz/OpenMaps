@@ -36,14 +36,17 @@ import nz.eloque.openmaps.core.model.EventTime
 import nz.eloque.openmaps.core.model.Itinerary
 import nz.eloque.openmaps.core.model.Leg
 import nz.eloque.openmaps.core.model.SettingsStore
+import nz.eloque.openmaps.core.model.SharedRental
 import nz.eloque.openmaps.core.model.TransportMode
 import nz.eloque.openmaps.core.model.Waypoint
 import nz.eloque.openmaps.map.MapController
+import nz.eloque.openmaps.ui.components.BookButton
 import nz.eloque.openmaps.ui.components.LineChip
 import nz.eloque.openmaps.ui.components.clockTime
 import nz.eloque.openmaps.ui.components.formatDistance
 import nz.eloque.openmaps.ui.components.formatDuration
 import nz.eloque.openmaps.ui.components.icon
+import nz.eloque.openmaps.ui.components.label
 import nz.eloque.openmaps.ui.components.timeRange
 import nz.eloque.openmaps.ui.components.withoutLinePrefix
 import nz.eloque.openmaps.ui.navigation.RouteKey
@@ -51,6 +54,9 @@ import nz.eloque.openmaps.ui.resources.Res
 import nz.eloque.openmaps.ui.resources.bike_leg
 import nz.eloque.openmaps.ui.resources.drive_leg
 import nz.eloque.openmaps.ui.resources.platform
+import nz.eloque.openmaps.ui.resources.rental_leg
+import nz.eloque.openmaps.ui.resources.rental_pick_up
+import nz.eloque.openmaps.ui.resources.rental_return
 import nz.eloque.openmaps.ui.resources.route_expired
 import nz.eloque.openmaps.ui.resources.stops_count
 import nz.eloque.openmaps.ui.resources.towards
@@ -119,6 +125,11 @@ private fun StreetLegItem(
 ) {
     val duration = formatDuration(leg.end.actual - leg.start.actual)
     val label = listOfNotNull(duration, leg.distanceMeters?.let { formatDistance(it, unit) }).joinToString(" · ")
+    val rental = leg.rental
+    if (rental != null) {
+        RentalLegItem(rental, label)
+        return
+    }
     Row(Modifier.padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
         Icon(leg.mode.icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(
@@ -133,6 +144,27 @@ private fun StreetLegItem(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(start = 16.dp),
         )
+    }
+}
+
+@Composable
+private fun RentalLegItem(
+    rental: SharedRental,
+    label: String,
+) {
+    Row(Modifier.padding(vertical = 10.dp), verticalAlignment = Alignment.Top) {
+        Icon(rental.kind.icon(rental.electric), contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+        Column(Modifier.padding(start = 16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(stringResource(Res.string.rental_leg, stringResource(rental.kind.label(rental.electric)), rental.operator))
+            Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            rental.fromStation?.let {
+                Text(stringResource(Res.string.rental_pick_up, it), style = MaterialTheme.typography.bodySmall)
+            }
+            rental.toStation?.let {
+                Text(stringResource(Res.string.rental_return, it), style = MaterialTheme.typography.bodySmall)
+            }
+            BookButton(rental.operator, rental.booking, Modifier.padding(top = 4.dp))
+        }
     }
 }
 

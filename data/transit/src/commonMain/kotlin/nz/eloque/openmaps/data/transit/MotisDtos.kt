@@ -82,6 +82,19 @@ internal data class LegDto(
     val cancelled: Boolean = false,
     val wheelchairAccessible: String? = null,
     val steps: List<StepDto> = emptyList(),
+    val rental: RentalDto? = null,
+)
+
+@Serializable
+internal data class RentalDto(
+    val systemName: String? = null,
+    val providerGroupId: String? = null,
+    val fromStationName: String? = null,
+    val toStationName: String? = null,
+    val rentalUriAndroid: String? = null,
+    val rentalUriWeb: String? = null,
+    val formFactor: String? = null,
+    val propulsionType: String? = null,
 )
 
 @Serializable

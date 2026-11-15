@@ -24,6 +24,8 @@ data class RouteOptions(
     val maxTransfers: Int? = null,
     val walkingSpeed: WalkingSpeed = WalkingSpeed.NORMAL,
     val wheelchair: Boolean = false,
+    /** Whether shared bikes and scooters may take the user to and from public transport. */
+    val sharedVehicles: Boolean = false,
 ) {
     val isDefault: Boolean
         get() = this == RouteOptions()

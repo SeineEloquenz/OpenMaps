@@ -45,6 +45,8 @@ data class PlanRequest(
     val directModes: Set<TransportMode> = setOf(TransportMode.WALK),
     /** False to ask for direct routes only, skipping the public transport search. */
     val withTransit: Boolean = true,
+    /** Kinds of shared vehicles to offer as routes on their own. */
+    val directSharing: Set<VehicleKind> = emptySet(),
 )
 
 data class PlanResult(

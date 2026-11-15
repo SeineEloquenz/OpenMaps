@@ -97,6 +97,7 @@ class MapController internal constructor(
     private val linesState: MutableState<List<MapLine>>,
     private val stopsState: MutableState<List<SearchResult.Stop>>,
     private val resultsState: MutableState<List<SearchResult.Place>>,
+    private val sharingState: MutableState<List<SharingPin>>,
     private val routesState: MutableState<List<MapRoute>>,
 ) {
     val isLocationPermissionGranted: Boolean
@@ -125,6 +126,11 @@ class MapController internal constructor(
 
     /** Search results drawn as pins. */
     var results: List<SearchResult.Place> by resultsState
+
+    /** Shared vehicles and their stations. */
+    var sharing: List<SharingPin> by sharingState
+
+    var onSharingClick: ((String) -> Unit)? by mutableStateOf(null)
 
     /** Routes to choose between, drawn in grey with a label each. */
     var routes: List<MapRoute> by routesState
@@ -230,6 +236,7 @@ fun rememberMapController(
     val linesState = remember { mutableStateOf<List<MapLine>>(emptyList(), referentialEqualityPolicy()) }
     val stopsState = remember { mutableStateOf<List<SearchResult.Stop>>(emptyList()) }
     val resultsState = remember { mutableStateOf<List<SearchResult.Place>>(emptyList()) }
+    val sharingState = remember { mutableStateOf<List<SharingPin>>(emptyList(), referentialEqualityPolicy()) }
     val routesState = remember { mutableStateOf<List<MapRoute>>(emptyList(), referentialEqualityPolicy()) }
     val routeColors =
         RouteColors(
@@ -252,6 +259,7 @@ fun rememberMapController(
         ) {
             PlaceLayers(dark) { place -> controllerRef[0]?.onPlaceClick?.invoke(place) }
             ResultLayers(resultsState.value, dark) { place -> controllerRef[0]?.onPlaceClick?.invoke(place) }
+            SharingLayers(sharingState.value, dark) { id -> controllerRef[0]?.onSharingClick?.invoke(id) }
             OtherRouteLines(routesState.value, routeColors) { id -> controllerRef[0]?.onRouteClick?.invoke(id) }
             linesState.value.filter { it.points.size >= 2 }.forEachIndexed { index, line ->
                 key(index, line) {
@@ -339,7 +347,7 @@ fun rememberMapController(
             RouteLabels(routesState.value, routeColors) { id -> controllerRef[0]?.onRouteClick?.invoke(id) }
         }
     return remember(mapState, location) {
-        MapController(mapState, location, markerState, linesState, stopsState, resultsState, routesState)
+        MapController(mapState, location, markerState, linesState, stopsState, resultsState, sharingState, routesState)
     }
         .also { controllerRef[0] = it }
 }

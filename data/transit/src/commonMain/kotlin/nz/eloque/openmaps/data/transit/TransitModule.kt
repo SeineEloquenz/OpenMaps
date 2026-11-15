@@ -5,6 +5,7 @@ import nz.eloque.openmaps.core.model.ServiceRole
 import nz.eloque.openmaps.core.model.ServiceSetting
 import nz.eloque.openmaps.core.model.ServiceSettingKind
 import nz.eloque.openmaps.core.model.SettingsStore
+import nz.eloque.openmaps.core.model.SharedMobility
 import nz.eloque.openmaps.core.model.TransitRepository
 import org.koin.dsl.module
 
@@ -23,6 +24,10 @@ fun transitModule(language: () -> String? = { null }) =
         single<TransitRepository> {
             val settings = get<SettingsStore>()
             MotisTransitRepository(get()) { settings.serviceValue(TransitServer.id).value ?: TRANSITOUS_API }
+        }
+        single<SharedMobility> {
+            val settings = get<SettingsStore>()
+            MotisSharedMobility(get()) { settings.serviceValue(TransitServer.id).value ?: TRANSITOUS_API }
         }
         single<Geocoder> {
             val settings = get<SettingsStore>()

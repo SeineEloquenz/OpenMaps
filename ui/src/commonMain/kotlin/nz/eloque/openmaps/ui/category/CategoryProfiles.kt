@@ -238,6 +238,13 @@ internal val PlaceCategory.profile: CategoryProfile
                             Free,
                         ),
                 )
+            PlaceCategory.SHARED_VEHICLES ->
+                CategoryProfile(kind = {
+                    place,
+                    _,
+                    ->
+                    place.category?.toCategoryLabel()
+                }, filters = emptyList())
             PlaceCategory.ATTRACTIONS ->
                 CategoryProfile(
                     kind = { place, _ -> place.category?.toCategoryLabel() },

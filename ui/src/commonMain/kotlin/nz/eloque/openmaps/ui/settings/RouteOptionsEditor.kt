@@ -20,6 +20,8 @@ import nz.eloque.openmaps.ui.resources.mode_ferry
 import nz.eloque.openmaps.ui.resources.mode_long_distance
 import nz.eloque.openmaps.ui.resources.mode_regional
 import nz.eloque.openmaps.ui.resources.mode_subway_tram
+import nz.eloque.openmaps.ui.resources.options_shared_vehicles
+import nz.eloque.openmaps.ui.resources.options_shared_vehicles_detail
 import nz.eloque.openmaps.ui.resources.options_transfers
 import nz.eloque.openmaps.ui.resources.options_transport
 import nz.eloque.openmaps.ui.resources.options_walking
@@ -88,6 +90,12 @@ fun RouteOptionsEditor(
             subtitle = stringResource(Res.string.options_wheelchair_detail),
             checked = options.wheelchair,
             onCheckedChange = { onChange(options.copy(wheelchair = it)) },
+        )
+        SettingsSwitch(
+            title = stringResource(Res.string.options_shared_vehicles),
+            subtitle = stringResource(Res.string.options_shared_vehicles_detail),
+            checked = options.sharedVehicles,
+            onCheckedChange = { onChange(options.copy(sharedVehicles = it)) },
         )
     }
 }

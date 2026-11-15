@@ -23,6 +23,7 @@ internal class PreferencesSettingsStore(
         settings.putInt(MAX_TRANSFERS, options.maxTransfers ?: NO_LIMIT)
         settings.putString(WALKING_SPEED, options.walkingSpeed.name)
         settings.putBoolean(WHEELCHAIR, options.wheelchair)
+        settings.putBoolean(SHARED_VEHICLES, options.sharedVehicles)
         _routeOptions.value = options
     }
 
@@ -74,6 +75,7 @@ internal class PreferencesSettingsStore(
             walkingSpeed =
                 WalkingSpeed.entries.firstOrNull { it.name == settings.getStringOrNull(WALKING_SPEED) } ?: defaults.walkingSpeed,
             wheelchair = settings.getBoolean(WHEELCHAIR, defaults.wheelchair),
+            sharedVehicles = settings.getBoolean(SHARED_VEHICLES, defaults.sharedVehicles),
         )
     }
 
@@ -82,6 +84,7 @@ internal class PreferencesSettingsStore(
         const val MAX_TRANSFERS = "route.maxTransfers"
         const val WALKING_SPEED = "route.walkingSpeed"
         const val WHEELCHAIR = "route.wheelchair"
+        const val SHARED_VEHICLES = "route.sharedVehicles"
         const val NO_LIMIT = -1
         const val TRAVEL_MODE = "route.travelMode"
         const val DISTANCE_UNIT = "units.distance"

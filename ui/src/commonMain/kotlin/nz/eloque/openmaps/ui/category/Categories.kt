@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.LocalCafe
 import androidx.compose.material.icons.filled.LocalGasStation
 import androidx.compose.material.icons.filled.LocalGroceryStore
 import androidx.compose.material.icons.filled.LocalPharmacy
+import androidx.compose.material.icons.filled.PedalBike
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Wc
@@ -43,6 +44,7 @@ import nz.eloque.openmaps.ui.resources.category_gas_stations
 import nz.eloque.openmaps.ui.resources.category_hotels
 import nz.eloque.openmaps.ui.resources.category_pharmacies
 import nz.eloque.openmaps.ui.resources.category_restaurants
+import nz.eloque.openmaps.ui.resources.category_shared_vehicles
 import nz.eloque.openmaps.ui.resources.category_supermarkets
 import nz.eloque.openmaps.ui.resources.category_toilets
 import nz.eloque.openmaps.ui.resources.clear
@@ -64,6 +66,7 @@ val PlaceCategory.label: StringResource
             PlaceCategory.BAKERIES -> Res.string.category_bakeries
             PlaceCategory.ATMS -> Res.string.category_atms
             PlaceCategory.TOILETS -> Res.string.category_toilets
+            PlaceCategory.SHARED_VEHICLES -> Res.string.category_shared_vehicles
         }
 
 val PlaceCategory.icon: ImageVector
@@ -81,6 +84,7 @@ val PlaceCategory.icon: ImageVector
             PlaceCategory.BAKERIES -> Icons.Default.BakeryDining
             PlaceCategory.ATMS -> Icons.Default.LocalAtm
             PlaceCategory.TOILETS -> Icons.Default.Wc
+            PlaceCategory.SHARED_VEHICLES -> Icons.Default.PedalBike
         }
 
 /** Words, in English and German, that ask for a category rather than a place by name. */
@@ -99,6 +103,8 @@ private val PlaceCategory.keywords: List<String>
             PlaceCategory.BAKERIES -> listOf("bakery", "bakeries", "backerei", "baecker", "backer")
             PlaceCategory.ATMS -> listOf("atm", "atms", "cash", "geldautomat", "bankomat")
             PlaceCategory.TOILETS -> listOf("toilet", "toilets", "wc", "restroom", "toilette")
+            PlaceCategory.SHARED_VEHICLES ->
+                listOf("bike sharing", "bikes", "scooter", "e-scooter", "car sharing", "leihrad", "fahrradverleih", "nextbike", "roller")
         }
 
 /** Categories whose keywords start with [query], so typing `caf` or `apotheke` offers a nearby search. */

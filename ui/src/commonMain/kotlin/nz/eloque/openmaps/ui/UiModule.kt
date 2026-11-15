@@ -7,6 +7,7 @@ import nz.eloque.openmaps.ui.directions.TripViewModel
 import nz.eloque.openmaps.ui.home.HomeViewModel
 import nz.eloque.openmaps.ui.place.PlaceViewModel
 import nz.eloque.openmaps.ui.search.SearchViewModel
+import nz.eloque.openmaps.ui.sharing.SharingViewModel
 import nz.eloque.openmaps.ui.stop.StopViewModel
 import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
@@ -22,4 +23,5 @@ val uiModule =
         viewModel { params -> DirectionsViewModel(get(), get(), get(), params.get()) }
         viewModel { params -> TripViewModel(get(), params.get()) }
         viewModel { params -> CategoryViewModel(get(), params.get()) }
+        viewModel { SharingViewModel(get()) }
     }

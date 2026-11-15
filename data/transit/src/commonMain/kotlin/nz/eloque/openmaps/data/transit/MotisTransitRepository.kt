@@ -17,6 +17,7 @@ import nz.eloque.openmaps.core.model.RouteOptions
 import nz.eloque.openmaps.core.model.SearchResult
 import nz.eloque.openmaps.core.model.TransitRepository
 import nz.eloque.openmaps.core.model.TransportMode
+import nz.eloque.openmaps.core.model.VehicleKind
 import nz.eloque.openmaps.core.model.WalkingSpeed
 import kotlin.time.Instant
 
@@ -46,8 +47,13 @@ internal class MotisTransitRepository(
                     parameter("toPlace", request.to.asParameter())
                     request.time?.let { parameter("time", it.asParameter()) }
                     parameter("arriveBy", request.arriveBy)
-                    parameter("directModes", request.directModes.joinToString(",") { it.name })
-                    if (request.directModes.any { it != TransportMode.WALK } || !request.withTransit) {
+                    val direct =
+                        request.directModes.map { it.name } + if (request.directSharing.isEmpty()) emptyList() else listOf("RENTAL")
+                    parameter("directModes", direct.joinToString(","))
+                    if (request.directSharing.isNotEmpty()) {
+                        parameter("directRentalFormFactors", request.directSharing.flatMap(::formFactors).joinToString(","))
+                        parameter("maxDirectTime", MAX_SHARED_DIRECT_SECONDS)
+                    } else if (request.directModes.any { it != TransportMode.WALK } || !request.withTransit) {
                         parameter("maxDirectTime", MAX_DIRECT_SECONDS)
                     }
                     request.pageCursor?.let { parameter("pageCursor", it) }
@@ -125,6 +131,13 @@ private fun HttpRequestBuilder.routeOptions(
         WalkingSpeed.NORMAL -> Unit
     }
     if (options.wheelchair) parameter("pedestrianProfile", "WHEELCHAIR")
+    if (options.sharedVehicles && withTransit) {
+        val factors = SharedAccessKinds.flatMap(::formFactors).joinToString(",")
+        parameter("preTransitModes", "WALK,RENTAL")
+        parameter("postTransitModes", "WALK,RENTAL")
+        parameter("preTransitRentalFormFactors", factors)
+        parameter("postTransitRentalFormFactors", factors)
+    }
 }
 
 private fun motisMode(mode: TransportMode): String =
@@ -136,6 +149,12 @@ private fun motisMode(mode: TransportMode): String =
 /** Rare modes without a group of their own stay allowed when the user restricts the main ones. */
 private val MINOR_MODES = listOf("FUNICULAR", "AERIAL_LIFT", "OTHER")
 private const val SLOW_WALK_METERS_PER_SECOND = 0.9
+
+/** Shared vehicles that can take the user to and from public transport. Cars are left out, as most must go back to their station. */
+private val SharedAccessKinds = listOf(VehicleKind.BICYCLE, VehicleKind.SCOOTER)
+
+/** Longest direct route on a shared vehicle, kept short because these searches cost the server the most. */
+private const val MAX_SHARED_DIRECT_SECONDS = 60 * 60
 
 /** Longest direct route looked for when more than a walk is asked for. */
 private const val MAX_DIRECT_SECONDS = 3 * 60 * 60

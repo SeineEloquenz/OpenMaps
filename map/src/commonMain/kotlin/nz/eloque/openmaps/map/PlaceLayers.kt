@@ -159,7 +159,7 @@ private enum class PlaceIcon(
 }
 
 /** A filled circle in [color] with [icon] drawn on it in white. */
-private class BadgePainter(
+internal class BadgePainter(
     private val icon: Painter,
     private val color: Color,
     private val outline: Color,
@@ -283,6 +283,7 @@ internal val PlaceCategory.tileValues: Set<String>
             PlaceCategory.BAKERIES -> setOf("bakery", "pastry")
             PlaceCategory.ATMS -> setOf("atm")
             PlaceCategory.TOILETS -> setOf("toilets")
+            PlaceCategory.SHARED_VEHICLES -> setOf("bicycle_rental", "car_sharing")
         }
 private const val RANK_ALL = 1000f
 
