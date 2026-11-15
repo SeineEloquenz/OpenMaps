@@ -72,6 +72,8 @@
     <string name="sharing_available">%1$d available</string>
     <string name="sharing_free_docks">%1$d free docks</string>
     <string name="sharing_none">No shared vehicles here</string>
+    <string name="shared_routes">Shared bikes and scooters</string>
+    <string name="no_shared_routes">None available near the start</string>
     <string name="earlier">Earlier</string>
     <string name="later">Later</string>
     <string name="no_routes">No routes found</string>

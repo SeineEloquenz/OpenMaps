@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import nz.eloque.openmaps.core.model.Itinerary
 import nz.eloque.openmaps.core.model.LatLng
+import nz.eloque.openmaps.core.model.Leg
 import nz.eloque.openmaps.core.model.PlanRequest
 import nz.eloque.openmaps.core.model.PlanResult
 import nz.eloque.openmaps.core.model.PlanTarget
@@ -19,6 +20,7 @@ import nz.eloque.openmaps.core.model.SettingsStore
 import nz.eloque.openmaps.core.model.TransitRepository
 import nz.eloque.openmaps.core.model.TransportMode
 import nz.eloque.openmaps.core.model.TravelMode
+import nz.eloque.openmaps.core.model.VehicleKind
 import nz.eloque.openmaps.ui.components.LoadState
 import nz.eloque.openmaps.ui.components.loadOnce
 import nz.eloque.openmaps.ui.navigation.DirectionsKey
@@ -66,9 +68,14 @@ class DirectionsViewModel(
     private val _street = MutableStateFlow<LoadState<Map<TransportMode, Itinerary>>?>(null)
     val street: StateFlow<LoadState<Map<TransportMode, Itinerary>>?> = _street.asStateFlow()
 
+    /** Routes on shared bikes and scooters, null until the bike tab needs them. */
+    private val _shared = MutableStateFlow<LoadState<List<Itinerary>>?>(null)
+    val shared: StateFlow<LoadState<List<Itinerary>>?> = _shared.asStateFlow()
+
     private var userLocation: LatLng? = null
     private var planJob: Job? = null
     private var streetJob: Job? = null
+    private var sharedJob: Job? = null
     private var pageJob: Job? = null
 
     val needsUserLocation: Boolean get() = from == null || to == null
@@ -98,14 +105,17 @@ class DirectionsViewModel(
         pageJob?.cancel()
         planJob?.cancel()
         streetJob?.cancel()
+        sharedJob?.cancel()
         _result.value = null
         _street.value = null
+        _shared.value = null
         loadForMode()
     }
 
     fun retry() {
         if (_result.value == LoadState.Failed) _result.value = null
         if (_street.value == LoadState.Failed) _street.value = null
+        if (_shared.value == LoadState.Failed) _shared.value = null
         loadForMode()
     }
 
@@ -119,8 +129,37 @@ class DirectionsViewModel(
                     is LoadState.Loaded -> if (transitState.value.direct == null) planStreet()
                     LoadState.Loading -> Unit
                 }
-            TravelMode.CAR, TravelMode.BIKE -> planStreet()
+            TravelMode.CAR -> planStreet()
+            TravelMode.BIKE -> {
+                planStreet()
+                planShared()
+            }
         }
+    }
+
+    /** A request of its own, as shared vehicle routes cost the routing service the most. */
+    private fun planShared() {
+        if (_shared.value != null) return
+        val request = request(pageCursor = null)?.copy(directModes = emptySet(), withTransit = false, directSharing = SharedKinds) ?: return
+        _shared.value = LoadState.Loading
+        sharedJob =
+            viewModelScope.launch {
+                _shared.value =
+                    loadOnce {
+                        val routes = transit.plan(request).direct
+                        cache.put(routes)
+                        routes
+                            .filter { route -> route.legs.any { it is Leg.Street && it.rental != null } }
+                            .sortedBy { it.duration }
+                            .distinctBy { route ->
+                                route.legs.firstNotNullOfOrNull { (it as? Leg.Street)?.rental }?.let {
+                                    it.operator to
+                                        it.kind
+                                }
+                            }
+                            .take(MAX_SHARED_ROUTES)
+                    }
+            }
     }
 
     private fun planTransit() {
@@ -211,3 +250,6 @@ class DirectionsViewModel(
 }
 
 private fun Endpoint.toTarget(): PlanTarget = stopId?.let { PlanTarget.Stop(it) } ?: PlanTarget.Coordinates(location)
+
+private val SharedKinds = setOf(VehicleKind.BICYCLE, VehicleKind.SCOOTER)
+private const val MAX_SHARED_ROUTES = 3

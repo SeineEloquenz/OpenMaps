@@ -69,6 +69,7 @@ import nz.eloque.openmaps.ui.components.clockTime
 import nz.eloque.openmaps.ui.components.formatDistance
 import nz.eloque.openmaps.ui.components.formatDuration
 import nz.eloque.openmaps.ui.components.icon
+import nz.eloque.openmaps.ui.components.label
 import nz.eloque.openmaps.ui.components.timeRange
 import nz.eloque.openmaps.ui.navigation.DirectionsField
 import nz.eloque.openmaps.ui.navigation.DirectionsKey
@@ -85,12 +86,15 @@ import nz.eloque.openmaps.ui.resources.mode_car
 import nz.eloque.openmaps.ui.resources.mode_transit
 import nz.eloque.openmaps.ui.resources.needs_location_for_route
 import nz.eloque.openmaps.ui.resources.no_routes
+import nz.eloque.openmaps.ui.resources.no_shared_routes
 import nz.eloque.openmaps.ui.resources.no_transfers
 import nz.eloque.openmaps.ui.resources.one_transfer
 import nz.eloque.openmaps.ui.resources.platform
 import nz.eloque.openmaps.ui.resources.remove_saved_route
+import nz.eloque.openmaps.ui.resources.rental_leg
 import nz.eloque.openmaps.ui.resources.route_options
 import nz.eloque.openmaps.ui.resources.save_route
+import nz.eloque.openmaps.ui.resources.shared_routes
 import nz.eloque.openmaps.ui.resources.swap
 import nz.eloque.openmaps.ui.resources.transfers
 import nz.eloque.openmaps.ui.resources.via_street
@@ -118,6 +122,7 @@ fun DirectionsSheet(
     val viewModel = koinViewModel<DirectionsViewModel> { parametersOf(directions) }
     val result by viewModel.result.collectAsStateWithLifecycle()
     val street by viewModel.street.collectAsStateWithLifecycle()
+    val shared by viewModel.shared.collectAsStateWithLifecycle()
     val mode by viewModel.mode.collectAsStateWithLifecycle()
     val time by viewModel.time.collectAsStateWithLifecycle()
     val userLocation = map.userLocation
@@ -214,6 +219,25 @@ fun DirectionsSheet(
                     }
                 }
         }
+        if (mode == TravelMode.BIKE && state is LoadState.Loaded) {
+            item {
+                Text(
+                    stringResource(Res.string.shared_routes),
+                    style = MaterialTheme.typography.titleSmall,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+            }
+            when (val sharedState = shared) {
+                is LoadState.Loaded -> {
+                    if (sharedState.value.isEmpty()) {
+                        item { Text(stringResource(Res.string.no_shared_routes), color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                    }
+                    items(sharedState.value, key = { it.id }) { route -> SharedRouteCard(route, onClick = { onOpenRoute(route) }) }
+                }
+                LoadState.Failed -> item { LoadStateContent(LoadState.Failed, onRetry = viewModel::retry) {} }
+                else -> item { LoadStateContent(LoadState.Loading, onRetry = {}) {} }
+            }
+        }
     }
 }
 
@@ -273,6 +297,28 @@ private fun StreetRouteCard(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+        }
+    }
+}
+
+@Composable
+private fun SharedRouteCard(
+    itinerary: Itinerary,
+    onClick: () -> Unit,
+) {
+    val rental = itinerary.legs.firstNotNullOfOrNull { (it as? Leg.Street)?.rental } ?: return
+    Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
+        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(rental.kind.icon(rental.electric), contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            Column(Modifier.weight(1f).padding(start = 12.dp)) {
+                Text(stringResource(Res.string.rental_leg, stringResource(rental.kind.label(rental.electric)), rental.operator))
+                Text(
+                    stringResource(Res.string.arrive_at, clockTime(itinerary.end)),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Text(formatDuration(itinerary.duration), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         }
     }
 }
