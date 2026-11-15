@@ -31,5 +31,7 @@ kotlin {
         implementation(libs.nav3.viewmodel)
         implementation(libs.kotlinx.datetime)
         implementation(libs.kotlinx.serialization.json)
+        implementation(libs.coil.compose)
+        implementation(libs.coil.network.ktor3)
     }
 }

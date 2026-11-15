@@ -59,22 +59,11 @@ fun OpeningHoursRow(raw: String) {
     }
 
     val now by rememberNow()
-    val local = now.toLocalDateTime(TimeZone.currentSystemDefault())
-    val today = local.dayOfWeek.ordinal
-    val status = hours.status(today, local.hour * 60 + local.minute)
+    val today = now.toLocalDateTime(TimeZone.currentSystemDefault()).dayOfWeek.ordinal
     var expanded by rememberSaveable { mutableStateOf(false) }
 
     ListItem(
-        headlineContent = {
-            Row {
-                Text(
-                    stringResource(if (status is OpenStatus.Open) Res.string.open_now else Res.string.closed_now),
-                    color = if (status is OpenStatus.Open) OpenColor else MaterialTheme.colorScheme.error,
-                    fontWeight = FontWeight.SemiBold,
-                )
-                statusDetail(status, today)?.let { Text(" · $it") }
-            }
-        },
+        headlineContent = { OpenStatusText(hours) },
         overlineContent = { Text(stringResource(Res.string.opening_hours)) },
         leadingContent = { Icon(Icons.Default.Schedule, contentDescription = null) },
         trailingContent = { Icon(if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore, contentDescription = null) },
@@ -101,6 +90,26 @@ fun OpeningHoursRow(raw: String) {
                 }
             }
         }
+    }
+}
+
+/** "Open" or "Closed" in colour, followed by when that changes. */
+@Composable
+fun OpenStatusText(
+    hours: OpeningHours,
+    modifier: Modifier = Modifier,
+) {
+    val now by rememberNow()
+    val local = now.toLocalDateTime(TimeZone.currentSystemDefault())
+    val today = local.dayOfWeek.ordinal
+    val status = hours.status(today, local.hour * 60 + local.minute)
+    Row(modifier) {
+        Text(
+            stringResource(if (status is OpenStatus.Open) Res.string.open_now else Res.string.closed_now),
+            color = if (status is OpenStatus.Open) OpenColor else MaterialTheme.colorScheme.error,
+            fontWeight = FontWeight.SemiBold,
+        )
+        statusDetail(status, today)?.let { Text(" · $it") }
     }
 }
 

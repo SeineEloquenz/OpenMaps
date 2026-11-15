@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -43,10 +44,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.offset
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
@@ -54,6 +57,10 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import androidx.savedstate.serialization.SavedStateConfiguration
+import coil3.ImageLoader
+import coil3.compose.setSingletonImageLoaderFactory
+import coil3.network.ktor3.KtorNetworkFetcherFactory
+import io.ktor.client.HttpClient
 import kotlinx.coroutines.launch
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
@@ -136,6 +143,10 @@ private val ControlMargin = 16.dp
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun App(version: String) {
+    val http = koinInject<HttpClient>()
+    setSingletonImageLoaderFactory { context ->
+        ImageLoader.Builder(context).components { add(KtorNetworkFetcherFactory(httpClient = { http })) }.build()
+    }
     OpenMapsTheme {
         val backStack = rememberNavBackStack(navConfiguration, HomeKey)
         val map = rememberMapController()
@@ -189,7 +200,9 @@ fun App(version: String) {
                 scaffoldState = sheetState,
                 sheetPeekHeight = peekHeight,
                 sheetContent = {
+                    val statusBar = WindowInsets.statusBars.getTop(LocalDensity.current)
                     NavDisplay(
+                        modifier = Modifier.belowStatusBar(statusBar) { sheetState.bottomSheetState.requireOffset() },
                         backStack = backStack.filterNot { it.isPage() },
                         onBack = { backStack.removeLastOrNull() },
                         transitionSpec = { fadeIn() togetherWith fadeOut() },
@@ -312,6 +325,16 @@ fun App(version: String) {
             }
         }
     }
+}
+
+/** Pushes the content down by as much of [statusBar] as the sheet's top edge, at [sheetTop] pixels, has slid under. */
+private fun Modifier.belowStatusBar(
+    statusBar: Int,
+    sheetTop: () -> Float,
+) = layout { measurable, constraints ->
+    val inset = (statusBar - (runCatching(sheetTop).getOrNull()?.toInt() ?: statusBar)).coerceIn(0, statusBar)
+    val placeable = measurable.measure(constraints.offset(vertical = -inset))
+    layout(placeable.width, placeable.height + inset) { placeable.place(0, inset) }
 }
 
 /** Keys shown as full-screen pages over the map instead of in the sheet. */

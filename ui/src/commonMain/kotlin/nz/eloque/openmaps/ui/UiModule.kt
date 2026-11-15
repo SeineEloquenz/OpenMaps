@@ -17,7 +17,7 @@ val uiModule =
         viewModelOf(::HomeViewModel)
         viewModelOf(::SearchViewModel)
         viewModel { params -> StopViewModel(get(), params.get()) }
-        viewModel { params -> PlaceViewModel(get(), get(), params.getOrNull(), params.get()) }
+        viewModel { params -> PlaceViewModel(get(), get(), get(), params.getOrNull(), params.get(), params.get()) }
         single { ItineraryCache() }
         viewModel { params -> DirectionsViewModel(get(), get(), get(), params.get()) }
         viewModel { params -> TripViewModel(get(), params.get()) }

@@ -40,4 +40,23 @@ data class PlaceDetails(
     val website: String?,
     val phone: String?,
     val wheelchair: String?,
+    val email: String? = null,
+    val operator: String? = null,
+    val description: String? = null,
+    /** OSM cuisine values such as `italian` or `coffee_shop`. */
+    val cuisine: List<String> = emptyList(),
+    val features: Set<PlaceFeature> = emptySet(),
+    val links: MediaLinks = MediaLinks(),
+    /** The area the place covers, for buildings and parks. */
+    val bounds: GeoBounds? = null,
+)
+
+enum class PlaceFeature { EMERGENCY, TAKEAWAY, DELIVERY, OUTDOOR_SEATING, WIFI, VEGETARIAN, VEGAN, GLUTEN_FREE, CARDS, TOILETS }
+
+/** The OSM `wikidata`, `wikipedia`, `wikimedia_commons` and `image` tags of a place. */
+data class MediaLinks(
+    val wikidata: String? = null,
+    val wikipedia: String? = null,
+    val commons: String? = null,
+    val image: String? = null,
 )

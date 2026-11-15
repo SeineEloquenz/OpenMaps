@@ -30,6 +30,10 @@ import nz.eloque.openmaps.ui.resources.privacy
 import nz.eloque.openmaps.ui.resources.privacy_detail
 import nz.eloque.openmaps.ui.resources.source_map
 import nz.eloque.openmaps.ui.resources.source_map_detail
+import nz.eloque.openmaps.ui.resources.source_media
+import nz.eloque.openmaps.ui.resources.source_media_detail
+import nz.eloque.openmaps.ui.resources.source_nearby
+import nz.eloque.openmaps.ui.resources.source_nearby_detail
 import nz.eloque.openmaps.ui.resources.source_places
 import nz.eloque.openmaps.ui.resources.source_places_detail
 import nz.eloque.openmaps.ui.resources.source_tiles
@@ -54,6 +58,8 @@ fun AboutPage(
         SourceRow(Res.string.source_map, Res.string.source_map_detail, "https://www.openstreetmap.org/copyright")
         SourceRow(Res.string.source_tiles, Res.string.source_tiles_detail, "https://openfreemap.org")
         SourceRow(Res.string.source_places, Res.string.source_places_detail, "https://nominatim.org")
+        SourceRow(Res.string.source_nearby, Res.string.source_nearby_detail, "https://photon.komoot.io")
+        SourceRow(Res.string.source_media, Res.string.source_media_detail, "https://commons.wikimedia.org")
         HorizontalDivider(Modifier.padding(vertical = 12.dp))
 
         SectionTitle(Res.string.privacy)

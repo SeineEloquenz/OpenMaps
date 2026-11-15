@@ -141,8 +141,12 @@
     <string name="source_tiles_detail">OpenFreeMap, built with OpenMapTiles</string>
     <string name="source_places">Place details</string>
     <string name="source_places_detail">Nominatim, from OpenStreetMap data</string>
+    <string name="source_nearby">Nearby places</string>
+    <string name="source_nearby_detail">Photon by komoot, from OpenStreetMap data</string>
+    <string name="source_media">Photos and summaries</string>
+    <string name="source_media_detail">Wikimedia Commons, Wikidata and Wikipedia, under their stated licences</string>
     <string name="privacy">Privacy</string>
-    <string name="privacy_detail">There is no account and no tracking. Searches and routes are sent to Transitous, place details are looked up on Nominatim, and map tiles come from OpenFreeMap. Your location only leaves the device as part of these requests.</string>
+    <string name="privacy_detail">There is no account and no tracking. Searches and routes are sent to Transitous, place details are looked up on Nominatim, nearby places on Photon, photos and summaries of places you open on Wikimedia, and map tiles come from OpenFreeMap. Your location only leaves the device as part of these requests.</string>
 
     <string name="opening_hours">Opening hours</string>
     <string name="open_now">Open</string>
@@ -165,4 +169,22 @@
     <string name="wheelchair_yes">Accessible</string>
     <string name="wheelchair_limited">Partly accessible</string>
     <string name="wheelchair_no">Not accessible</string>
+    <string name="call">Call</string>
+    <string name="share">Share</string>
+    <string name="email">Email</string>
+    <string name="operator">Operated by</string>
+    <string name="cuisine">Cuisine</string>
+    <string name="read_on_wikipedia">Read more on Wikipedia</string>
+    <string name="photos_commons">Photos from Wikimedia Commons</string>
+    <string name="photos_nearby">Photos taken nearby, from Wikimedia Commons</string>
+    <string name="feature_emergency">Emergency department</string>
+    <string name="feature_takeaway">Takeaway</string>
+    <string name="feature_delivery">Delivery</string>
+    <string name="feature_outdoor_seating">Outdoor seating</string>
+    <string name="feature_wifi">Wi-Fi</string>
+    <string name="feature_vegetarian">Vegetarian options</string>
+    <string name="feature_vegan">Vegan options</string>
+    <string name="feature_gluten_free">Gluten-free options</string>
+    <string name="feature_cards">Cards accepted</string>
+    <string name="feature_toilets">Toilets</string>
 </resources>

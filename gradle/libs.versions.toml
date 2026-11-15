@@ -19,6 +19,7 @@ nav3 = "1.2.0"
 nav3Lifecycle = "2.11.0"
 composeKit = "v0.6.0"
 maplibreCompose = "0.20.0"
+coil = "3.6.3"
 ktlint = "14.2.0"
 
 # Android SDK
@@ -69,6 +70,9 @@ multiplatform-settings-test = { module = "com.russhwolf:multiplatform-settings-t
 room-runtime = { module = "androidx.room3:room3-runtime", version.ref = "room" }
 room-compiler = { module = "androidx.room3:room3-compiler", version.ref = "room" }
 androidx-sqlite-bundled = { module = "androidx.sqlite:sqlite-bundled", version.ref = "sqlite" }
+
+coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
+coil-network-ktor3 = { module = "io.coil-kt.coil3:coil-network-ktor3", version.ref = "coil" }
 
 compose-kit = { module = "com.github.SeineEloquenz.compose-kit:lib", version.ref = "composeKit" }
 
