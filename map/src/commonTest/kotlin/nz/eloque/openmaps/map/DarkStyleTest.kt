@@ -51,6 +51,20 @@ class DarkStyleTest {
     }
 
     @Test
+    fun groundFollowsTheThemeAccent() {
+        fun ground(tint: MapTint) =
+            parseColor(
+                Json.parseToJsonElement(darkStyle(LIGHT, tint)).jsonObject.getValue("layers").jsonArray[0]
+                    .jsonObject.getValue("paint").jsonObject.getValue("background-color").jsonPrimitive.content,
+            )!!
+
+        val purple = ground(MapTint.of(0.8f, 0.7f, 1f))
+        assertEquals(260.0, purple.h, 1.0)
+        assertTrue(purple.s > 0.1)
+        assertEquals(0.0, ground(MapTint.of(0.5f, 0.5f, 0.5f)).s)
+    }
+
+    @Test
     fun parsesStyleColors() {
         assertEquals(Hsla(0.0, 0.0, 1.0, 1.0), parseColor("#fff"))
         assertEquals(Hsla(35.0, 0.57, 0.88, 0.49), parseColor("hsla(35,57%,88%,0.49)"))
