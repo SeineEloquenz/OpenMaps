@@ -63,7 +63,7 @@ import nz.eloque.openmaps.ui.place.telUri
 import nz.eloque.openmaps.ui.resources.Res
 import nz.eloque.openmaps.ui.resources.call
 import nz.eloque.openmaps.ui.resources.category_none
-import nz.eloque.openmaps.ui.resources.charging_attribution
+import nz.eloque.openmaps.ui.resources.data_attribution
 import nz.eloque.openmaps.ui.resources.directions
 import nz.eloque.openmaps.ui.resources.search_this_area
 import nz.eloque.openmaps.ui.resources.website
@@ -97,31 +97,31 @@ fun CategorySheet(
 ) {
     val viewModel = koinViewModel<CategoryViewModel> { parametersOf(key.category) }
     val results by viewModel.results.collectAsStateWithLifecycle()
-    val details by viewModel.details.collectAsStateWithLifecycle()
     val filters by viewModel.filters.collectAsStateWithLifecycle()
     val searchedArea by viewModel.searchedArea.collectAsStateWithLifecycle()
     val unit by koinInject<SettingsStore>().distanceUnit.collectAsState()
     val now by rememberNow()
-    val all = (results as? LoadState.Loaded)?.value.orEmpty()
+    val found = (results as? LoadState.Loaded)?.value
+    val all = found?.places.orEmpty()
     val profile = key.category.profile
     val origin = map.userLocation ?: map.center
     val shown =
-        all.filter { profile.allows(filters, details[it], now) }.sortedBy { it.location.distanceTo(origin) }
+        all.filter { profile.allows(filters, it.details, now) }.sortedBy { it.place.location.distanceTo(origin) }
 
     LaunchedEffect(viewModel) {
         if (viewModel.searchedArea.value != null) return@LaunchedEffect
         val bounds = snapshotFlow { map.visibleBounds }.filterNotNull().first()
-        viewModel.search(map.center, bounds)
+        viewModel.search(map.center, bounds, map.loadedPlaces)
     }
-    LaunchedEffect(shown) { map.results = shown }
-    LaunchedEffect(results) {
-        val places = (results as? LoadState.Loaded)?.value.orEmpty()
-        if (places.isNotEmpty() && !viewModel.fitted) {
-            viewModel.fitted = true
-            val nearest = places.take(FIT_COUNT).map { it.location }
-            if (nearest.size == 1) map.show(nearest.single()) else map.fit(nearest)
-            map.visibleBounds?.let(viewModel::showing)
-        }
+    LaunchedEffect(shown) { map.results = shown.map { it.place } }
+    val untouched =
+        viewModel.fittedCount == 0 || map.visibleBounds?.let { visible -> searchedArea?.let { !visible.differsFrom(it) } } == true
+    LaunchedEffect(all.size) {
+        if (all.size <= viewModel.fittedCount || !untouched) return@LaunchedEffect
+        viewModel.fittedCount = all.size
+        val nearest = all.take(FIT_COUNT).map { it.place.location }
+        if (nearest.size == 1) map.show(nearest.single()) else map.fit(nearest)
+        map.visibleBounds?.let(viewModel::showing)
     }
 
     val visible = map.visibleBounds
@@ -139,7 +139,7 @@ fun CategorySheet(
                     modifier = Modifier.weight(1f),
                 )
                 if (moved) {
-                    FilledTonalButton(onClick = { map.visibleBounds?.let { viewModel.search(map.center, it) } }) {
+                    FilledTonalButton(onClick = { map.visibleBounds?.let { viewModel.search(map.center, it, map.loadedPlaces) } }) {
                         Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
                         Text(stringResource(Res.string.search_this_area), modifier = Modifier.padding(start = 8.dp))
                     }
@@ -147,7 +147,7 @@ fun CategorySheet(
             }
         }
         item {
-            FilterRow(profile, filters, details.values, onChange = viewModel::setFilters)
+            FilterRow(profile, filters, all.mapNotNull { it.details }, onChange = viewModel::setFilters)
         }
         item {
             LoadStateContent(results, onRetry = viewModel::retry, modifier = Modifier.fillMaxWidth()) {
@@ -160,32 +160,31 @@ fun CategorySheet(
                 }
             }
         }
-        items(shown, key = { "${it.osmId ?: it.name}-${it.location}" }) { place ->
+        items(shown, key = { "${it.place.osmId ?: it.place.name}-${it.place.location}" }) { result ->
+            val place = result.place
             PlaceResult(
                 profile = profile,
                 place = place,
-                details = details[place],
+                details = result.details,
                 distance = formatDistance(place.location.distanceTo(origin), unit),
                 onOpen = { onOpenPlace(place) },
                 onDirections = { onDirections(place) },
             )
             HorizontalDivider(Modifier.padding(horizontal = 16.dp))
         }
-        if (viewModel.fromChargingDatabase && shown.isNotEmpty()) {
+        found?.attribution?.takeIf { shown.isNotEmpty() }?.let { attribution ->
             item {
                 val uriHandler = LocalUriHandler.current
                 Text(
-                    stringResource(Res.string.charging_attribution),
+                    stringResource(Res.string.data_attribution, attribution.source),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.clickable { uriHandler.openUri(OPEN_CHARGE_MAP_URL) }.padding(16.dp),
+                    modifier = Modifier.clickable { uriHandler.openUri(attribution.url) }.padding(16.dp),
                 )
             }
         }
     }
 }
-
-private const val OPEN_CHARGE_MAP_URL = "https://openchargemap.org"
 
 @Composable
 private fun FilterRow(

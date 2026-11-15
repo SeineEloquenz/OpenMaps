@@ -21,5 +21,5 @@ val uiModule =
         single { ItineraryCache() }
         viewModel { params -> DirectionsViewModel(get(), get(), get(), params.get()) }
         viewModel { params -> TripViewModel(get(), params.get()) }
-        viewModel { params -> CategoryViewModel(get(), get(), get(), params.get()) }
+        viewModel { params -> CategoryViewModel(get(), params.get()) }
     }

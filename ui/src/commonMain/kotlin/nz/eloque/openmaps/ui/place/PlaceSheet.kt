@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Accessible
+import androidx.compose.material.icons.filled.BabyChangingStation
 import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.CreditCard
@@ -30,6 +31,7 @@ import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Grain
 import androidx.compose.material.icons.filled.Grass
 import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.LocalAtm
 import androidx.compose.material.icons.filled.LocalHospital
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Restaurant
@@ -61,6 +63,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
+import nz.eloque.openmaps.core.model.Accessibility
 import nz.eloque.openmaps.core.model.OpeningHours
 import nz.eloque.openmaps.core.model.PlaceDetails
 import nz.eloque.openmaps.core.model.PlaceFeature
@@ -85,6 +88,7 @@ import nz.eloque.openmaps.ui.resources.address
 import nz.eloque.openmaps.ui.resources.call
 import nz.eloque.openmaps.ui.resources.cuisine
 import nz.eloque.openmaps.ui.resources.email
+import nz.eloque.openmaps.ui.resources.fact_cash_deposit
 import nz.eloque.openmaps.ui.resources.feature_cards
 import nz.eloque.openmaps.ui.resources.feature_delivery
 import nz.eloque.openmaps.ui.resources.feature_emergency
@@ -95,6 +99,7 @@ import nz.eloque.openmaps.ui.resources.feature_toilets
 import nz.eloque.openmaps.ui.resources.feature_vegan
 import nz.eloque.openmaps.ui.resources.feature_vegetarian
 import nz.eloque.openmaps.ui.resources.feature_wifi
+import nz.eloque.openmaps.ui.resources.filter_baby_changing
 import nz.eloque.openmaps.ui.resources.nearby_departures
 import nz.eloque.openmaps.ui.resources.operator
 import nz.eloque.openmaps.ui.resources.phone
@@ -169,7 +174,7 @@ private fun StatusLine(
     val unit by koinInject<SettingsStore>().distanceUnit.collectAsState()
     val hours = details?.openingHours?.let(OpeningHours::parse)
     val distance = map.userLocation?.let { formatDistance(it.distanceTo(place.location), unit) }
-    val accessible = details?.wheelchair in setOf("yes", "designated")
+    val accessible = details?.wheelchair == Accessibility.YES
     if (hours == null && distance == null && !accessible) return
     Row(Modifier.padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         hours?.let { OpenStatusText(it) }
@@ -308,12 +313,11 @@ private fun DetailRows(
     details.wheelchair?.let { value ->
         val label =
             when (value) {
-                "yes", "designated" -> stringResource(Res.string.wheelchair_yes)
-                "limited" -> stringResource(Res.string.wheelchair_limited)
-                "no" -> stringResource(Res.string.wheelchair_no)
-                else -> null
+                Accessibility.YES -> Res.string.wheelchair_yes
+                Accessibility.LIMITED -> Res.string.wheelchair_limited
+                Accessibility.NO -> Res.string.wheelchair_no
             }
-        label?.let { DetailRow(Icons.AutoMirrored.Filled.Accessible, stringResource(Res.string.wheelchair), it) }
+        DetailRow(Icons.AutoMirrored.Filled.Accessible, stringResource(Res.string.wheelchair), stringResource(label))
     }
     if (details.features.isNotEmpty()) {
         FlowRow(
@@ -349,6 +353,8 @@ private fun PlaceFeature.display(): Pair<ImageVector, StringResource> =
         PlaceFeature.GLUTEN_FREE -> Icons.Default.Grain to Res.string.feature_gluten_free
         PlaceFeature.CARDS -> Icons.Default.CreditCard to Res.string.feature_cards
         PlaceFeature.TOILETS -> Icons.Default.Wc to Res.string.feature_toilets
+        PlaceFeature.CASH_DEPOSIT -> Icons.Default.LocalAtm to Res.string.fact_cash_deposit
+        PlaceFeature.CHANGING_TABLE -> Icons.Default.BabyChangingStation to Res.string.filter_baby_changing
     }
 
 @Composable

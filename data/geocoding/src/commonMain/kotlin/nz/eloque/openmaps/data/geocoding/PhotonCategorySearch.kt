@@ -6,7 +6,6 @@ import io.ktor.client.request.get
 import io.ktor.client.request.parameter
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import nz.eloque.openmaps.core.model.CategorySearch
 import nz.eloque.openmaps.core.model.GeoBounds
 import nz.eloque.openmaps.core.model.LatLng
 import nz.eloque.openmaps.core.model.OsmId
@@ -45,7 +44,7 @@ internal class PhotonCategorySearch(
     private val client: HttpClient,
     private val language: () -> String?,
     private val baseUrl: () -> String,
-) : CategorySearch {
+) : CategoryCandidates {
     override suspend fun search(
         category: PlaceCategory,
         center: LatLng,
@@ -54,7 +53,7 @@ internal class PhotonCategorySearch(
         val response: PhotonResponseDto =
             client
                 .get("${baseUrl()}/api/") {
-                    parameter("include", category.tags.joinToString(",") { "osm.$it" })
+                    parameter("include", category.osmTags.joinToString(",") { "osm.$it" })
                     parameter("bbox", "${bounds.west},${bounds.south},${bounds.east},${bounds.north}")
                     parameter("lat", center.latitude)
                     parameter("lon", center.longitude)

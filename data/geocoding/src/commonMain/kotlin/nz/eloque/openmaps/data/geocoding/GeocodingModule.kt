@@ -1,7 +1,6 @@
 package nz.eloque.openmaps.data.geocoding
 
-import nz.eloque.openmaps.core.model.CategorySearch
-import nz.eloque.openmaps.core.model.ChargingStations
+import nz.eloque.openmaps.core.model.NearbyPlaces
 import nz.eloque.openmaps.core.model.PlaceDetailsSource
 import nz.eloque.openmaps.core.model.PlaceMediaSource
 import nz.eloque.openmaps.core.model.SettingsStore
@@ -20,13 +19,13 @@ fun geocodingModule(language: () -> String? = { null }) =
             val settings = get<SettingsStore>()
             NominatimPlaceDetails(get()) { settings.placeDetailsUrl.value ?: NOMINATIM_API }
         }
-        single<CategorySearch> {
+        single<NearbyPlaces> {
             val settings = get<SettingsStore>()
-            PhotonCategorySearch(get(), language) { settings.categorySearchUrl.value ?: PHOTON_API }
+            CompositeNearbyPlaces(
+                candidates = PhotonCategorySearch(get(), language) { settings.categorySearchUrl.value ?: PHOTON_API },
+                details = get(),
+                charging = OpenChargeMapStations(get()) { settings.openChargeMapKey.value ?: OPEN_CHARGE_MAP_APP_KEY },
+            )
         }
         single<PlaceMediaSource> { WikimediaMedia(get(), language) }
-        single<ChargingStations> {
-            val settings = get<SettingsStore>()
-            OpenChargeMapStations(get()) { settings.openChargeMapKey.value ?: OPEN_CHARGE_MAP_APP_KEY }
-        }
     }

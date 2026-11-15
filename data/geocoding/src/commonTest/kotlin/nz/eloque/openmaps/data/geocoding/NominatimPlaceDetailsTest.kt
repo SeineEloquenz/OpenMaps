@@ -10,6 +10,7 @@ import io.ktor.http.headersOf
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
+import nz.eloque.openmaps.core.model.Accessibility
 import nz.eloque.openmaps.core.model.GeoBounds
 import nz.eloque.openmaps.core.model.OsmId
 import nz.eloque.openmaps.core.model.OsmType
@@ -61,7 +62,7 @@ class NominatimPlaceDetailsTest {
 
             assertEquals("Mo-Su 09:00-17:00", details?.openingHours)
             assertEquals("https://www.rijksmuseum.nl/", details?.website)
-            assertEquals("yes", details?.wheelchair)
+            assertEquals(Accessibility.YES, details?.wheelchair)
             assertEquals("Museumstraat 1, 1071 XX Amsterdam", details?.address)
             assertEquals("+31 20 6747000", details?.phone)
             assertEquals(GeoBounds(52.3592, 4.8828, 52.3611, 4.8873), details?.bounds)

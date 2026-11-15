@@ -7,7 +7,9 @@ import io.ktor.client.request.header
 import io.ktor.client.request.parameter
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import nz.eloque.openmaps.core.model.ChargingStations
+import nz.eloque.openmaps.core.model.Attribution
+import nz.eloque.openmaps.core.model.Charger
+import nz.eloque.openmaps.core.model.Connector
 import nz.eloque.openmaps.core.model.GeoBounds
 import nz.eloque.openmaps.core.model.LatLng
 import nz.eloque.openmaps.core.model.PlaceDetails
@@ -57,6 +59,8 @@ internal class OpenChargeMapStations(
     private val client: HttpClient,
     private val key: () -> String?,
 ) : ChargingStations {
+    override val attribution = Attribution("Open Charge Map", "https://openchargemap.org")
+
     override val available: Boolean
         get() = key() != null
 
@@ -94,22 +98,8 @@ internal fun OcmStationDto.toPlace() =
         category = "charging_station",
     )
 
-/** The station as the OSM tags a charging station would carry, so it shows like one from OpenStreetMap. */
 internal fun OcmStationDto.toDetails(): PlaceDetails {
-    val tags =
-        buildMap {
-            operatorName?.let { put("operator", it) }
-            points?.let { put("capacity", it.toString()) }
-            usageCost?.let { put("charge", it) }
-            if (usageCost?.contains("free", ignoreCase = true) == true) put("fee", "no")
-            connections
-                .mapNotNull { connection -> SocketKeys[connection.typeId]?.let { it to connection } }
-                .groupBy({ it.first }, { it.second })
-                .forEach { (socket, list) ->
-                    put("socket:$socket", list.sumOf { it.quantity ?: 1 }.toString())
-                    list.mapNotNull { it.powerKw }.maxOrNull()?.let { put("socket:$socket:output", "${it.roundToInt()} kW") }
-                }
-        }
+    val free = usageCost?.contains("free", ignoreCase = true)?.takeIf { it }
     return PlaceDetails(
         address =
             listOfNotNull(
@@ -123,7 +113,14 @@ internal fun OcmStationDto.toDetails(): PlaceDetails {
         phone = null,
         wheelchair = null,
         operator = operatorName,
-        tags = tags,
+        free = free,
+        chargers =
+            connections
+                .mapNotNull { connection -> ConnectorIds[connection.typeId]?.let { it to connection } }
+                .groupBy({ it.first }, { it.second })
+                .map { (connector, list) ->
+                    Charger(connector, list.mapNotNull { it.powerKw }.maxOrNull()?.roundToInt(), list.sumOf { it.quantity ?: 1 })
+                },
     )
 }
 
@@ -131,17 +128,17 @@ internal fun OcmStationDto.toDetails(): PlaceDetails {
 private val OcmStationDto.operatorName: String?
     get() = operator?.title?.takeUnless { it.isBlank() || it.startsWith("(") }
 
-/** Open Charge Map connection type ids and the OSM `socket:*` key for each. */
-private val SocketKeys =
+/** Open Charge Map connection type ids. */
+private val ConnectorIds =
     mapOf(
-        1 to "type1",
-        2 to "chademo",
-        25 to "type2",
-        1036 to "type2_cable",
-        32 to "type1_combo",
-        33 to "type2_combo",
-        27 to "tesla_supercharger",
-        28 to "schuko",
-        30 to "tesla_destination",
-        16 to "cee_blue",
+        1 to Connector.TYPE_1,
+        2 to Connector.CHADEMO,
+        25 to Connector.TYPE_2,
+        1036 to Connector.TYPE_2,
+        32 to Connector.CCS1,
+        33 to Connector.CCS,
+        27 to Connector.TESLA,
+        30 to Connector.TESLA,
+        28 to Connector.SCHUKO,
+        16 to Connector.CEE,
     )

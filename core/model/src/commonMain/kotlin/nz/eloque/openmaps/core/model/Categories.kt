@@ -1,51 +1,56 @@
 package nz.eloque.openmaps.core.model
 
-/** Kinds of places offered as quick searches, each matching OSM tags written as `key.value`. */
-enum class PlaceCategory(
-    val tags: List<String>,
-) {
-    RESTAURANTS(listOf("amenity.restaurant", "amenity.fast_food")),
-    CAFES(listOf("amenity.cafe")),
-    SUPERMARKETS(listOf("shop.supermarket", "shop.convenience")),
-    GAS_STATIONS(listOf("amenity.fuel")),
-    CHARGING(listOf("amenity.charging_station")),
-    BARS(listOf("amenity.bar", "amenity.pub", "amenity.biergarten")),
-    ATTRACTIONS(
-        listOf(
-            "tourism.attraction",
-            "tourism.museum",
-            "tourism.gallery",
-            "tourism.viewpoint",
-            "tourism.zoo",
-            "tourism.theme_park",
-            "historic.castle",
-            "historic.monument",
-        ),
-    ),
-    HOTELS(listOf("tourism.hotel", "tourism.hostel", "tourism.guest_house", "tourism.motel")),
-    PHARMACIES(listOf("amenity.pharmacy")),
-    BAKERIES(listOf("shop.bakery", "shop.pastry")),
-    ATMS(listOf("amenity.atm")),
-    TOILETS(listOf("amenity.toilets")),
+import kotlinx.coroutines.flow.Flow
+
+/** Kinds of places offered as quick searches. */
+enum class PlaceCategory {
+    RESTAURANTS,
+    CAFES,
+    SUPERMARKETS,
+    GAS_STATIONS,
+    CHARGING,
+    BARS,
+    ATTRACTIONS,
+    HOTELS,
+    PHARMACIES,
+    BAKERIES,
+    ATMS,
+    TOILETS,
 }
 
-/** A charging station database with more detail than OpenStreetMap, used for [PlaceCategory.CHARGING] when set up. */
-interface ChargingStations {
-    /** False until the user has entered what the service needs, such as an API key. */
-    val available: Boolean
+/** A place found nearby, with its details once they are known. */
+data class NearbyPlace(
+    val place: SearchResult.Place,
+    val details: PlaceDetails?,
+)
 
-    /** Stations inside [bounds], nearest to [center] first, with their details as OSM-style tags. */
-    suspend fun stations(
-        center: LatLng,
-        bounds: GeoBounds,
-    ): List<Pair<SearchResult.Place, PlaceDetails>>
+/** Credit a data source requires wherever its data is shown. */
+data class Attribution(
+    val source: String,
+    val url: String,
+)
+
+data class NearbyResults(
+    /** Nearest to the search center first. */
+    val places: List<NearbyPlace>,
+    val attribution: Attribution? = null,
+)
+
+/** Places already at hand on the device, such as in loaded map data, which can include ones search services miss. */
+fun interface LoadedPlaces {
+    /** Emits the places of [category] known so far, again whenever more become known. */
+    fun places(category: PlaceCategory): Flow<List<SearchResult.Place>>
 }
 
-interface CategorySearch {
-    /** Places of [category] inside [bounds], nearest to [center] first. Unnamed places have an empty name. */
-    suspend fun search(
+interface NearbyPlaces {
+    /**
+     * Places of [category] in [area], nearest to [center] first. Emits the places as soon as they are found,
+     * then again as details arrive or [loaded] adds places. Fails only when no places could be found at all.
+     */
+    fun search(
         category: PlaceCategory,
         center: LatLng,
-        bounds: GeoBounds,
-    ): List<SearchResult.Place>
+        area: GeoBounds,
+        loaded: LoadedPlaces?,
+    ): Flow<NearbyResults>
 }

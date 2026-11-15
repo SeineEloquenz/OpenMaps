@@ -19,6 +19,7 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.referentialEqualityPolicy
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.UiComposable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
@@ -28,20 +29,25 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.mapLatest
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import nz.eloque.openmaps.core.model.GeoBounds
 import nz.eloque.openmaps.core.model.LatLng
+import nz.eloque.openmaps.core.model.LoadedPlaces
 import nz.eloque.openmaps.core.model.SearchResult
 import nz.eloque.openmaps.core.model.TransportMode
 import org.maplibre.compose.camera.CameraFit
 import org.maplibre.compose.camera.CameraPosition
 import org.maplibre.compose.camera.CameraUpdate
+import org.maplibre.compose.expressions.dsl.asString
 import org.maplibre.compose.expressions.dsl.case
 import org.maplibre.compose.expressions.dsl.const
 import org.maplibre.compose.expressions.dsl.feature
@@ -61,6 +67,7 @@ import org.maplibre.compose.location.rememberLocationState
 import org.maplibre.compose.map.MapState
 import org.maplibre.compose.map.rememberMapState
 import org.maplibre.compose.sources.GeoJsonData
+import org.maplibre.compose.sources.VectorTileSourceHandle
 import org.maplibre.compose.sources.rememberGeoJsonSource
 import org.maplibre.compose.style.BaseStyle
 import org.maplibre.compose.util.DpPadding
@@ -158,6 +165,33 @@ class MapController internal constructor(
     ) {
         val current = mapState.cameraPosition.zoom
         mapState.animateCamera(CameraUpdate(center = target.toPosition(), zoom = if (zoomIn) maxOf(current, PLACE_ZOOM) else current))
+    }
+
+    /** Places of a category in the map tiles loaded so far, read again each time the map comes to rest. Includes unnamed ones. */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val loadedPlaces: LoadedPlaces =
+        LoadedPlaces { category ->
+            val values = category.tileValues.toList()
+            snapshotFlow { mapState.isCameraMoving }
+                .filter { !it }
+                .mapLatest {
+                    delay(TILE_SETTLE_MILLIS)
+                    tilePlaces(values)
+                }
+        }
+
+    private suspend fun tilePlaces(values: List<String>): List<SearchResult.Place> {
+        val tiles = mapState.style.sources[BASE_SOURCE] as? VectorTileSourceHandle ?: return emptyList()
+        val matches =
+            switch(
+                feature["subclass"].asString(),
+                cases = listOf(case(values, const(true))),
+                fallback = switch(feature["class"].asString(), cases = listOf(case(values, const(true))), fallback = const(false)),
+            )
+        return tiles
+            .querySourceFeatures(setOf("poi"), matches)
+            .mapNotNull { it.toPlace(tapped = null, named = false) }
+            .distinctBy { it.osmId ?: it.location }
     }
 
     suspend fun fit(points: List<LatLng>) {
@@ -343,6 +377,9 @@ private val LoadingDarkStyle =
         """{"version":8,"sources":{},"layers":[{"id":"background","type":"background","paint":{"background-color":"#1c1c1c"}}]}""",
     )
 private const val USER_ZOOM = 15.0
+
+/** Time for the tiles of a new view to load before places are read from them. */
+private const val TILE_SETTLE_MILLIS = 600L
 private const val PLACE_ZOOM = 16.0
 private const val STOP_INDEX = "i"
 private const val STOP_ICON = "m"

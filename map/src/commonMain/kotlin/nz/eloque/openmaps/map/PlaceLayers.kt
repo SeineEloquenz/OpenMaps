@@ -64,6 +64,7 @@ import kotlinx.serialization.json.put
 import nz.eloque.openmaps.core.model.LatLng
 import nz.eloque.openmaps.core.model.OsmId
 import nz.eloque.openmaps.core.model.OsmType
+import nz.eloque.openmaps.core.model.PlaceCategory
 import nz.eloque.openmaps.core.model.SearchResult
 import org.maplibre.compose.expressions.dsl.all
 import org.maplibre.compose.expressions.dsl.asNumber
@@ -242,9 +243,13 @@ internal fun PlaceLayers(
     }
 }
 
-private fun Feature<*, JsonObject?>.toPlace(tapped: LatLng?): SearchResult.Place? {
+/** The place a `poi` tile feature stands for. Unnamed places get an empty name unless [named] is required. */
+internal fun Feature<*, JsonObject?>.toPlace(
+    tapped: LatLng?,
+    named: Boolean = true,
+): SearchResult.Place? {
     val properties = properties ?: return null
-    val name = properties["name"]?.jsonPrimitive?.content?.takeIf { it.isNotBlank() } ?: return null
+    val name = properties["name"]?.jsonPrimitive?.content?.takeIf { it.isNotBlank() } ?: if (named) return null else ""
     val location = (geometry as? Point)?.coordinates?.toLatLng() ?: tapped ?: return null
     val encoded = id?.content?.toDoubleOrNull()?.toLong()
     val type =
@@ -260,7 +265,25 @@ private fun Feature<*, JsonObject?>.toPlace(tapped: LatLng?): SearchResult.Place
 /** Base style layers that draw places themselves, hidden in favour of [PlaceLayers]. */
 internal val BaseStylePlaceLayers = listOf("poi_r1", "poi_r7", "poi_r20")
 
-private const val BASE_SOURCE = "openmaptiles"
+internal const val BASE_SOURCE = "openmaptiles"
+
+/** OpenMapTiles `poi` class or subclass values of the places in a category. */
+internal val PlaceCategory.tileValues: Set<String>
+    get() =
+        when (this) {
+            PlaceCategory.RESTAURANTS -> setOf("restaurant", "fast_food")
+            PlaceCategory.CAFES -> setOf("cafe")
+            PlaceCategory.SUPERMARKETS -> setOf("supermarket", "convenience")
+            PlaceCategory.GAS_STATIONS -> setOf("fuel")
+            PlaceCategory.CHARGING -> setOf("charging_station")
+            PlaceCategory.BARS -> setOf("bar", "pub", "biergarten")
+            PlaceCategory.ATTRACTIONS -> setOf("attraction", "museum", "gallery", "viewpoint", "zoo", "theme_park", "castle", "monument")
+            PlaceCategory.HOTELS -> setOf("hotel", "hostel", "guest_house", "motel")
+            PlaceCategory.PHARMACIES -> setOf("pharmacy")
+            PlaceCategory.BAKERIES -> setOf("bakery", "pastry")
+            PlaceCategory.ATMS -> setOf("atm")
+            PlaceCategory.TOILETS -> setOf("toilets")
+        }
 private const val RANK_ALL = 1000f
 
 /** Zoom at which each rank band appears, paired with the rank it ends below. Matches the light base style. */

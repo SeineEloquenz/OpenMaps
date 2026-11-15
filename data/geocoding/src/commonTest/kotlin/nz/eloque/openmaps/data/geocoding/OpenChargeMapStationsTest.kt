@@ -9,6 +9,8 @@ import io.ktor.http.headersOf
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
+import nz.eloque.openmaps.core.model.Charger
+import nz.eloque.openmaps.core.model.Connector
 import nz.eloque.openmaps.core.model.GeoBounds
 import nz.eloque.openmaps.core.model.LatLng
 import kotlin.test.Test
@@ -51,14 +53,12 @@ class OpenChargeMapStationsTest {
             val (place, details) = stations.first()
             assertEquals("Karlsruhe Hbf", place.name)
             assertEquals("Bahnhofplatz 1, 76137 Karlsruhe", details.address)
-            assertEquals("EnBW", details.tags["operator"])
-            assertEquals("3", details.tags["socket:type2_combo"])
-            assertEquals("150 kW", details.tags["socket:type2_combo:output"])
-            assertEquals("4", details.tags["socket:type2"])
+            assertEquals("EnBW", details.operator)
+            assertEquals(listOf(Charger(Connector.CCS, 150, 3), Charger(Connector.TYPE_2, 22, 4)), details.chargers)
             assertEquals("secret", headers.single())
             val unknownOperator = stations.last().second
             assertEquals(null, unknownOperator.operator)
-            assertEquals("2", unknownOperator.tags["socket:cee_blue"])
+            assertEquals(listOf(Charger(Connector.CEE, 4, 2)), unknownOperator.chargers)
         }
 
     @Test

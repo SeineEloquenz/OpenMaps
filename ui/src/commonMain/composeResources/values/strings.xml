@@ -201,7 +201,7 @@
     <string name="filter_fuel">Fuel</string>
     <string name="filter_connector">Connector</string>
     <string name="filter_fast_charging">%1$d kW and up</string>
-    <string name="charging_attribution">Charging data from Open Charge Map and its data providers</string>
+    <string name="data_attribution">Data from %1$s and its data providers</string>
     <string name="filter_free_entry">Free entry</string>
     <string name="fact_free">Free</string>
     <string name="fact_paid">Paid</string>

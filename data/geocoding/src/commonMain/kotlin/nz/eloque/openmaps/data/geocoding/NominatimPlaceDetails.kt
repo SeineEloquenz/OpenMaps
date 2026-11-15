@@ -12,7 +12,6 @@ import nz.eloque.openmaps.core.model.OsmId
 import nz.eloque.openmaps.core.model.OsmType
 import nz.eloque.openmaps.core.model.PlaceDetails
 import nz.eloque.openmaps.core.model.PlaceDetailsSource
-import nz.eloque.openmaps.core.model.PlaceFeature
 
 @Serializable
 internal data class LookupResultDto(
@@ -68,41 +67,25 @@ private fun LookupResultDto.osmIdOrNull(): OsmId? {
 
 private fun LookupResultDto.toDetails(): PlaceDetails {
     val tags = extratags.orEmpty()
-
-    fun first(vararg keys: String) = keys.firstNotNullOfOrNull { tags[it] }?.substringBefore(';')?.trim()
     return PlaceDetails(
         address = address?.let(::formatAddress),
         openingHours = tags["opening_hours"],
-        website = first("website", "contact:website"),
-        phone = first("phone", "contact:phone"),
-        wheelchair = tags["wheelchair"],
-        email = first("email", "contact:email"),
+        website = tags.first("website", "contact:website"),
+        phone = tags.first("phone", "contact:phone"),
+        wheelchair = tags.accessibility(),
+        email = tags.first("email", "contact:email"),
         operator = tags["operator"],
+        brand = tags["brand"],
         description = tags["description"],
-        cuisine = tags["cuisine"]?.split(';')?.map { it.trim() }?.filter { it.isNotEmpty() }.orEmpty(),
-        features = features(tags),
+        cuisine = tags.cuisine(),
+        features = tags.features(),
+        free = tags.free(),
+        stars = tags.stars(),
+        fuels = tags.fuels(),
+        chargers = tags.chargers(),
         links = MediaLinks(tags["wikidata"], tags["wikipedia"], tags["wikimedia_commons"], tags["image"]),
         bounds = boundingbox?.mapNotNull { it.toDoubleOrNull() }?.takeIf { it.size == 4 }?.let { GeoBounds(it[0], it[2], it[1], it[3]) },
-        tags = tags,
     )
-}
-
-private val Yes = setOf("yes", "only", "designated")
-
-private fun features(tags: Map<String, String>): Set<PlaceFeature> {
-    fun yes(vararg keys: String) = keys.any { tags[it] in Yes }
-    return buildSet {
-        if (yes("emergency")) add(PlaceFeature.EMERGENCY)
-        if (yes("takeaway")) add(PlaceFeature.TAKEAWAY)
-        if (yes("delivery")) add(PlaceFeature.DELIVERY)
-        if (yes("outdoor_seating")) add(PlaceFeature.OUTDOOR_SEATING)
-        if (tags["internet_access"] in setOf("wlan", "wifi", "yes")) add(PlaceFeature.WIFI)
-        if (yes("diet:vegetarian")) add(PlaceFeature.VEGETARIAN)
-        if (yes("diet:vegan")) add(PlaceFeature.VEGAN)
-        if (yes("diet:gluten_free")) add(PlaceFeature.GLUTEN_FREE)
-        if (yes("payment:cards", "payment:credit_cards", "payment:debit_cards")) add(PlaceFeature.CARDS)
-        if (yes("toilets")) add(PlaceFeature.TOILETS)
-    }
 }
 
 private fun formatAddress(address: Map<String, String>): String? {
