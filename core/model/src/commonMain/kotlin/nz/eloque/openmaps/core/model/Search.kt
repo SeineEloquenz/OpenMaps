@@ -49,6 +49,8 @@ data class PlaceDetails(
     val links: MediaLinks = MediaLinks(),
     /** The area the place covers, for buildings and parks. */
     val bounds: GeoBounds? = null,
+    /** All OSM tags of the place, for details only some kinds of places have. */
+    val tags: Map<String, String> = emptyMap(),
 )
 
 enum class PlaceFeature { EMERGENCY, TAKEAWAY, DELIVERY, OUTDOOR_SEATING, WIFI, VEGETARIAN, VEGAN, GLUTEN_FREE, CARDS, TOILETS }

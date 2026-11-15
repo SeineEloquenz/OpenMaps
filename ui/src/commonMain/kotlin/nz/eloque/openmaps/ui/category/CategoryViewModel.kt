@@ -20,14 +20,6 @@ import nz.eloque.openmaps.ui.components.LoadState
 import nz.eloque.openmaps.ui.components.loadOnce
 import nz.eloque.openmaps.ui.place.toCategoryLabel
 
-/** Which results to show. Places without the needed information are hidden while a filter is on. */
-data class CategoryFilters(
-    val openNow: Boolean = false,
-    /** An OSM cuisine value, or null for any. */
-    val cuisine: String? = null,
-    val wheelchair: Boolean = false,
-)
-
 class CategoryViewModel(
     private val search: CategorySearch,
     private val detailsSource: PlaceDetailsSource,

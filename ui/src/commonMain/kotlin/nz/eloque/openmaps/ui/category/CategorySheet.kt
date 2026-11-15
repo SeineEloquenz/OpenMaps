@@ -15,14 +15,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Accessible
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Call
-import androidx.compose.material.icons.filled.Deck
 import androidx.compose.material.icons.filled.Directions
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.TakeoutDining
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -45,17 +42,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
 import nz.eloque.openmaps.core.model.GeoBounds
-import nz.eloque.openmaps.core.model.OpenStatus
 import nz.eloque.openmaps.core.model.OpeningHours
 import nz.eloque.openmaps.core.model.PlaceDetails
-import nz.eloque.openmaps.core.model.PlaceFeature
 import nz.eloque.openmaps.core.model.SearchResult
 import nz.eloque.openmaps.core.model.SettingsStore
 import nz.eloque.openmaps.map.MapController
@@ -66,15 +60,10 @@ import nz.eloque.openmaps.ui.components.rememberNow
 import nz.eloque.openmaps.ui.navigation.CategoryKey
 import nz.eloque.openmaps.ui.place.OpenStatusText
 import nz.eloque.openmaps.ui.place.telUri
-import nz.eloque.openmaps.ui.place.toCategoryLabel
 import nz.eloque.openmaps.ui.resources.Res
 import nz.eloque.openmaps.ui.resources.call
 import nz.eloque.openmaps.ui.resources.category_none
-import nz.eloque.openmaps.ui.resources.cuisine
 import nz.eloque.openmaps.ui.resources.directions
-import nz.eloque.openmaps.ui.resources.filter_any_cuisine
-import nz.eloque.openmaps.ui.resources.filter_open_now
-import nz.eloque.openmaps.ui.resources.filter_wheelchair
 import nz.eloque.openmaps.ui.resources.search_this_area
 import nz.eloque.openmaps.ui.resources.website
 import org.jetbrains.compose.resources.StringResource
@@ -83,7 +72,6 @@ import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import kotlin.math.abs
-import kotlin.time.Instant
 
 private const val FIT_COUNT = 10
 
@@ -114,7 +102,10 @@ fun CategorySheet(
     val unit by koinInject<SettingsStore>().distanceUnit.collectAsState()
     val now by rememberNow()
     val all = (results as? LoadState.Loaded)?.value.orEmpty()
-    val shown = all.filter { filters.allows(it.osmId?.let(details::get), now) }
+    val profile = key.category.profile
+    val origin = map.userLocation ?: map.center
+    val shown =
+        all.filter { profile.allows(filters, it.osmId?.let(details::get), now) }.sortedBy { it.location.distanceTo(origin) }
 
     LaunchedEffect(viewModel) {
         if (viewModel.searchedArea.value != null) return@LaunchedEffect
@@ -134,7 +125,6 @@ fun CategorySheet(
 
     val visible = map.visibleBounds
     val moved = !map.isMoving && visible != null && searchedArea?.let { visible.differsFrom(it) } == true
-    val origin = map.userLocation ?: map.center
 
     LazyColumn(Modifier.fillMaxWidth()) {
         item {
@@ -156,7 +146,7 @@ fun CategorySheet(
             }
         }
         item {
-            FilterRow(filters, cuisines = details.values.flatMap { it.cuisine }.distinct().sorted(), onChange = viewModel::setFilters)
+            FilterRow(profile, filters, details.values, onChange = viewModel::setFilters)
         }
         item {
             LoadStateContent(results, onRetry = viewModel::retry, modifier = Modifier.fillMaxWidth()) {
@@ -171,6 +161,7 @@ fun CategorySheet(
         }
         items(shown, key = { "${it.osmId ?: it.name}-${it.location}" }) { place ->
             PlaceResult(
+                profile = profile,
                 place = place,
                 details = place.osmId?.let(details::get),
                 distance = formatDistance(place.location.distanceTo(origin), unit),
@@ -182,75 +173,95 @@ fun CategorySheet(
     }
 }
 
-private fun CategoryFilters.allows(
-    details: PlaceDetails?,
-    now: Instant,
-): Boolean {
-    if (openNow) {
-        val hours = details?.openingHours?.let(OpeningHours::parse) ?: return false
-        val local = now.toLocalDateTime(TimeZone.currentSystemDefault())
-        if (hours.status(local.dayOfWeek.ordinal, local.hour * 60 + local.minute) !is OpenStatus.Open) return false
-    }
-    if (cuisine != null && details?.cuisine?.contains(cuisine) != true) return false
-    if (wheelchair && details?.wheelchair != "yes") return false
-    return true
-}
-
 @Composable
 private fun FilterRow(
+    profile: CategoryProfile,
     filters: CategoryFilters,
-    cuisines: List<String>,
+    details: Collection<PlaceDetails>,
     onChange: (CategoryFilters) -> Unit,
 ) {
-    var choosingCuisine by remember { mutableStateOf(false) }
     Row(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 4.dp),
     ) {
-        FilterChip(
-            selected = filters.openNow,
-            onClick = { onChange(filters.copy(openNow = !filters.openNow)) },
-            label = { Text(stringResource(Res.string.filter_open_now)) },
-        )
-        if (cuisines.isNotEmpty() || filters.cuisine != null) {
-            Box {
-                FilterChip(
-                    selected = filters.cuisine != null,
-                    onClick = { choosingCuisine = true },
-                    label = { Text(filters.cuisine?.toCategoryLabel() ?: stringResource(Res.string.cuisine)) },
-                    trailingIcon = { Icon(Icons.Default.ArrowDropDown, contentDescription = null, modifier = Modifier.size(18.dp)) },
-                )
-                DropdownMenu(expanded = choosingCuisine, onDismissRequest = { choosingCuisine = false }) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(Res.string.filter_any_cuisine)) },
-                        onClick = {
-                            onChange(filters.copy(cuisine = null))
-                            choosingCuisine = false
-                        },
-                    )
-                    cuisines.forEach { cuisine ->
-                        DropdownMenuItem(
-                            text = { Text(cuisine.toCategoryLabel()) },
-                            onClick = {
-                                onChange(filters.copy(cuisine = cuisine))
-                                choosingCuisine = false
+        profile.filters.forEach { filter ->
+            when (filter) {
+                is ResultFilter.Toggle -> {
+                    val on = filter.id in filters.on
+                    FilterChip(
+                        selected = on,
+                        onClick = { onChange(filters.copy(on = if (on) filters.on - filter.id else filters.on + filter.id)) },
+                        label = { Text(filter.text()) },
+                        leadingIcon =
+                            filter.icon?.let { icon ->
+                                { Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp)) }
                             },
-                        )
+                    )
+                }
+                is ResultFilter.Choice -> {
+                    val values = details.flatMap(filter.values).distinct().sortedBy(filter.display)
+                    val chosen = filters.choices[filter.id]
+                    if (values.isNotEmpty() || chosen != null) {
+                        ChoiceChip(filter, values, chosen) { value ->
+                            onChange(
+                                filters.copy(
+                                    choices =
+                                        if (value ==
+                                            null
+                                        ) {
+                                            filters.choices - filter.id
+                                        } else {
+                                            filters.choices + (filter.id to value)
+                                        },
+                                ),
+                            )
+                        }
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ChoiceChip(
+    filter: ResultFilter.Choice,
+    values: List<String>,
+    chosen: String?,
+    onChoose: (String?) -> Unit,
+) {
+    var open by remember { mutableStateOf(false) }
+    Box {
         FilterChip(
-            selected = filters.wheelchair,
-            onClick = { onChange(filters.copy(wheelchair = !filters.wheelchair)) },
-            label = { Text(stringResource(Res.string.filter_wheelchair)) },
-            leadingIcon = { Icon(Icons.AutoMirrored.Filled.Accessible, contentDescription = null, modifier = Modifier.size(18.dp)) },
+            selected = chosen != null,
+            onClick = { open = true },
+            label = { Text(chosen?.let(filter.display) ?: stringResource(filter.label)) },
+            trailingIcon = { Icon(Icons.Default.ArrowDropDown, contentDescription = null, modifier = Modifier.size(18.dp)) },
         )
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            DropdownMenuItem(
+                text = { Text(stringResource(filter.anyLabel)) },
+                onClick = {
+                    onChoose(null)
+                    open = false
+                },
+            )
+            values.forEach { value ->
+                DropdownMenuItem(
+                    text = { Text(filter.display(value)) },
+                    onClick = {
+                        onChoose(value)
+                        open = false
+                    },
+                )
+            }
+        }
     }
 }
 
 @Composable
 private fun PlaceResult(
+    profile: CategoryProfile,
     place: SearchResult.Place,
     details: PlaceDetails?,
     distance: String,
@@ -258,9 +269,7 @@ private fun PlaceResult(
     onDirections: () -> Unit,
 ) {
     val uriHandler = LocalUriHandler.current
-    val kind =
-        details?.cuisine?.take(2)?.joinToString(", ") { it.toCategoryLabel() }?.takeIf { it.isNotEmpty() }
-            ?: place.category?.toCategoryLabel()
+    val facts = details?.let(profile.facts).orEmpty().map { stringResource(it) }
     Column(
         Modifier.fillMaxWidth().clickable(onClick = onOpen).padding(vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp),
@@ -268,11 +277,32 @@ private fun PlaceResult(
         Text(place.name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 16.dp))
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 16.dp)) {
             Text(
-                listOfNotNull(kind, distance).joinToString(" · "),
+                (listOfNotNull(profile.kind(place, details)?.takeIf { it.isNotBlank() }, distance) + facts).joinToString(" · "),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false),
             )
-            FeatureIcons(details)
+            details?.let(profile.icons).orEmpty().forEach { icon ->
+                Icon(
+                    icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 6.dp).size(16.dp),
+                )
+            }
+        }
+        if (profile.showsDescription) {
+            details?.description?.let {
+                Text(
+                    it,
+                    style = MaterialTheme.typography.bodySmall,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                )
+            }
         }
         details?.openingHours?.let(OpeningHours::parse)?.let { OpenStatusText(it, Modifier.padding(horizontal = 16.dp)) }
         Row(
@@ -283,24 +313,6 @@ private fun PlaceResult(
             details?.phone?.let { phone -> ResultAction(Icons.Default.Call, Res.string.call) { uriHandler.openUri(phone.telUri()) } }
             details?.website?.let { url -> ResultAction(Icons.Default.Language, Res.string.website) { uriHandler.openUri(url) } }
         }
-    }
-}
-
-@Composable
-private fun FeatureIcons(details: PlaceDetails?) {
-    val icons =
-        listOfNotNull(
-            Icons.AutoMirrored.Filled.Accessible.takeIf { details?.wheelchair == "yes" },
-            Icons.Default.Deck.takeIf { details?.features?.contains(PlaceFeature.OUTDOOR_SEATING) == true },
-            Icons.Default.TakeoutDining.takeIf { details?.features?.contains(PlaceFeature.TAKEAWAY) == true },
-        )
-    icons.forEach { icon ->
-        Icon(
-            icon,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(start = 6.dp).size(16.dp),
-        )
     }
 }
 

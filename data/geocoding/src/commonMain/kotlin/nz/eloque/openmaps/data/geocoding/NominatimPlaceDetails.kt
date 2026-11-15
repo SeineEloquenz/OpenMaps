@@ -83,6 +83,7 @@ private fun LookupResultDto.toDetails(): PlaceDetails {
         features = features(tags),
         links = MediaLinks(tags["wikidata"], tags["wikipedia"], tags["wikimedia_commons"], tags["image"]),
         bounds = boundingbox?.mapNotNull { it.toDoubleOrNull() }?.takeIf { it.size == 4 }?.let { GeoBounds(it[0], it[2], it[1], it[3]) },
+        tags = tags,
     )
 }
 
