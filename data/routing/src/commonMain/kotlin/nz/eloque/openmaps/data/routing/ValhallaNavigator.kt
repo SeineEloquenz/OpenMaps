@@ -10,7 +10,9 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -51,6 +53,7 @@ import org.maplibre.navigation.core.navigation.MapLibreNavigationOptions
 import org.maplibre.navigation.core.routeprogress.RouteProgress
 import org.maplibre.spatialk.geojson.Position
 import kotlin.time.Clock
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import org.maplibre.navigation.core.models.RouteOptions as NavigationRouteOptions
 
@@ -175,6 +178,8 @@ internal class ValhallaNavigator(
         var voiceLanguage: String?,
         var rerouting: Boolean = false,
         var lastReroute: Long = 0,
+        var lastLocation: Location? = null,
+        var recheck: Job? = null,
     )
 
     override suspend fun start(
@@ -199,10 +204,31 @@ internal class ValhallaNavigator(
         navigation.addOffRouteListener { location -> reroute(trip, location) }
         _state.value = initialState(trip, route)
         navigation.startNavigation(route)
+        if (mode == TransportMode.CAR && replay == null) trip.recheck = scope.launch { recheck(trip) }
+    }
+
+    /** Asks for the route again now and then, so closures and roadworks reported since the start change it. */
+    private suspend fun recheck(trip: Trip) {
+        while (true) {
+            delay(RECHECK_INTERVAL)
+            if (this.trip !== trip) return
+            val here = trip.lastLocation ?: continue
+            val remaining = _state.value?.takeIf { it.status == NavigationStatus.NAVIGATING }?.remainingTime ?: continue
+            val route =
+                runCatching { routes.route(LatLng(here.latitude, here.longitude), here.bearing, trip.to, trip.mode, trip.options) }
+                    .getOrNull() ?: continue
+            if (this.trip !== trip || trip.rerouting) return
+            // The current estimate knows nothing of new closures, so a fresh route that differs a lot either way is better informed.
+            if ((route.duration.seconds - remaining).absoluteValue > RECHECK_DIFFERENCE) {
+                trip.geometry = route.points()
+                trip.navigation.startNavigation(route)
+            }
+        }
     }
 
     override fun stop() {
         trip?.let {
+            it.recheck?.cancel()
             it.navigation.stopNavigation()
             it.navigation.onDestroy()
             it.replay?.onStop()
@@ -217,6 +243,7 @@ internal class ValhallaNavigator(
         progress: RouteProgress,
     ) {
         if (this.trip !== trip) return
+        trip.lastLocation = location
         val steps = progress.currentLeg.steps
         val step = steps.getOrNull(progress.stepIndex)
         val next = steps.getOrNull(progress.stepIndex + 1)
@@ -380,6 +407,8 @@ private fun navigationOptions(mode: TransportMode): MapLibreNavigationOptions {
     return defaults.copy(offRouteThresholdRadiusMeters = defaults.offRouteThresholdRadiusMeters * factor)
 }
 
+private val RECHECK_INTERVAL = 5.minutes
+private val RECHECK_DIFFERENCE = 1.minutes
 private const val HEADING_TOLERANCE = 45
 private const val ARRIVAL_METERS = 25.0
 private const val REROUTE_PAUSE_MILLIS = 5_000L
