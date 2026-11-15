@@ -154,10 +154,10 @@
     <string name="source_media">Photos and summaries</string>
     <string name="source_media_detail">Wikimedia Commons, Wikidata and Wikipedia, under their stated licences</string>
     <string name="source_charging">Charging stations</string>
-    <string name="source_charging_detail">Open Charge Map and its data providers, when you have entered a key. Otherwise OpenStreetMap.</string>
+    <string name="source_charging_detail">Open Charge Map and its data providers</string>
     <string name="api_keys">API keys</string>
     <string name="open_charge_map_key">Open Charge Map key</string>
-    <string name="open_charge_map_key_detail">With a free key from openchargemap.org, charging stations show plug types and power from Open Charge Map. Without one they come from OpenStreetMap.</string>
+    <string name="open_charge_map_key_detail">Charging stations come from Open Charge Map through a key shared by everyone using OpenMaps. If it runs into its limits, enter your own free key from openchargemap.org.</string>
     <string name="privacy">Privacy</string>
     <string name="privacy_detail">There is no account and no tracking. Searches and routes are sent to Transitous, place details are looked up on Nominatim, nearby places on Photon, photos and summaries of places you open on Wikimedia, and map tiles come from OpenFreeMap. Your location only leaves the device as part of these requests.</string>
 

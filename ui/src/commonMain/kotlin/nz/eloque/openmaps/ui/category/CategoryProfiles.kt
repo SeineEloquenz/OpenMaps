@@ -331,7 +331,9 @@ private val Connectors =
         "type1_combo" to "CCS1",
         "type1" to "Type 1",
         "tesla_supercharger" to "Tesla",
+        "tesla_destination" to "Tesla",
         "schuko" to "Schuko",
+        "cee_blue" to "CEE",
     )
 
 private val Fuels =

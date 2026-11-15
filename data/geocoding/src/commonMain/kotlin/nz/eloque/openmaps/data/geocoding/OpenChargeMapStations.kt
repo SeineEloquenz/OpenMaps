@@ -52,7 +52,7 @@ internal data class OcmStatusDto(
     @SerialName("IsOperational") val operational: Boolean? = null,
 )
 
-/** Stations from Open Charge Map, which needs a key per user. */
+/** Stations from Open Charge Map, which needs an API key. */
 internal class OpenChargeMapStations(
     private val client: HttpClient,
     private val key: () -> String?,
@@ -88,7 +88,7 @@ private const val MAX_RESULTS = 50
 internal fun OcmStationDto.toPlace() =
     SearchResult.Place(
         osmId = null,
-        name = address.title?.takeIf { it.isNotBlank() } ?: operator?.title.orEmpty(),
+        name = address.title?.takeIf { it.isNotBlank() } ?: operatorName.orEmpty(),
         location = LatLng(address.latitude, address.longitude),
         area = address.town,
         category = "charging_station",
@@ -98,7 +98,7 @@ internal fun OcmStationDto.toPlace() =
 internal fun OcmStationDto.toDetails(): PlaceDetails {
     val tags =
         buildMap {
-            operator?.title?.let { put("operator", it) }
+            operatorName?.let { put("operator", it) }
             points?.let { put("capacity", it.toString()) }
             usageCost?.let { put("charge", it) }
             if (usageCost?.contains("free", ignoreCase = true) == true) put("fee", "no")
@@ -122,10 +122,14 @@ internal fun OcmStationDto.toDetails(): PlaceDetails {
         website = operator?.website,
         phone = null,
         wheelchair = null,
-        operator = operator?.title,
+        operator = operatorName,
         tags = tags,
     )
 }
+
+/** The operator's name, without placeholders such as `(Business Owner at Location)`. */
+private val OcmStationDto.operatorName: String?
+    get() = operator?.title?.takeUnless { it.isBlank() || it.startsWith("(") }
 
 /** Open Charge Map connection type ids and the OSM `socket:*` key for each. */
 private val SocketKeys =
@@ -138,4 +142,6 @@ private val SocketKeys =
         33 to "type2_combo",
         27 to "tesla_supercharger",
         28 to "schuko",
+        30 to "tesla_destination",
+        16 to "cee_blue",
     )

@@ -23,7 +23,9 @@ private const val STATIONS_JSON =
     "UsageCost":"0,59 EUR/kWh","NumberOfPoints":6,"StatusType":{"IsOperational":true},
     "Connections":[{"ConnectionTypeID":33,"PowerKW":150.0,"Quantity":2},{"ConnectionTypeID":33,"PowerKW":50.0},
     {"ConnectionTypeID":25,"PowerKW":22.0,"Quantity":4},{"ConnectionTypeID":999,"PowerKW":3.7}]},
-    {"ID":2,"AddressInfo":{"Title":"Broken","Latitude":48.0,"Longitude":8.0},"StatusType":{"IsOperational":false}}]"""
+    {"ID":2,"AddressInfo":{"Title":"Broken","Latitude":48.0,"Longitude":8.0},"StatusType":{"IsOperational":false}},
+    {"ID":3,"AddressInfo":{"Title":"Tiefgarage","Latitude":49.1,"Longitude":8.4},"OperatorInfo":{"Title":"(Business Owner at Location)"},
+    "Connections":[{"ConnectionTypeID":16,"PowerKW":3.7,"Quantity":2}]}]"""
 
 class OpenChargeMapStationsTest {
     private val headers = mutableListOf<String?>()
@@ -45,7 +47,8 @@ class OpenChargeMapStationsTest {
         runTest {
             val stations = source("secret").stations(LatLng(49.0, 8.4), GeoBounds(48.9, 8.3, 49.1, 8.5))
 
-            val (place, details) = stations.single()
+            assertEquals(2, stations.size)
+            val (place, details) = stations.first()
             assertEquals("Karlsruhe Hbf", place.name)
             assertEquals("Bahnhofplatz 1, 76137 Karlsruhe", details.address)
             assertEquals("EnBW", details.tags["operator"])
@@ -53,6 +56,9 @@ class OpenChargeMapStationsTest {
             assertEquals("150 kW", details.tags["socket:type2_combo:output"])
             assertEquals("4", details.tags["socket:type2"])
             assertEquals("secret", headers.single())
+            val unknownOperator = stations.last().second
+            assertEquals(null, unknownOperator.operator)
+            assertEquals("2", unknownOperator.tags["socket:cee_blue"])
         }
 
     @Test
