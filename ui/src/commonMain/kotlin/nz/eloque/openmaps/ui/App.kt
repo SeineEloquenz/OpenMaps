@@ -1,5 +1,6 @@
 package nz.eloque.openmaps.ui
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -41,7 +43,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavKey
@@ -60,7 +64,7 @@ import nz.eloque.openmaps.core.model.PlacesStore
 import nz.eloque.openmaps.map.MapController
 import nz.eloque.openmaps.map.OpenMap
 import nz.eloque.openmaps.map.rememberMapController
-import nz.eloque.openmaps.ui.about.AboutSheet
+import nz.eloque.openmaps.ui.about.AboutPage
 import nz.eloque.openmaps.ui.category.CategoryChips
 import nz.eloque.openmaps.ui.category.CategoryChipsHeight
 import nz.eloque.openmaps.ui.category.CategorySheet
@@ -92,7 +96,7 @@ import nz.eloque.openmaps.ui.resources.settings
 import nz.eloque.openmaps.ui.resources.waiting_for_location
 import nz.eloque.openmaps.ui.saved.SavedSheet
 import nz.eloque.openmaps.ui.search.SearchScreen
-import nz.eloque.openmaps.ui.settings.SettingsSheet
+import nz.eloque.openmaps.ui.settings.SettingsPage
 import nz.eloque.openmaps.ui.stop.StopSheet
 import nz.eloque.openmaps.ui.theme.OpenMapsTheme
 import org.jetbrains.compose.resources.getString
@@ -121,6 +125,9 @@ private val navConfiguration =
     }
 
 private val SheetPeekHeight = 280.dp
+
+/** Shows only the drag handle and the favourites row, so the map has the screen on start. */
+private val HomePeekHeight = 104.dp
 
 /** Differs per app process, so a sheet position saved by an earlier process is not restored and the sheet starts collapsed. */
 private val ProcessStart = Random.nextInt()
@@ -172,132 +179,148 @@ fun App(version: String) {
             snapshotFlow { backStack.any { it is CategoryKey } }.collect { if (!it) map.results = emptyList() }
         }
 
-        BottomSheetScaffold(
-            scaffoldState = sheetState,
-            sheetPeekHeight = SheetPeekHeight,
-            sheetContent = {
-                NavDisplay(
-                    backStack = backStack,
-                    onBack = { backStack.removeLastOrNull() },
-                    transitionSpec = { fadeIn() togetherWith fadeOut() },
-                    popTransitionSpec = { fadeIn() togetherWith fadeOut() },
-                    entryDecorators =
-                        listOf(
-                            rememberSaveableStateHolderNavEntryDecorator(),
-                            rememberViewModelStoreNavEntryDecorator(),
-                        ),
-                    entryProvider =
-                        entryProvider {
-                            entry<HomeKey> {
-                                HomeSheet(
-                                    map = map,
-                                    onOpenStop = backStack::add,
-                                    onDirectionsTo = { backStack.add(DirectionsKey(from = null, to = it.toEndpoint())) },
-                                    onSetFavourite = { backStack.add(SearchKey(saveAs = it)) },
-                                    onOpenSaved = { backStack.add(SavedKey) },
-                                    onOpenTrip = { tripId, stopName -> backStack.add(TripKey(tripId, stopName)) },
-                                )
-                            }
-                            entry<AboutKey> { AboutSheet(version) }
-                            entry<SavedKey> {
-                                SavedSheet(
-                                    onOpenPlace = { backStack.add(it.toKey()) },
-                                    onOpenRoute = { backStack.add(DirectionsKey(it.from?.toEndpoint(), it.to?.toEndpoint())) },
-                                )
-                            }
-                            entry<SettingsKey> { SettingsSheet(onOpenAbout = { backStack.add(AboutKey) }) }
-                            entry<SearchKey> { search ->
-                                SearchScreen(
-                                    near = map.userLocation,
-                                    stopsFirst = search.field != null,
-                                    onDismiss = { backStack.removeLastOrNull() },
-                                    onCategory =
-                                        if (search.field == null && search.saveAs == null) {
-                                            { category ->
-                                                backStack.removeLastOrNull()
-                                                if (backStack.lastOrNull() is CategoryKey) backStack.removeLastOrNull()
-                                                backStack.add(CategoryKey(category))
-                                            }
-                                        } else {
-                                            null
-                                        },
-                                    onSelect = { result ->
-                                        backStack.removeLastOrNull()
-                                        search.saveAs?.let { label ->
-                                            scope.launch { places.saveFavourite(result, label) }
-                                            return@SearchScreen
-                                        }
-                                        val field = search.field
-                                        val index = backStack.indexOfLast { it is DirectionsKey }
-                                        if (field == null || index < 0) {
-                                            backStack.add(result.toKey())
-                                        } else {
-                                            val directions = backStack[index] as DirectionsKey
-                                            backStack[index] =
-                                                when (field) {
-                                                    DirectionsField.FROM -> directions.copy(from = result.toEndpoint())
-                                                    DirectionsField.TO -> directions.copy(to = result.toEndpoint())
+        val top = backStack.lastOrNull()
+        val peekHeight =
+            (if (top == HomeKey) HomePeekHeight else SheetPeekHeight) +
+                with(LocalDensity.current) { WindowInsets.navigationBars.getBottom(this).toDp() }
+
+        Box(Modifier.fillMaxSize()) {
+            BottomSheetScaffold(
+                scaffoldState = sheetState,
+                sheetPeekHeight = peekHeight,
+                sheetContent = {
+                    NavDisplay(
+                        backStack = backStack.filterNot { it.isPage() },
+                        onBack = { backStack.removeLastOrNull() },
+                        transitionSpec = { fadeIn() togetherWith fadeOut() },
+                        popTransitionSpec = { fadeIn() togetherWith fadeOut() },
+                        entryDecorators =
+                            listOf(
+                                rememberSaveableStateHolderNavEntryDecorator(),
+                                rememberViewModelStoreNavEntryDecorator(),
+                            ),
+                        entryProvider =
+                            entryProvider {
+                                entry<HomeKey> {
+                                    HomeSheet(
+                                        map = map,
+                                        onOpenStop = backStack::add,
+                                        onDirectionsTo = { backStack.add(DirectionsKey(from = null, to = it.toEndpoint())) },
+                                        onSetFavourite = { backStack.add(SearchKey(saveAs = it)) },
+                                        onOpenSaved = { backStack.add(SavedKey) },
+                                        onOpenTrip = { tripId, stopName -> backStack.add(TripKey(tripId, stopName)) },
+                                    )
+                                }
+                                entry<SavedKey> {
+                                    SavedSheet(
+                                        onOpenPlace = { backStack.add(it.toKey()) },
+                                        onOpenRoute = { backStack.add(DirectionsKey(it.from?.toEndpoint(), it.to?.toEndpoint())) },
+                                    )
+                                }
+                                entry<SearchKey> { search ->
+                                    SearchScreen(
+                                        near = map.userLocation,
+                                        stopsFirst = search.field != null,
+                                        onDismiss = { backStack.removeLastOrNull() },
+                                        onCategory =
+                                            if (search.field == null && search.saveAs == null) {
+                                                { category ->
+                                                    backStack.removeLastOrNull()
+                                                    if (backStack.lastOrNull() is CategoryKey) backStack.removeLastOrNull()
+                                                    backStack.add(CategoryKey(category))
                                                 }
-                                        }
-                                    },
-                                )
-                            }
-                            entry<PlaceKey> { place ->
-                                PlaceSheet(
-                                    place,
-                                    map,
-                                    onDirections = { backStack.add(DirectionsKey(from = null, to = place.toEndpoint())) },
-                                    onOpenStop = backStack::add,
-                                    onOpenTrip = { tripId, stopName -> backStack.add(TripKey(tripId, stopName)) },
-                                )
-                            }
-                            entry<StopKey> { stop ->
-                                StopSheet(
-                                    stop = stop,
-                                    map = map,
-                                    onDirections = { backStack.add(DirectionsKey(from = null, to = stop.toEndpoint())) },
-                                    onOpenTrip = { backStack.add(TripKey(it, stop.name)) },
-                                )
-                            }
-                            entry<DirectionsKey> { directions ->
-                                DirectionsSheet(
-                                    directions = directions,
-                                    map = map,
-                                    onEditField = { backStack.add(SearchKey(it)) },
-                                    onSwap = {
-                                        val index = backStack.indexOf(directions)
-                                        if (index >= 0) backStack[index] = DirectionsKey(from = directions.to, to = directions.from)
-                                    },
-                                    onOpenRoute = { backStack.add(RouteKey(it.id, directions.to?.name)) },
-                                )
-                            }
-                            entry<RouteKey> { RouteSheet(it, map, snackbar) }
-                            entry<CategoryKey> { CategorySheet(it, map, onOpenPlace = { place -> backStack.add(place.toKey()) }) }
-                            entry<TripKey> { TripSheet(it, map) }
-                        },
-                )
-            },
-        ) {
-            val top = backStack.lastOrNull()
-            MapLayer(
-                map = map,
-                showSearchBar = top == HomeKey || top is CategoryKey,
-                category = (top as? CategoryKey)?.category,
-                onCategory = { category ->
-                    if (top is CategoryKey) backStack.removeLastOrNull()
-                    if (category != null) backStack.add(CategoryKey(category))
+                                            } else {
+                                                null
+                                            },
+                                        onSelect = { result ->
+                                            backStack.removeLastOrNull()
+                                            search.saveAs?.let { label ->
+                                                scope.launch { places.saveFavourite(result, label) }
+                                                return@SearchScreen
+                                            }
+                                            val field = search.field
+                                            val index = backStack.indexOfLast { it is DirectionsKey }
+                                            if (field == null || index < 0) {
+                                                backStack.add(result.toKey())
+                                            } else {
+                                                val directions = backStack[index] as DirectionsKey
+                                                backStack[index] =
+                                                    when (field) {
+                                                        DirectionsField.FROM -> directions.copy(from = result.toEndpoint())
+                                                        DirectionsField.TO -> directions.copy(to = result.toEndpoint())
+                                                    }
+                                            }
+                                        },
+                                    )
+                                }
+                                entry<PlaceKey> { place ->
+                                    PlaceSheet(
+                                        place,
+                                        map,
+                                        onDirections = { backStack.add(DirectionsKey(from = null, to = place.toEndpoint())) },
+                                        onOpenStop = backStack::add,
+                                        onOpenTrip = { tripId, stopName -> backStack.add(TripKey(tripId, stopName)) },
+                                    )
+                                }
+                                entry<StopKey> { stop ->
+                                    StopSheet(
+                                        stop = stop,
+                                        map = map,
+                                        onDirections = { backStack.add(DirectionsKey(from = null, to = stop.toEndpoint())) },
+                                        onOpenTrip = { backStack.add(TripKey(it, stop.name)) },
+                                    )
+                                }
+                                entry<DirectionsKey> { directions ->
+                                    DirectionsSheet(
+                                        directions = directions,
+                                        map = map,
+                                        onEditField = { backStack.add(SearchKey(it)) },
+                                        onSwap = {
+                                            val index = backStack.indexOf(directions)
+                                            if (index >= 0) backStack[index] = DirectionsKey(from = directions.to, to = directions.from)
+                                        },
+                                        onOpenRoute = { backStack.add(RouteKey(it.id, directions.to?.name)) },
+                                    )
+                                }
+                                entry<RouteKey> { RouteSheet(it, map, snackbar) }
+                                entry<CategoryKey> { CategorySheet(it, map, onOpenPlace = { place -> backStack.add(place.toKey()) }) }
+                                entry<TripKey> { TripSheet(it, map) }
+                            },
+                    )
                 },
-                onSearch = { backStack.add(SearchKey()) },
-                onSettings = { backStack.add(SettingsKey) },
-                snackbar = snackbar,
-            )
+            ) {
+                MapLayer(
+                    map = map,
+                    peekHeight = peekHeight,
+                    showSearchBar = top == HomeKey || top is CategoryKey,
+                    category = (top as? CategoryKey)?.category,
+                    onCategory = { category ->
+                        if (top is CategoryKey) backStack.removeLastOrNull()
+                        if (category != null) backStack.add(CategoryKey(category))
+                    },
+                    onSearch = { backStack.add(SearchKey()) },
+                    onSettings = { backStack.add(SettingsKey) },
+                    snackbar = snackbar,
+                )
+            }
+            AnimatedContent(top?.takeIf { it.isPage() }, transitionSpec = { fadeIn() togetherWith fadeOut() }) { page ->
+                when (page) {
+                    SettingsKey -> SettingsPage(onBack = { backStack.removeLastOrNull() }, onOpenAbout = { backStack.add(AboutKey) })
+                    AboutKey -> AboutPage(version, onBack = { backStack.removeLastOrNull() })
+                    else -> {}
+                }
+            }
         }
     }
 }
 
+/** Keys shown as full-screen pages over the map instead of in the sheet. */
+private fun NavKey.isPage() = this == SettingsKey || this == AboutKey
+
 @Composable
 private fun MapLayer(
     map: MapController,
+    peekHeight: Dp,
     showSearchBar: Boolean,
     category: PlaceCategory?,
     onCategory: (PlaceCategory?) -> Unit,
@@ -313,7 +336,7 @@ private fun MapLayer(
             start = safe.calculateStartPadding(direction),
             top = safe.calculateTopPadding() + if (showSearchBar) SearchBarHeight + CategoryChipsHeight + ControlMargin * 2 else 0.dp,
             end = safe.calculateEndPadding(direction),
-            bottom = SheetPeekHeight + FabSize + ControlMargin,
+            bottom = peekHeight + FabSize + ControlMargin,
         )
 
     Box(Modifier.fillMaxSize()) {
@@ -332,7 +355,7 @@ private fun MapLayer(
         }
 
         FloatingActionButton(
-            modifier = Modifier.align(Alignment.BottomEnd).padding(end = ControlMargin, bottom = SheetPeekHeight + ControlMargin),
+            modifier = Modifier.align(Alignment.BottomEnd).padding(end = ControlMargin, bottom = peekHeight + ControlMargin),
             onClick = {
                 if (!map.isLocationPermissionGranted) {
                     map.requestLocationPermission()

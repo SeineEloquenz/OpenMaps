@@ -3,6 +3,7 @@ package nz.eloque.openmaps.ui.about
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -19,7 +20,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
+import nz.eloque.openmaps.ui.components.Page
 import nz.eloque.openmaps.ui.resources.Res
+import nz.eloque.openmaps.ui.resources.about
 import nz.eloque.openmaps.ui.resources.about_app
 import nz.eloque.openmaps.ui.resources.about_licence
 import nz.eloque.openmaps.ui.resources.data_sources
@@ -37,8 +40,11 @@ import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
-fun AboutSheet(version: String) {
-    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
+fun AboutPage(
+    version: String,
+    onBack: () -> Unit,
+) = Page(stringResource(Res.string.about), onBack) {
+    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(horizontal = 16.dp)) {
         Text(stringResource(Res.string.about_app, version), style = MaterialTheme.typography.headlineSmall)
         Text(stringResource(Res.string.about_licence), color = MaterialTheme.colorScheme.onSurfaceVariant)
         HorizontalDivider(Modifier.padding(vertical = 12.dp))

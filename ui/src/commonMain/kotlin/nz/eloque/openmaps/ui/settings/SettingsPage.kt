@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
@@ -36,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import nz.eloque.openmaps.core.model.DistanceUnit
 import nz.eloque.openmaps.core.model.SettingsStore
+import nz.eloque.openmaps.ui.components.Page
 import nz.eloque.openmaps.ui.resources.Res
 import nz.eloque.openmaps.ui.resources.about
 import nz.eloque.openmaps.ui.resources.server_category_search
@@ -58,7 +60,10 @@ private const val DEFAULT_PLACE_DETAILS_URL = "https://nominatim.openstreetmap.o
 private const val DEFAULT_CATEGORY_SEARCH_URL = "https://photon.komoot.io"
 
 @Composable
-fun SettingsSheet(onOpenAbout: () -> Unit) {
+fun SettingsPage(
+    onBack: () -> Unit,
+    onOpenAbout: () -> Unit,
+) = Page(stringResource(Res.string.settings), onBack) {
     val settings = koinInject<SettingsStore>()
     val routeOptions by settings.routeOptions.collectAsStateWithLifecycle()
     val distanceUnit by settings.distanceUnit.collectAsStateWithLifecycle()
@@ -66,13 +71,7 @@ fun SettingsSheet(onOpenAbout: () -> Unit) {
     val placeDetailsUrl by settings.placeDetailsUrl.collectAsStateWithLifecycle()
     val categorySearchUrl by settings.categorySearchUrl.collectAsStateWithLifecycle()
 
-    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
-        Text(
-            stringResource(Res.string.settings),
-            style = MaterialTheme.typography.headlineSmall,
-            modifier = Modifier.padding(horizontal = 16.dp),
-        )
-
+    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).navigationBarsPadding()) {
         SectionTitle(Res.string.settings_routes)
         RouteOptionsEditor(routeOptions, settings::setRouteOptions)
         HorizontalDivider(Modifier.padding(vertical = 8.dp))
