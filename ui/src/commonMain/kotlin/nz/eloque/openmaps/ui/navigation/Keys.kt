@@ -9,6 +9,7 @@ import nz.eloque.openmaps.core.model.PlaceId
 import nz.eloque.openmaps.core.model.RouteEnd
 import nz.eloque.openmaps.core.model.SearchResult
 import nz.eloque.openmaps.core.model.TransportMode
+import nz.eloque.openmaps.core.model.TravelMode
 
 @Serializable
 data object HomeKey : NavKey
@@ -120,6 +121,15 @@ data class TripKey(
 
 @Serializable
 data object SavedKey : NavKey
+
+/** A trip with turn-by-turn guidance. A null [from] starts at the user's location. [simulate] drives the route by itself. */
+@Serializable
+data class NavigationKey(
+    val from: Endpoint?,
+    val to: Endpoint,
+    val mode: TravelMode,
+    val simulate: Boolean = false,
+) : NavKey
 
 /** A tapped road event, as the properties of its map feature. */
 @Serializable

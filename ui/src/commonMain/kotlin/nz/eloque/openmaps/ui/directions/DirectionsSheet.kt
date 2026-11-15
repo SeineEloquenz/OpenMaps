@@ -19,6 +19,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.DirectionsTransit
 import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material.icons.filled.TripOrigin
@@ -33,6 +34,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Tab
@@ -61,6 +63,7 @@ import kotlinx.coroutines.launch
 import nz.eloque.openmaps.core.model.DistanceUnit
 import nz.eloque.openmaps.core.model.Itinerary
 import nz.eloque.openmaps.core.model.Leg
+import nz.eloque.openmaps.core.model.Navigator
 import nz.eloque.openmaps.core.model.PlacesStore
 import nz.eloque.openmaps.core.model.RoadEvent
 import nz.eloque.openmaps.core.model.RoadEvents
@@ -91,6 +94,8 @@ import nz.eloque.openmaps.ui.resources.later
 import nz.eloque.openmaps.ui.resources.mode_bike
 import nz.eloque.openmaps.ui.resources.mode_car
 import nz.eloque.openmaps.ui.resources.mode_transit
+import nz.eloque.openmaps.ui.resources.navigation_simulate
+import nz.eloque.openmaps.ui.resources.navigation_start
 import nz.eloque.openmaps.ui.resources.needs_location_for_route
 import nz.eloque.openmaps.ui.resources.no_routes
 import nz.eloque.openmaps.ui.resources.no_shared_routes
@@ -130,6 +135,8 @@ fun DirectionsSheet(
     onEditField: (DirectionsField) -> Unit,
     onSwap: () -> Unit,
     onOpenRoute: (Itinerary) -> Unit,
+    onNavigate: (TravelMode, simulate: Boolean) -> Unit,
+    canSimulate: Boolean = false,
 ) {
     val viewModel = koinViewModel<DirectionsViewModel> { parametersOf(directions) }
     val result by viewModel.result.collectAsStateWithLifecycle()
@@ -239,7 +246,16 @@ fun DirectionsSheet(
                     if (route == null) {
                         Text(stringResource(Res.string.no_routes), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     } else {
-                        StreetRouteCard(route, mode, unit, eventsOnRoute, onClick = { onOpenRoute(route) })
+                        val navigable = directions.to != null && koinInject<Navigator>().isAvailable
+                        StreetRouteCard(
+                            route,
+                            mode,
+                            unit,
+                            eventsOnRoute,
+                            onClick = { onOpenRoute(route) },
+                            onStart = if (navigable) ({ onNavigate(mode, false) }) else null,
+                            onSimulate = if (navigable && canSimulate) ({ onNavigate(mode, true) }) else null,
+                        )
                     }
                 }
         }
@@ -297,6 +313,8 @@ private fun StreetRouteCard(
     unit: DistanceUnit,
     events: List<RoadEvent>,
     onClick: () -> Unit,
+    onStart: (() -> Unit)?,
+    onSimulate: (() -> Unit)?,
 ) {
     val legs = itinerary.legs.filterIsInstance<Leg.Street>()
     val meters = legs.mapNotNull { it.distanceMeters }.takeIf { it.isNotEmpty() }?.sum()
@@ -338,6 +356,15 @@ private fun StreetRouteCard(
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Icon(event.icon, contentDescription = null, tint = event.color, modifier = Modifier.size(18.dp))
                     Text(text, style = MaterialTheme.typography.bodyMedium, color = event.color)
+                }
+            }
+            if (onStart != null) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 4.dp)) {
+                    Button(onClick = onStart) {
+                        Icon(Icons.Default.Navigation, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Text(stringResource(Res.string.navigation_start), modifier = Modifier.padding(start = 8.dp))
+                    }
+                    onSimulate?.let { OutlinedButton(onClick = it) { Text(stringResource(Res.string.navigation_simulate)) } }
                 }
             }
         }

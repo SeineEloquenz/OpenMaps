@@ -76,6 +76,9 @@ interface Navigator {
 
     val announcements: Flow<Announcement>
 
+    /** False while trips cannot start, such as when no routing server is set. */
+    val isAvailable: Boolean
+
     /** Starts a trip, replacing any running one. Throws when no route can be found. [simulate] drives the route by itself. */
     suspend fun start(
         from: LatLng,

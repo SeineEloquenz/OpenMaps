@@ -84,6 +84,9 @@ internal class ValhallaNavigationRoutes(
     private val language: () -> String?,
     private val units: () -> DistanceUnit,
 ) {
+    val isConfigured: Boolean
+        get() = baseUrl() != null
+
     /** Null when Valhalla finds no route. [heading] keeps a rerouted trip going the way the user faces. */
     suspend fun route(
         from: LatLng,
@@ -157,6 +160,8 @@ internal class ValhallaNavigator(
     override val state: StateFlow<NavigationState?> = _state.asStateFlow()
     private val _announcements = MutableSharedFlow<Announcement>(extraBufferCapacity = 8)
     override val announcements: Flow<Announcement> = _announcements.asSharedFlow()
+    override val isAvailable: Boolean
+        get() = routes.isConfigured
 
     private var trip: Trip? = null
 

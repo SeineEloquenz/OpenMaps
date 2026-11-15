@@ -87,12 +87,15 @@ import nz.eloque.openmaps.ui.components.StopsOnMap
 import nz.eloque.openmaps.ui.directions.DirectionsSheet
 import nz.eloque.openmaps.ui.directions.RouteSheet
 import nz.eloque.openmaps.ui.directions.TripSheet
+import nz.eloque.openmaps.ui.guidance.NavigationBanner
+import nz.eloque.openmaps.ui.guidance.NavigationSheet
 import nz.eloque.openmaps.ui.home.HomeSheet
 import nz.eloque.openmaps.ui.navigation.AboutKey
 import nz.eloque.openmaps.ui.navigation.CategoryKey
 import nz.eloque.openmaps.ui.navigation.DirectionsField
 import nz.eloque.openmaps.ui.navigation.DirectionsKey
 import nz.eloque.openmaps.ui.navigation.HomeKey
+import nz.eloque.openmaps.ui.navigation.NavigationKey
 import nz.eloque.openmaps.ui.navigation.PlaceKey
 import nz.eloque.openmaps.ui.navigation.RoadEventKey
 import nz.eloque.openmaps.ui.navigation.RouteKey
@@ -140,6 +143,7 @@ private val navConfiguration =
                     subclass(CategoryKey::class)
                     subclass(TripKey::class)
                     subclass(RoadEventKey::class)
+                    subclass(NavigationKey::class)
                 }
             }
     }
@@ -156,7 +160,10 @@ private val ControlMargin = 16.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun App(version: String) {
+fun App(
+    version: String,
+    debug: Boolean = false,
+) {
     val http = koinInject<HttpClient>()
     setSingletonImageLoaderFactory { context ->
         ImageLoader.Builder(context).components { add(KtorNetworkFetcherFactory(httpClient = { http })) }.build()
@@ -224,6 +231,7 @@ fun App(version: String) {
             when {
                 top == HomeKey -> HomePeekHeight
                 top is CategoryKey -> windowHeight * CATEGORY_PEEK_FRACTION
+                top is NavigationKey -> NavigationPeekHeight
                 else -> SheetPeekHeight
             } +
                 with(LocalDensity.current) { WindowInsets.navigationBars.getBottom(this).toDp() }
@@ -328,6 +336,10 @@ fun App(version: String) {
                                             if (index >= 0) backStack[index] = DirectionsKey(from = directions.to, to = directions.from)
                                         },
                                         onOpenRoute = { backStack.add(RouteKey(it.id, directions.to?.name)) },
+                                        onNavigate = { mode, simulate ->
+                                            directions.to?.let { backStack.add(NavigationKey(directions.from, it, mode, simulate)) }
+                                        },
+                                        canSimulate = debug,
                                     )
                                 }
                                 entry<RouteKey> { RouteSheet(it, map, snackbar) }
@@ -345,6 +357,7 @@ fun App(version: String) {
                                 }
                                 entry<TripKey> { TripSheet(it, map) }
                                 entry<RoadEventKey> { RoadEventSheet(it) }
+                                entry<NavigationKey> { NavigationSheet(it, map, onEnd = { backStack.removeLastOrNull() }) }
                             },
                     )
                 },
@@ -353,6 +366,7 @@ fun App(version: String) {
                     map = map,
                     peekHeight = peekHeight,
                     showSearchBar = top == HomeKey || top is CategoryKey,
+                    navigating = top is NavigationKey,
                     category = (top as? CategoryKey)?.category,
                     onCategory = { category ->
                         if (top is CategoryKey) backStack.removeLastOrNull()
@@ -392,6 +406,7 @@ private fun MapLayer(
     map: MapController,
     peekHeight: Dp,
     showSearchBar: Boolean,
+    navigating: Boolean,
     category: PlaceCategory?,
     onCategory: (PlaceCategory?) -> Unit,
     onSearch: () -> Unit,
@@ -404,7 +419,13 @@ private fun MapLayer(
     val mapPadding =
         PaddingValues(
             start = safe.calculateStartPadding(direction),
-            top = safe.calculateTopPadding() + if (showSearchBar) SearchBarHeight + CategoryChipsHeight + ControlMargin * 2 else 0.dp,
+            top =
+                safe.calculateTopPadding() +
+                    when {
+                        showSearchBar -> SearchBarHeight + CategoryChipsHeight + ControlMargin * 2
+                        navigating -> NavigationBannerHeight
+                        else -> 0.dp
+                    },
             end = safe.calculateEndPadding(direction),
             bottom = peekHeight + FabSize + ControlMargin,
         )
@@ -430,6 +451,11 @@ private fun MapLayer(
             }
         }
 
+        if (navigating) {
+            NavigationBanner(Modifier.statusBarsPadding().padding(ControlMargin))
+            return@Box
+        }
+
         FloatingActionButton(
             modifier = Modifier.align(Alignment.BottomEnd).padding(end = ControlMargin, bottom = peekHeight + ControlMargin),
             onClick = {
@@ -448,6 +474,8 @@ private fun MapLayer(
 }
 
 private val SearchBarHeight = 56.dp
+private val NavigationBannerHeight = 140.dp
+private val NavigationPeekHeight = 130.dp
 private val FabSize = 56.dp
 
 @Composable

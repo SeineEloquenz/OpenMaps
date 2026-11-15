@@ -5,6 +5,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DirectionsBoat
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.DirectionsSubway
+import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material.icons.filled.Train
 import androidx.compose.material.icons.filled.Tram
 import androidx.compose.material3.MaterialTheme
@@ -45,7 +46,9 @@ import nz.eloque.openmaps.core.model.LoadedPlaces
 import nz.eloque.openmaps.core.model.RoadEventTiles
 import nz.eloque.openmaps.core.model.SearchResult
 import nz.eloque.openmaps.core.model.TransportMode
+import org.maplibre.compose.camera.CameraAnimation
 import org.maplibre.compose.camera.CameraFit
+import org.maplibre.compose.camera.CameraMoveReason
 import org.maplibre.compose.camera.CameraPosition
 import org.maplibre.compose.camera.CameraUpdate
 import org.maplibre.compose.expressions.dsl.asString
@@ -54,6 +57,8 @@ import org.maplibre.compose.expressions.dsl.const
 import org.maplibre.compose.expressions.dsl.feature
 import org.maplibre.compose.expressions.dsl.image
 import org.maplibre.compose.expressions.dsl.switch
+import org.maplibre.compose.expressions.value.IconPitchAlignment
+import org.maplibre.compose.expressions.value.IconRotationAlignment
 import org.maplibre.compose.expressions.value.LineCap
 import org.maplibre.compose.expressions.value.LineJoin
 import org.maplibre.compose.interaction.ClickResult
@@ -78,6 +83,7 @@ import org.maplibre.spatialk.geojson.FeatureCollection
 import org.maplibre.spatialk.geojson.LineString
 import org.maplibre.spatialk.geojson.Point
 import org.maplibre.spatialk.geojson.Position
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
@@ -87,6 +93,13 @@ data class MapLine(
     val points: List<LatLng>,
     val color: Color,
     val width: Dp = 6.dp,
+)
+
+/** The user's position while navigating, drawn as an arrow turned to [bearing]. */
+@Immutable
+data class NavigationPuck(
+    val position: LatLng,
+    val bearing: Double?,
 )
 
 /** Map camera, user location, the highlighted marker and drawn lines, shared between [OpenMap] and the UI around it. */
@@ -101,6 +114,7 @@ class MapController internal constructor(
     private val sharingState: MutableState<List<SharingPin>>,
     private val routesState: MutableState<List<MapRoute>>,
     private val roadEventsState: MutableState<RoadEventTiles?>,
+    private val puckState: MutableState<NavigationPuck?>,
 ) {
     val isLocationPermissionGranted: Boolean
         get() = location.permission is LocationPermission.Granted
@@ -138,6 +152,25 @@ class MapController internal constructor(
     var routes: List<MapRoute> by routesState
 
     var onRouteClick: ((String) -> Unit)? by mutableStateOf(null)
+
+    var puck: NavigationPuck? by puckState
+
+    /** True while the user drags, pinches or rotates the map. */
+    val isMovedByUser: Boolean
+        get() = mapState.isCameraMoving && mapState.cameraMoveReason == CameraMoveReason.Gesture
+
+    /** Moves the camera smoothly to [position], turned to [bearing] and tilted by [tilt] degrees. */
+    suspend fun follow(
+        position: LatLng,
+        bearing: Double?,
+        zoom: Double,
+        tilt: Double,
+    ) {
+        mapState.animateCamera(
+            CameraUpdate(center = position.toPosition(), zoom = zoom, bearing = bearing, pitch = tilt),
+            CameraAnimation.Ease { duration = FollowAnimation },
+        )
+    }
 
     /** Road events drawn on the map, or null for none. */
     var roadEvents: RoadEventTiles? by roadEventsState
@@ -270,6 +303,11 @@ fun rememberMapController(
     val sharingState = remember { mutableStateOf<List<SharingPin>>(emptyList(), referentialEqualityPolicy()) }
     val routesState = remember { mutableStateOf<List<MapRoute>>(emptyList(), referentialEqualityPolicy()) }
     val roadEventsState = remember { mutableStateOf<RoadEventTiles?>(null) }
+    val puckState = remember { mutableStateOf<NavigationPuck?>(null) }
+    val puckIcon =
+        rememberVectorPainter(Icons.Default.Navigation).let { painter ->
+            image(remember(painter, markerColor) { BadgePainter(painter, markerColor, Color.White) }, size = DpSize(30.dp, 30.dp))
+        }
     val routeColors =
         RouteColors(
             other = if (dark) Color(0xFF6B7280) else Color(0xFFB0B7C3),
@@ -378,9 +416,33 @@ fun rememberMapController(
                 )
             }
             RouteLabels(routesState.value, routeColors) { id -> controllerRef[0]?.onRouteClick?.invoke(id) }
+            puckState.value?.let { puck ->
+                val source = rememberGeoJsonSource(GeoJsonData.Features(Point(puck.position.toPosition())))
+                SymbolLayer(
+                    id = "navigation-puck",
+                    source = source,
+                    iconImage = puckIcon,
+                    iconRotate = const((puck.bearing ?: 0.0).toFloat()),
+                    iconRotationAlignment = const(IconRotationAlignment.Map),
+                    iconPitchAlignment = const(IconPitchAlignment.Viewport),
+                    iconAllowOverlap = const(true),
+                    iconIgnorePlacement = const(true),
+                )
+            }
         }
     return remember(mapState, location) {
-        MapController(mapState, location, markerState, linesState, stopsState, resultsState, sharingState, routesState, roadEventsState)
+        MapController(
+            mapState,
+            location,
+            markerState,
+            linesState,
+            stopsState,
+            resultsState,
+            sharingState,
+            routesState,
+            roadEventsState,
+            puckState,
+        )
     }
         .also { controllerRef[0] = it }
 }
@@ -435,6 +497,7 @@ private val StopIconTint = Color(0xFF303030)
 /** Below this zoom there are too many stops in view to load or draw. */
 const val STOPS_MIN_ZOOM = 14.0
 private val FIT_MARGIN = 48.dp
+private val FollowAnimation = 900.milliseconds
 private const val ROUTE_EVENT_DISTANCE = 30.0
 private val EUROPE = Position(longitude = 10.0, latitude = 50.0)
 
