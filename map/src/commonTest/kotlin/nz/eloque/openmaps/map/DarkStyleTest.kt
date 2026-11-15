@@ -31,7 +31,7 @@ class DarkStyleTest {
     @Test
     fun roadsStandOutFromTheDarkGround() {
         val ground = lightness("background", "background-color")
-        assertTrue(ground < 0.2)
+        assertTrue(ground < 0.25)
         assertTrue(lightness("road_minor", "line-color") > ground + 0.1)
         assertTrue(lightness("road_minor_casing", "line-color") < ground)
     }
@@ -47,7 +47,7 @@ class DarkStyleTest {
     fun recolorsInsideExpressions() {
         val stops = layers.getValue("road_motorway").getValue("line-color").jsonArray
         assertEquals("interpolate", stops[0].jsonPrimitive.content)
-        assertTrue(parseColor(stops[6].jsonPrimitive.content)!!.l < 0.4)
+        assertTrue(parseColor(stops[6].jsonPrimitive.content)!!.l < 0.5)
     }
 
     @Test

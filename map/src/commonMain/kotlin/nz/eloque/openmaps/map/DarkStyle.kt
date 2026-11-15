@@ -20,15 +20,18 @@ internal fun darkStyle(light: String): String {
 
 private enum class Tone(
     val lightness: (Double) -> Double,
-    val saturation: Double,
+    val slate: Boolean = false,
 ) {
-    INVERTED({ 0.1 + (1 - it) * 0.75 }, 0.45),
-    BUILDING({ 0.1 + (1 - it) * 0.4 }, 0.3),
-    ROAD({ 0.12 + it * 0.3 }, 0.5),
-    CASING({ 0.04 + it * 0.1 }, 0.4),
+    INVERTED({ 0.19 + (1 - it) * 0.62 }),
+    WATER({ 0.1 + (1 - it) * 0.2 }),
+    BUILDING({ 0.21 + (1 - it) * 0.2 }, slate = true),
+    MINOR_ROAD({ 0.08 + it * 0.24 }, slate = true),
+    MAJOR_ROAD({ 0.3 + it * 0.15 }, slate = true),
+    CASING({ 0.16 }, slate = true),
 }
 
 private val RoadLayer = Regex("^(road|bridge|tunnel)_")
+private val MajorRoad = Regex("motorway|trunk|primary|secondary|tertiary|link")
 
 private fun darken(layer: JsonObject): JsonObject {
     val id = layer["id"]?.jsonPrimitive?.content.orEmpty()
@@ -36,9 +39,11 @@ private fun darken(layer: JsonObject): JsonObject {
     val tone =
         when {
             id.startsWith("building") -> Tone.BUILDING
+            id.startsWith("water") && type != "symbol" -> Tone.WATER
             type != "line" || !RoadLayer.containsMatchIn(id) || "rail" in id -> Tone.INVERTED
             "casing" in id -> Tone.CASING
-            else -> Tone.ROAD
+            MajorRoad.containsMatchIn(id) -> Tone.MAJOR_ROAD
+            else -> Tone.MINOR_ROAD
         }
     val paint =
         layer["paint"]?.jsonObject.orEmpty().mapValues { (key, value) ->
@@ -50,7 +55,13 @@ private fun darken(layer: JsonObject): JsonObject {
             paint.containsKey("fill-pattern") -> mapOf("fill-opacity" to JsonPrimitive(PATTERN_OPACITY))
             else -> emptyMap()
         }
-    return JsonObject(layer + ("paint" to JsonObject(paint + extra)))
+    val changes =
+        buildMap {
+            put("paint", JsonObject(paint + extra))
+            if (id.startsWith("building")) put("minzoom", JsonPrimitive(BUILDING_MIN_ZOOM))
+            if (id == "landuse_residential") put("layout", JsonObject(mapOf("visibility" to JsonPrimitive("none"))))
+        }
+    return JsonObject(layer + changes)
 }
 
 private fun recolor(
@@ -70,9 +81,17 @@ internal data class Hsla(
     val a: Double,
 )
 
+/** Greys and roads turn navy slate, greens deep teal, and other colours a muted violet. */
 private fun Hsla.toned(tone: Tone): String {
-    val l = tone.lightness(l).coerceIn(0.0, 1.0)
-    return "hsla(${h.roundToInt()},${percent(s * tone.saturation)}%,${percent(l)}%,$a)"
+    val chroma = s * (1 - abs(2 * l - 1))
+    val dark = tone.lightness(l).coerceIn(0.0, 1.0)
+    val (h, s, l) =
+        when {
+            tone.slate || chroma < NEUTRAL_CHROMA -> Triple(SLATE_HUE, if (dark < 0.5) 0.36 else 0.1, dark)
+            h in 60.0..170.0 -> Triple(TEAL_HUE, 0.6, minOf(dark, GREEN_LIGHTNESS))
+            else -> Triple(h + (VIOLET_HUE - h) * 0.6, minOf(s * 0.3, 0.2), dark)
+        }
+    return "hsla(${h.roundToInt()},${percent(s)}%,${percent(l)}%,$a)"
 }
 
 private fun percent(value: Double) = (value * 1000).roundToInt() / 10.0
@@ -126,3 +145,9 @@ private fun rgbToHsl(
 
 private const val RASTER_BRIGHTNESS = 0.3
 private const val PATTERN_OPACITY = 0.15
+private const val BUILDING_MIN_ZOOM = 16.5
+private const val NEUTRAL_CHROMA = 0.1
+private const val SLATE_HUE = 216.0
+private const val TEAL_HUE = 192.0
+private const val GREEN_LIGHTNESS = 0.22
+private const val VIOLET_HUE = 240.0
