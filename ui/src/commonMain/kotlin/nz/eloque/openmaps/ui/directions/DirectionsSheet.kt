@@ -60,6 +60,7 @@ import nz.eloque.openmaps.core.model.PlacesStore
 import nz.eloque.openmaps.core.model.SettingsStore
 import nz.eloque.openmaps.core.model.TransportMode
 import nz.eloque.openmaps.core.model.TravelMode
+import nz.eloque.openmaps.core.model.best
 import nz.eloque.openmaps.map.MapController
 import nz.eloque.openmaps.ui.components.LineChip
 import nz.eloque.openmaps.ui.components.LoadState
@@ -132,7 +133,8 @@ fun DirectionsSheet(
             TravelMode.BIKE to direct[TransportMode.BIKE],
         )
     var selectedId by rememberSaveable { mutableStateOf<String?>(null) }
-    val selected = loaded?.itineraries?.let { list -> list.firstOrNull { it.id == selectedId } ?: list.firstOrNull() }
+    val best = loaded?.itineraries?.best(arriveBy = time is TimeChoice.ArriveBy)
+    val selected = loaded?.itineraries?.firstOrNull { it.id == selectedId } ?: best
     if (mode == TravelMode.TRANSIT) {
         ShowItineraryOnMap(map, selected, fit = false)
         ShowRouteChoicesOnMap(map, loaded?.itineraries.orEmpty(), selected) { selectedId = it.id }
@@ -160,7 +162,7 @@ fun DirectionsSheet(
                 selected = mode,
                 durations =
                     routes.mapValues { it.value?.duration } +
-                        (TravelMode.TRANSIT to loaded?.itineraries?.minOfOrNull { it.duration }),
+                        (TravelMode.TRANSIT to best?.duration),
                 onSelect = viewModel::selectMode,
             )
         }

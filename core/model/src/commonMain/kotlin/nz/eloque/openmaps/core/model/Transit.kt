@@ -92,6 +92,14 @@ data class Itinerary(
         get() = end - start
 }
 
+/** The route to suggest first: the earliest arrival, or with [arriveBy] the latest departure, then fewer transfers, then the shorter ride. */
+fun List<Itinerary>.best(arriveBy: Boolean = false): Itinerary? =
+    minWithOrNull(
+        compareBy<Itinerary> { if (arriveBy) -it.start.toEpochMilliseconds() else it.end.toEpochMilliseconds() }
+            .thenBy { it.transfers }
+            .thenBy { it.duration },
+    )
+
 data class Departure(
     val stopId: String?,
     val stopName: String,
