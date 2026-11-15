@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
@@ -220,7 +221,9 @@ fun App(version: String) {
                 sheetContent = {
                     val statusBar = WindowInsets.statusBars.getTop(LocalDensity.current)
                     NavDisplay(
-                        modifier = Modifier.belowStatusBar(statusBar) { sheetState.bottomSheetState.requireOffset() },
+                        // Without full height, content shorter than the peek makes the sheet count as expanded,
+                        // so it opens fully by itself once results load.
+                        modifier = Modifier.fillMaxHeight().belowStatusBar(statusBar) { sheetState.bottomSheetState.requireOffset() },
                         backStack = backStack.filterNot { it.isPage() },
                         onBack = { backStack.removeLastOrNull() },
                         transitionSpec = { fadeIn() togetherWith fadeOut() },
