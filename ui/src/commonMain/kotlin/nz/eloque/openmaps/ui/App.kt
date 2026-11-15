@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Settings
@@ -48,6 +49,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.offset
@@ -78,6 +80,7 @@ import nz.eloque.openmaps.ui.about.AboutPage
 import nz.eloque.openmaps.ui.category.CategoryChips
 import nz.eloque.openmaps.ui.category.CategoryChipsHeight
 import nz.eloque.openmaps.ui.category.CategorySheet
+import nz.eloque.openmaps.ui.category.label
 import nz.eloque.openmaps.ui.components.StopsOnMap
 import nz.eloque.openmaps.ui.directions.DirectionsSheet
 import nz.eloque.openmaps.ui.directions.RouteSheet
@@ -99,6 +102,7 @@ import nz.eloque.openmaps.ui.navigation.toEndpoint
 import nz.eloque.openmaps.ui.navigation.toKey
 import nz.eloque.openmaps.ui.place.PlaceSheet
 import nz.eloque.openmaps.ui.resources.Res
+import nz.eloque.openmaps.ui.resources.clear
 import nz.eloque.openmaps.ui.resources.dropped_pin
 import nz.eloque.openmaps.ui.resources.my_location
 import nz.eloque.openmaps.ui.resources.search_hint
@@ -138,6 +142,7 @@ private val SheetPeekHeight = 280.dp
 
 /** Shows only the drag handle and the favourites row, so the map has the screen on start. */
 private val HomePeekHeight = 104.dp
+private const val CATEGORY_PEEK_FRACTION = 0.45f
 
 /** Differs per app process, so a sheet position saved by an earlier process is not restored and the sheet starts collapsed. */
 private val ProcessStart = Random.nextInt()
@@ -198,8 +203,13 @@ fun App(version: String) {
         LaunchedEffect(sheetTop) {
             if (sheetState.bottomSheetState.currentValue == SheetValue.Expanded) sheetState.bottomSheetState.partialExpand()
         }
+        val windowHeight = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.height.toDp() }
         val peekHeight =
-            (if (top == HomeKey) HomePeekHeight else SheetPeekHeight) +
+            when {
+                top == HomeKey -> HomePeekHeight
+                top is CategoryKey -> windowHeight * CATEGORY_PEEK_FRACTION
+                else -> SheetPeekHeight
+            } +
                 with(LocalDensity.current) { WindowInsets.navigationBars.getBottom(this).toDp() }
 
         Box(Modifier.fillMaxSize()) {
@@ -303,7 +313,14 @@ fun App(version: String) {
                                     )
                                 }
                                 entry<RouteKey> { RouteSheet(it, map, snackbar) }
-                                entry<CategoryKey> { CategorySheet(it, map, onOpenPlace = { place -> backStack.add(place.toKey()) }) }
+                                entry<CategoryKey> {
+                                    CategorySheet(
+                                        it,
+                                        map,
+                                        onOpenPlace = { place -> backStack.add(place.toKey()) },
+                                        onDirections = { place -> backStack.add(DirectionsKey(from = null, to = place.toEndpoint())) },
+                                    )
+                                }
                                 entry<TripKey> { TripSheet(it, map) }
                             },
                     )
@@ -374,7 +391,13 @@ private fun MapLayer(
 
         if (showSearchBar) {
             Column(Modifier.statusBarsPadding().padding(top = ControlMargin)) {
-                SearchPill(onSearch, onSettings, Modifier.padding(horizontal = ControlMargin))
+                SearchPill(
+                    query = category?.let { stringResource(it.label) },
+                    onClick = onSearch,
+                    onClear = { onCategory(null) },
+                    onSettings = onSettings,
+                    modifier = Modifier.padding(horizontal = ControlMargin),
+                )
                 CategoryChips(
                     selected = category,
                     onSelect = onCategory,
@@ -406,7 +429,9 @@ private val FabSize = 56.dp
 
 @Composable
 private fun SearchPill(
+    query: String?,
     onClick: () -> Unit,
+    onClear: () -> Unit,
     onSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -420,10 +445,16 @@ private fun SearchPill(
         Row(Modifier.padding(start = 20.dp, end = 4.dp, top = 4.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Default.Search, contentDescription = null)
             Text(
-                stringResource(Res.string.search_hint),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                query ?: stringResource(Res.string.search_hint),
+                color = if (query != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
                 modifier = Modifier.weight(1f).padding(start = 12.dp),
             )
+            if (query != null) {
+                IconButton(onClick = onClear) {
+                    Icon(Icons.Default.Close, contentDescription = stringResource(Res.string.clear))
+                }
+            }
             IconButton(onClick = onSettings) {
                 Icon(Icons.Outlined.Settings, contentDescription = stringResource(Res.string.settings))
             }

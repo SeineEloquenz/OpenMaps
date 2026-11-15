@@ -181,6 +181,9 @@
     <string name="email">Email</string>
     <string name="operator">Operated by</string>
     <string name="cuisine">Cuisine</string>
+    <string name="filter_open_now">Open now</string>
+    <string name="filter_any_cuisine">Any cuisine</string>
+    <string name="filter_wheelchair">Wheelchair</string>
     <string name="read_on_wikipedia">Read more on Wikipedia</string>
     <string name="photos_commons">Photos from Wikimedia Commons</string>
     <string name="photos_nearby">Photos taken nearby, from Wikimedia Commons</string>

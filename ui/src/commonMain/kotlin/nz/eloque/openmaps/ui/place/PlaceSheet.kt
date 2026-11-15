@@ -367,7 +367,7 @@ private fun DetailRow(
     )
 }
 
-private fun String.telUri() = "tel:${filter { c -> c.isDigit() || c == '+' }}"
+internal fun String.telUri() = "tel:${filter { c -> c.isDigit() || c == '+' }}"
 
 private fun PlaceKey.shareUrl(): String =
     parsedOsmId?.let { "https://www.openstreetmap.org/${it.type.name.lowercase()}/${it.id}" }

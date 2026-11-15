@@ -22,6 +22,7 @@ data class LatLng(
 }
 
 private const val EARTH_RADIUS_METERS = 6_371_000.0
+private const val METERS_PER_DEGREE = 111_320.0
 
 private fun Double.toRadians() = this * PI / 180
 
@@ -46,4 +47,19 @@ data class GeoBounds(
     val west: Double,
     val north: Double,
     val east: Double,
-)
+) {
+    /** These bounds, grown where needed to reach at least [radiusMeters] from [center] in every direction. */
+    fun coveringAtLeast(
+        center: LatLng,
+        radiusMeters: Double,
+    ): GeoBounds {
+        val latitude = radiusMeters / METERS_PER_DEGREE
+        val longitude = latitude / cos(center.latitude * PI / 180)
+        return GeoBounds(
+            south = minOf(south, center.latitude - latitude),
+            west = minOf(west, center.longitude - longitude),
+            north = maxOf(north, center.latitude + latitude),
+            east = maxOf(east, center.longitude + longitude),
+        )
+    }
+}

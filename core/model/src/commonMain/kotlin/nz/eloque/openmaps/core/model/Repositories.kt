@@ -15,6 +15,9 @@ interface Geocoder {
 
 interface PlaceDetailsSource {
     suspend fun details(osmId: OsmId): PlaceDetails?
+
+    /** Details of many places in as few requests as the service allows. Places it does not know are left out. */
+    suspend fun detailsOf(osmIds: List<OsmId>): Map<OsmId, PlaceDetails>
 }
 
 sealed interface PlanTarget {
