@@ -168,11 +168,9 @@ fun rememberMapController(
     loadStyle: suspend (String) -> String,
     dark: Boolean = isSystemInDarkTheme(),
 ): MapController {
-    val accent = MaterialTheme.colorScheme.primary
-    val tint = remember(accent) { MapTint.of(accent.red, accent.green, accent.blue) }
-    val darkBase by produceState<BaseStyle?>(null, dark, tint) {
+    val darkBase by produceState<BaseStyle?>(null, dark) {
         if (!dark) return@produceState
-        value = runCatching { BaseStyle.Json(darkStyle(loadStyle(LIGHT_STYLE), tint)) }.getOrElse { BaseStyle.Uri(DARK_STYLE) }
+        value = runCatching { BaseStyle.Json(darkStyle(loadStyle(LIGHT_STYLE))) }.getOrElse { BaseStyle.Uri(DARK_STYLE) }
     }
     val location = rememberLocationState()
     val markerColor = MaterialTheme.colorScheme.primary

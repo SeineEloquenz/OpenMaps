@@ -11,55 +11,29 @@ import kotlinx.serialization.json.jsonPrimitive
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-/** The hue and saturation that the dark style gives its ground, roads and buildings. */
-internal data class MapTint(
-    val hue: Double,
-    val saturation: Double,
-) {
-    companion object {
-        val Navy = MapTint(216.0, MAX_TINT_SATURATION)
-
-        /** A tint following [accent], muted to grey when the accent itself is grey. */
-        fun of(
-            red: Float,
-            green: Float,
-            blue: Float,
-        ): MapTint {
-            val accent = rgbToHsl(red.toDouble(), green.toDouble(), blue.toDouble(), 1.0)
-            return MapTint(accent.h, ACCENT_TINT_SATURATION * (accent.s / VIVID_SATURATION).coerceAtMost(1.0))
-        }
-    }
-}
-
 /** A dark variant of the MapLibre style [light], keeping all its layers and recolouring their paint. */
-internal fun darkStyle(
-    light: String,
-    tint: MapTint = MapTint.Navy,
-): String {
+internal fun darkStyle(light: String): String {
     val style = Json.parseToJsonElement(light).jsonObject
-    val layers = style.getValue("layers").jsonArray.map { darken(it.jsonObject, tint) }
+    val layers = style.getValue("layers").jsonArray.map { darken(it.jsonObject) }
     return JsonObject(style + ("layers" to JsonArray(layers))).toString()
 }
 
 private enum class Tone(
     val lightness: (Double) -> Double,
-    val slate: Boolean = false,
+    val grey: Boolean = false,
 ) {
     INVERTED({ 0.19 + (1 - it) * 0.62 }),
     WATER({ 0.1 + (1 - it) * 0.2 }),
-    BUILDING({ 0.21 + (1 - it) * 0.2 }, slate = true),
-    MINOR_ROAD({ 0.08 + it * 0.24 }, slate = true),
-    MAJOR_ROAD({ 0.3 + it * 0.15 }, slate = true),
-    CASING({ 0.16 }, slate = true),
+    BUILDING({ 0.21 + (1 - it) * 0.2 }, grey = true),
+    MINOR_ROAD({ 0.08 + it * 0.24 }, grey = true),
+    MAJOR_ROAD({ 0.3 + it * 0.15 }, grey = true),
+    CASING({ 0.16 }, grey = true),
 }
 
 private val RoadLayer = Regex("^(road|bridge|tunnel)_")
 private val MajorRoad = Regex("motorway|trunk|primary|secondary|tertiary|link")
 
-private fun darken(
-    layer: JsonObject,
-    tint: MapTint,
-): JsonObject {
+private fun darken(layer: JsonObject): JsonObject {
     val id = layer["id"]?.jsonPrimitive?.content.orEmpty()
     val type = layer["type"]?.jsonPrimitive?.content
     val tone =
@@ -73,7 +47,7 @@ private fun darken(
         }
     val paint =
         layer["paint"]?.jsonObject.orEmpty().mapValues { (key, value) ->
-            if (key.endsWith("color")) recolor(value, tone, tint) else value
+            if (key.endsWith("color")) recolor(value, tone) else value
         }
     val extra =
         when {
@@ -93,11 +67,10 @@ private fun darken(
 private fun recolor(
     value: JsonElement,
     tone: Tone,
-    tint: MapTint,
 ): JsonElement =
     when (value) {
-        is JsonArray -> JsonArray(value.map { recolor(it, tone, tint) })
-        is JsonPrimitive -> if (value.isString) parseColor(value.content)?.let { JsonPrimitive(it.toned(tone, tint)) } ?: value else value
+        is JsonArray -> JsonArray(value.map { recolor(it, tone) })
+        is JsonPrimitive -> if (value.isString) parseColor(value.content)?.let { JsonPrimitive(it.toned(tone)) } ?: value else value
         else -> value
     }
 
@@ -108,28 +81,14 @@ internal data class Hsla(
     val a: Double,
 )
 
-/** Greys and roads take the [tint], greens turn deep teal, and other colours a muted violet. */
-private fun Hsla.toned(
-    tone: Tone,
-    tint: MapTint,
-): String {
+/** Greys and roads turn a near-neutral grey, greens deep teal, and other colours a muted violet. */
+private fun Hsla.toned(tone: Tone): String {
     val chroma = s * (1 - abs(2 * l - 1))
     val dark = tone.lightness(l).coerceIn(0.0, 1.0)
     val (h, s, l) =
         when {
-            tone.slate || chroma < NEUTRAL_CHROMA ->
-                Triple(
-                    tint.hue,
-                    if (dark <
-                        0.5
-                    ) {
-                        tint.saturation
-                    } else {
-                        tint.saturation * LABEL_TINT
-                    },
-                    dark,
-                )
-            h in 60.0..170.0 -> Triple(TEAL_HUE, 0.6, minOf(dark, GREEN_LIGHTNESS))
+            tone.grey || chroma < NEUTRAL_CHROMA -> Triple(GREY_HUE, GREY_SATURATION, dark)
+            h in 60.0..170.0 -> Triple(TEAL_HUE, 0.45, minOf(dark, GREEN_LIGHTNESS))
             else -> Triple(h + (VIOLET_HUE - h) * 0.6, minOf(s * 0.3, 0.2), dark)
         }
     return "hsla(${h.roundToInt()},${percent(s)}%,${percent(l)}%,$a)"
@@ -163,7 +122,7 @@ internal fun parseColor(text: String): Hsla? {
     }
 }
 
-internal fun rgbToHsl(
+private fun rgbToHsl(
     r: Double,
     g: Double,
     b: Double,
@@ -188,10 +147,8 @@ private const val RASTER_BRIGHTNESS = 0.3
 private const val PATTERN_OPACITY = 0.15
 private const val BUILDING_MIN_ZOOM = 16.5
 private const val NEUTRAL_CHROMA = 0.1
-private const val MAX_TINT_SATURATION = 0.36
-private const val ACCENT_TINT_SATURATION = 0.17
-private const val VIVID_SATURATION = 0.5
-private const val LABEL_TINT = 0.3
+private const val GREY_HUE = 220.0
+private const val GREY_SATURATION = 0.06
 private const val TEAL_HUE = 192.0
 private const val GREEN_LIGHTNESS = 0.22
 private const val VIOLET_HUE = 240.0
