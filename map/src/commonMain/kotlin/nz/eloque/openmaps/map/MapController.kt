@@ -213,7 +213,7 @@ fun rememberMapController(
             PlaceLayers(dark) { place -> controllerRef[0]?.onPlaceClick?.invoke(place) }
             ResultLayers(resultsState.value, dark) { place -> controllerRef[0]?.onPlaceClick?.invoke(place) }
             OtherRouteLines(routesState.value, routeColors) { id -> controllerRef[0]?.onRouteClick?.invoke(id) }
-            linesState.value.forEachIndexed { index, line ->
+            linesState.value.filter { it.points.size >= 2 }.forEachIndexed { index, line ->
                 key(index, line) {
                     // Old and new layers coexist briefly while the list changes, so ids must not repeat across contents.
                     val id = "$index-${line.hashCode()}"
