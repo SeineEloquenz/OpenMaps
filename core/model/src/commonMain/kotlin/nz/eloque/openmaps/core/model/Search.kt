@@ -20,6 +20,7 @@ sealed interface SearchResult {
         override val name: String,
         override val location: LatLng,
         override val area: String?,
+        /** What kind of place it is, as lower-case English words joined by underscores, such as `charging_station`. */
         val category: String?,
     ) : SearchResult
 
@@ -46,7 +47,7 @@ data class PlaceDetails(
     /** The chain the place belongs to, such as `Aldi` or `Aral`. */
     val brand: String? = null,
     val description: String? = null,
-    /** Cuisine codes such as `italian` or `coffee_shop`. */
+    /** Lower-case English words joined by underscores, such as `italian` or `coffee_shop`. */
     val cuisine: List<String> = emptyList(),
     val features: Set<PlaceFeature> = emptySet(),
     /** True when using the place costs nothing, false when it costs, null when unknown. */

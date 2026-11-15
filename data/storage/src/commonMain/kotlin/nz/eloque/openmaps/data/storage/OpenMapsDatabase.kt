@@ -78,7 +78,10 @@ expect object OpenMapsDatabaseConstructor : RoomDatabaseConstructor<OpenMapsData
     override fun initialize(): OpenMapsDatabase
 }
 
-/** Renames the place id column and gives the OpenStreetMap ids stored before, like `way/123`, their `osm:` prefix. */
+/**
+ * Renames the place id column and gives the OpenStreetMap ids stored before, like `way/123`, their `osm:` prefix.
+ * Also drops the icon size earlier versions kept in place types, as in `museum_16`.
+ */
 internal val PlaceIdMigration =
     object : Migration(2, 3) {
         override suspend fun migrate(connection: SQLiteConnection) {
@@ -86,6 +89,9 @@ internal val PlaceIdMigration =
                 connection.execSQL("ALTER TABLE `$table` RENAME COLUMN `osmId` TO `placeId`")
                 connection.execSQL(
                     "UPDATE `$table` SET `placeId` = 'osm:' || `placeId` WHERE `placeId` IS NOT NULL AND `placeId` NOT LIKE '%:%'",
+                )
+                connection.execSQL(
+                    "UPDATE `$table` SET `category` = substr(`category`, 1, length(`category`) - 3) WHERE `category` GLOB '*_[0-9][0-9]'",
                 )
             }
         }

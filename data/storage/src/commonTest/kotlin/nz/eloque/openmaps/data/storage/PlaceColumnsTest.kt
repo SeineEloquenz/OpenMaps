@@ -16,7 +16,7 @@ class PlaceColumnsTest {
         val results =
             listOf(
                 SearchResult.Stop("de:123", "Hbf", location, "Karlsruhe", setOf(TransportMode.TRAM, TransportMode.REGIONAL_RAIL)),
-                SearchResult.Place(PlaceId("osm:way/42"), "Museum", location, "Karlsruhe", "museum_16"),
+                SearchResult.Place(PlaceId("osm:way/42"), "Museum", location, "Karlsruhe", "museum"),
                 SearchResult.Address("Main St 1", location, null, "Main St", "1", "76131"),
             )
         results.forEach { assertEquals(it, it.toColumns().toSearchResult()) }

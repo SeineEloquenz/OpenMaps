@@ -60,6 +60,7 @@ import nz.eloque.openmaps.ui.components.rememberNow
 import nz.eloque.openmaps.ui.navigation.CategoryKey
 import nz.eloque.openmaps.ui.place.OpenStatusText
 import nz.eloque.openmaps.ui.place.telUri
+import nz.eloque.openmaps.ui.place.toCategoryLabel
 import nz.eloque.openmaps.ui.resources.Res
 import nz.eloque.openmaps.ui.resources.call
 import nz.eloque.openmaps.ui.resources.category_none
@@ -75,6 +76,9 @@ import org.koin.core.parameter.parametersOf
 import kotlin.math.abs
 
 private const val FIT_COUNT = 10
+
+/** The place with its type as name when it has none, for the list and the place sheet. Map pins stay unlabelled. */
+private fun SearchResult.Place.named() = if (name.isBlank()) copy(name = category?.toCategoryLabel().orEmpty()) else this
 
 /** True once the view has panned or zoomed by more than a fifth of [other]'s size. */
 private fun GeoBounds.differsFrom(other: GeoBounds): Boolean {
@@ -167,8 +171,8 @@ fun CategorySheet(
                 place = place,
                 details = result.details,
                 distance = formatDistance(place.location.distanceTo(origin), unit),
-                onOpen = { onOpenPlace(place) },
-                onDirections = { onDirections(place) },
+                onOpen = { onOpenPlace(place.named()) },
+                onDirections = { onDirections(place.named()) },
             )
             HorizontalDivider(Modifier.padding(horizontal = 16.dp))
         }
@@ -287,7 +291,7 @@ private fun PlaceResult(
         Modifier.fillMaxWidth().clickable(onClick = onOpen).padding(vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
-        Text(place.name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 16.dp))
+        Text(place.named().name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 16.dp))
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 16.dp)) {
             Text(
                 (listOfNotNull(profile.kind(place, details)?.takeIf { it.isNotBlank() }, distance) + facts).joinToString(" · "),

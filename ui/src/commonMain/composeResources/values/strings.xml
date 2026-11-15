@@ -115,9 +115,14 @@
     <string name="units_metric">Kilometres</string>
     <string name="units_imperial">Miles</string>
     <string name="servers">Servers</string>
-    <string name="servers_detail">Leave empty to use the public services. Set an address to use your own MOTIS, Nominatim or Photon server.</string>
-    <string name="server_transit">Routing and departures (MOTIS)</string>
-    <string name="server_place_details">Place details (Nominatim)</string>
+    <string name="servers_detail">Leave empty to use the public services. Set an address to use your own server.</string>
+    <string name="service_server">%1$s (%2$s)</string>
+    <string name="service_key">%1$s key</string>
+    <string name="service_help">About %1$s</string>
+    <string name="role_transit">Routing and departures</string>
+    <string name="role_place_details">Place details</string>
+    <string name="role_nearby_search">Nearby places</string>
+    <string name="role_charging_stations">Charging stations</string>
     <string name="category_restaurants">Restaurants</string>
     <string name="category_cafes">Cafés</string>
     <string name="category_supermarkets">Supermarkets</string>
@@ -134,7 +139,6 @@
     <string name="address">Address</string>
     <string name="category_nearby">%1$s nearby</string>
     <string name="search_this_area">Search this area</string>
-    <string name="server_category_search">Nearby places (Photon)</string>
     <string name="server_invalid">Must start with https:// or http://</string>
 
     <string name="about">About</string>
@@ -156,8 +160,7 @@
     <string name="source_charging">Charging stations</string>
     <string name="source_charging_detail">Open Charge Map and its data providers</string>
     <string name="api_keys">API keys</string>
-    <string name="open_charge_map_key">Open Charge Map key</string>
-    <string name="open_charge_map_key_detail">Charging stations come from Open Charge Map through a key shared by everyone using OpenMaps. If it runs into its limits, enter your own free key from openchargemap.org.</string>
+    <string name="api_keys_detail">Some services work through a key built into OpenMaps and shared by everyone using it. If one runs into its limits, enter your own free key.</string>
     <string name="privacy">Privacy</string>
     <string name="privacy_detail">There is no account and no tracking. Searches and routes are sent to Transitous, place details are looked up on Nominatim, nearby places on Photon, photos and summaries of places you open on Wikimedia, and map tiles come from OpenFreeMap. Your location only leaves the device as part of these requests.</string>
 

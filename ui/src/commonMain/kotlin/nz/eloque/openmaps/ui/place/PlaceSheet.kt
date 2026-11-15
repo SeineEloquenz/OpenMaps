@@ -376,8 +376,5 @@ private fun DetailRow(
 
 internal fun String.telUri() = "tel:${filter { c -> c.isDigit() || c == '+' }}"
 
-/** Turns an OSM tag value such as `fast_food`, or a MOTIS icon name such as `museum_16`, into a label. */
-fun String.toCategoryLabel(): String =
-    replace(IconSizeSuffix, "").replace('_', ' ').let { if (it == "atm") "ATM" else it.replaceFirstChar { c -> c.uppercase() } }
-
-private val IconSizeSuffix = Regex("_\\d+$")
+/** Turns a place type or cuisine code such as `fast_food` into a label. */
+fun String.toCategoryLabel(): String = replace('_', ' ').let { if (it == "atm") "ATM" else it.replaceFirstChar { c -> c.uppercase() } }

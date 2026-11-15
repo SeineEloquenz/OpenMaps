@@ -148,7 +148,16 @@ internal fun MatchDto.toSearchResult(): SearchResult {
     return when (type) {
         "STOP" -> SearchResult.Stop(id, name, location, area, modes.map(::transportMode).toSet())
         "ADDRESS" -> SearchResult.Address(name, location, area, street, houseNumber, zip)
-        else -> SearchResult.Place(id.takeIf { OsmObject.matches(it) }?.let { PlaceId("osm:$it") }, name, location, area, category)
+        else ->
+            SearchResult.Place(
+                id.takeIf {
+                    OsmObject.matches(it)
+                }?.let { PlaceId("osm:$it") },
+                name,
+                location,
+                area,
+                category?.replace(IconSizeSuffix, ""),
+            )
     }
 }
 
@@ -171,6 +180,9 @@ internal fun mainStreets(
 }
 
 private const val MAIN_STREETS = 2
+
+/** MOTIS gives place types as icon names with a size, such as `museum_16`. */
+private val IconSizeSuffix = Regex("_\\d+$")
 
 /** Geocoded places carry their OpenStreetMap object as `way/123`. */
 private val OsmObject = Regex("(node|way|relation)/\\d+")

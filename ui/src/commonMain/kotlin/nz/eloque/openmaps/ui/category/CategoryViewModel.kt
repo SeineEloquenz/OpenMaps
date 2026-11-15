@@ -14,9 +14,7 @@ import nz.eloque.openmaps.core.model.LoadedPlaces
 import nz.eloque.openmaps.core.model.NearbyPlaces
 import nz.eloque.openmaps.core.model.NearbyResults
 import nz.eloque.openmaps.core.model.PlaceCategory
-import nz.eloque.openmaps.core.model.SearchResult
 import nz.eloque.openmaps.ui.components.LoadState
-import nz.eloque.openmaps.ui.place.toCategoryLabel
 
 class CategoryViewModel(
     private val nearby: NearbyPlaces,
@@ -58,10 +56,7 @@ class CategoryViewModel(
         job =
             viewModelScope.launch {
                 try {
-                    nearby.search(category, center, area, loaded).collect { results ->
-                        _results.value =
-                            LoadState.Loaded(results.copy(places = results.places.map { it.copy(place = it.place.withName()) }))
-                    }
+                    nearby.search(category, center, area, loaded).collect { _results.value = LoadState.Loaded(it) }
                 } catch (e: CancellationException) {
                     throw e
                 } catch (_: Exception) {
@@ -74,8 +69,6 @@ class CategoryViewModel(
     fun showing(bounds: GeoBounds) {
         _searchedArea.value = bounds
     }
-
-    private fun SearchResult.Place.withName() = if (name.isBlank()) copy(name = category?.toCategoryLabel().orEmpty()) else this
 
     fun retry() {
         val center = center ?: return

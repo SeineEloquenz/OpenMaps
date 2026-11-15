@@ -2,12 +2,15 @@ package nz.eloque.openmaps
 
 import android.app.Application
 import android.content.Intent
+import nz.eloque.openmaps.core.model.ServiceCatalog
 import nz.eloque.openmaps.core.platform.ReminderScheduler
 import nz.eloque.openmaps.core.platform.Sharer
 import nz.eloque.openmaps.core.platform.createHttpClient
 import nz.eloque.openmaps.data.geocoding.geocodingModule
+import nz.eloque.openmaps.data.geocoding.geocodingServiceSettings
 import nz.eloque.openmaps.data.storage.storageModule
 import nz.eloque.openmaps.data.transit.transitModule
+import nz.eloque.openmaps.data.transit.transitServiceSettings
 import nz.eloque.openmaps.reminder.AndroidReminderScheduler
 import nz.eloque.openmaps.ui.uiModule
 import org.koin.android.ext.koin.androidContext
@@ -26,6 +29,7 @@ class OpenMapsApplication : Application() {
                 module {
                     single { createHttpClient(USER_AGENT) }
                     single<ReminderScheduler> { reminders }
+                    single { ServiceCatalog(transitServiceSettings + geocodingServiceSettings) }
                     single<Sharer> {
                         Sharer { text ->
                             val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text)

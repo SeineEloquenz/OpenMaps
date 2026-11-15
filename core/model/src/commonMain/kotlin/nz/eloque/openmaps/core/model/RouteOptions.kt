@@ -45,23 +45,12 @@ interface SettingsStore {
 
     fun setDistanceUnit(unit: DistanceUnit)
 
-    /** Base URL of a self-hosted MOTIS API, or null for Transitous. */
-    val transitUrl: StateFlow<String?>
+    /** The user's value for the [ServiceSetting] with [id], or null to use its default. */
+    fun serviceValue(id: String): StateFlow<String?>
 
-    fun setTransitUrl(url: String?)
-
-    /** Base URL of a self-hosted Nominatim, or null for the public one. */
-    val placeDetailsUrl: StateFlow<String?>
-
-    fun setPlaceDetailsUrl(url: String?)
-
-    /** Base URL of a self-hosted Photon, or null for the public one. */
-    val categorySearchUrl: StateFlow<String?>
-
-    fun setCategorySearchUrl(url: String?)
-
-    /** The user's own Open Charge Map API key, or null to use OpenStreetMap for charging stations. */
-    val openChargeMapKey: StateFlow<String?>
-
-    fun setOpenChargeMapKey(key: String?)
+    /** Blank values reset the setting to its default. */
+    fun setServiceValue(
+        id: String,
+        value: String?,
+    )
 }

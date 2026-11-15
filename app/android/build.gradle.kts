@@ -76,6 +76,7 @@ android {
 
 dependencies {
     implementation(project(":ui"))
+    implementation(project(":core:model"))
     implementation(project(":core:platform"))
     implementation(project(":data:transit"))
     implementation(project(":data:geocoding"))

@@ -44,39 +44,20 @@ internal class PreferencesSettingsStore(
         _distanceUnit.value = unit
     }
 
-    private val _transitUrl = MutableStateFlow(settings.getStringOrNull(TRANSIT_URL))
-    override val transitUrl: StateFlow<String?> = _transitUrl.asStateFlow()
+    private val serviceValues = mutableMapOf<String, MutableStateFlow<String?>>()
 
-    override fun setTransitUrl(url: String?) = setUrl(TRANSIT_URL, _transitUrl, url)
+    override fun serviceValue(id: String): StateFlow<String?> = serviceState(id).asStateFlow()
 
-    private val _placeDetailsUrl = MutableStateFlow(settings.getStringOrNull(PLACE_DETAILS_URL))
-    override val placeDetailsUrl: StateFlow<String?> = _placeDetailsUrl.asStateFlow()
-
-    override fun setPlaceDetailsUrl(url: String?) = setUrl(PLACE_DETAILS_URL, _placeDetailsUrl, url)
-
-    private val _categorySearchUrl = MutableStateFlow(settings.getStringOrNull(CATEGORY_SEARCH_URL))
-    override val categorySearchUrl: StateFlow<String?> = _categorySearchUrl.asStateFlow()
-
-    override fun setCategorySearchUrl(url: String?) = setUrl(CATEGORY_SEARCH_URL, _categorySearchUrl, url)
-
-    private val _openChargeMapKey = MutableStateFlow(settings.getStringOrNull(OPEN_CHARGE_MAP_KEY))
-    override val openChargeMapKey: StateFlow<String?> = _openChargeMapKey.asStateFlow()
-
-    override fun setOpenChargeMapKey(key: String?) {
-        val cleaned = key?.trim()?.takeIf { it.isNotEmpty() }
-        if (cleaned == null) settings.remove(OPEN_CHARGE_MAP_KEY) else settings.putString(OPEN_CHARGE_MAP_KEY, cleaned)
-        _openChargeMapKey.value = cleaned
-    }
-
-    private fun setUrl(
-        key: String,
-        state: MutableStateFlow<String?>,
-        url: String?,
+    override fun setServiceValue(
+        id: String,
+        value: String?,
     ) {
-        val cleaned = url?.trim()?.trimEnd('/')?.takeIf { it.isNotEmpty() }
-        if (cleaned == null) settings.remove(key) else settings.putString(key, cleaned)
-        state.value = cleaned
+        val cleaned = value?.trim()?.takeIf { it.isNotEmpty() }
+        if (cleaned == null) settings.remove(id) else settings.putString(id, cleaned)
+        serviceState(id).value = cleaned
     }
+
+    private fun serviceState(id: String) = serviceValues.getOrPut(id) { MutableStateFlow(settings.getStringOrNull(id)) }
 
     private fun readRouteOptions(): RouteOptions {
         val defaults = RouteOptions()
@@ -104,9 +85,5 @@ internal class PreferencesSettingsStore(
         const val NO_LIMIT = -1
         const val TRAVEL_MODE = "route.travelMode"
         const val DISTANCE_UNIT = "units.distance"
-        const val TRANSIT_URL = "server.transit"
-        const val PLACE_DETAILS_URL = "server.placeDetails"
-        const val CATEGORY_SEARCH_URL = "server.categorySearch"
-        const val OPEN_CHARGE_MAP_KEY = "keys.openChargeMap"
     }
 }
