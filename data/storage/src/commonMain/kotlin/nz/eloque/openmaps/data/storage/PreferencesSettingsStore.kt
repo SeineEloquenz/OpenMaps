@@ -59,6 +59,15 @@ internal class PreferencesSettingsStore(
 
     override fun setCategorySearchUrl(url: String?) = setUrl(CATEGORY_SEARCH_URL, _categorySearchUrl, url)
 
+    private val _openChargeMapKey = MutableStateFlow(settings.getStringOrNull(OPEN_CHARGE_MAP_KEY))
+    override val openChargeMapKey: StateFlow<String?> = _openChargeMapKey.asStateFlow()
+
+    override fun setOpenChargeMapKey(key: String?) {
+        val cleaned = key?.trim()?.takeIf { it.isNotEmpty() }
+        if (cleaned == null) settings.remove(OPEN_CHARGE_MAP_KEY) else settings.putString(OPEN_CHARGE_MAP_KEY, cleaned)
+        _openChargeMapKey.value = cleaned
+    }
+
     private fun setUrl(
         key: String,
         state: MutableStateFlow<String?>,
@@ -98,5 +107,6 @@ internal class PreferencesSettingsStore(
         const val TRANSIT_URL = "server.transit"
         const val PLACE_DETAILS_URL = "server.placeDetails"
         const val CATEGORY_SEARCH_URL = "server.categorySearch"
+        const val OPEN_CHARGE_MAP_KEY = "keys.openChargeMap"
     }
 }

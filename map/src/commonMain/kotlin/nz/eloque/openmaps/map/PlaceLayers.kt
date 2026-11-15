@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.Checkroom
 import androidx.compose.material.icons.filled.Church
 import androidx.compose.material.icons.filled.ContentCut
 import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.EvStation
 import androidx.compose.material.icons.filled.Fastfood
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.Hotel
@@ -141,6 +142,7 @@ private enum class PlaceIcon(
     SWIMMING(Icons.Default.Pool, PlaceGroup.NATURE, listOf("swimming_pool", "swimming", "water_park")),
     SPORTS(Icons.Default.FitnessCenter, PlaceGroup.NATURE, listOf("sports_centre", "stadium")),
     FUEL(Icons.Default.LocalGasStation, PlaceGroup.SERVICES, listOf("fuel")),
+    CHARGING(Icons.Default.EvStation, PlaceGroup.SERVICES, listOf("charging_station")),
     ATM(Icons.Default.LocalAtm, PlaceGroup.SERVICES, listOf("atm")),
     BANK(Icons.Default.AccountBalance, PlaceGroup.SERVICES, listOf("bank", "town_hall")),
     POST(Icons.Default.LocalPostOffice, PlaceGroup.SERVICES, listOf("post")),

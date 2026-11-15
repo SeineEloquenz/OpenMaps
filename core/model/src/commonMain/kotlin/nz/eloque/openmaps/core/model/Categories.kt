@@ -8,6 +8,7 @@ enum class PlaceCategory(
     CAFES(listOf("amenity.cafe")),
     SUPERMARKETS(listOf("shop.supermarket", "shop.convenience")),
     GAS_STATIONS(listOf("amenity.fuel")),
+    CHARGING(listOf("amenity.charging_station")),
     BARS(listOf("amenity.bar", "amenity.pub", "amenity.biergarten")),
     ATTRACTIONS(
         listOf(
@@ -26,6 +27,18 @@ enum class PlaceCategory(
     BAKERIES(listOf("shop.bakery", "shop.pastry")),
     ATMS(listOf("amenity.atm")),
     TOILETS(listOf("amenity.toilets")),
+}
+
+/** A charging station database with more detail than OpenStreetMap, used for [PlaceCategory.CHARGING] when set up. */
+interface ChargingStations {
+    /** False until the user has entered what the service needs, such as an API key. */
+    val available: Boolean
+
+    /** Stations inside [bounds], nearest to [center] first, with their details as OSM-style tags. */
+    suspend fun stations(
+        center: LatLng,
+        bounds: GeoBounds,
+    ): List<Pair<SearchResult.Place, PlaceDetails>>
 }
 
 interface CategorySearch {

@@ -28,6 +28,8 @@ import nz.eloque.openmaps.ui.resources.filter_any_cuisine
 import nz.eloque.openmaps.ui.resources.filter_baby_changing
 import nz.eloque.openmaps.ui.resources.filter_bank
 import nz.eloque.openmaps.ui.resources.filter_chain
+import nz.eloque.openmaps.ui.resources.filter_connector
+import nz.eloque.openmaps.ui.resources.filter_fast_charging
 import nz.eloque.openmaps.ui.resources.filter_free
 import nz.eloque.openmaps.ui.resources.filter_free_entry
 import nz.eloque.openmaps.ui.resources.filter_fuel
@@ -207,6 +209,30 @@ internal val PlaceCategory.profile: CategoryProfile
                             Chain,
                         ),
                 )
+            PlaceCategory.CHARGING ->
+                CategoryProfile(
+                    kind = { _, details ->
+                        details?.let {
+                            listOfNotNull(
+                                it.tags["operator"] ?: it.tags["network"] ?: it.tags["brand"],
+                                it.maxPowerKw?.let { kw -> "$kw kW" },
+                                it.connectors.takeIf { list -> list.isNotEmpty() }?.joinToString(", "),
+                            ).joinToString(" · ")
+                        }
+                    },
+                    facts = { details -> listOfNotNull(Res.string.fact_free.takeIf { details.tags["fee"] == "no" }) },
+                    filters =
+                        listOf(
+                            ResultFilter.Choice("connector", Res.string.filter_connector, values = { it.connectors }),
+                            ResultFilter.Toggle("fast", Res.string.filter_fast_charging, labelArgs = listOf(FAST_CHARGING_KW)) {
+                                details,
+                                _,
+                                ->
+                                (details.maxPowerKw ?: 0) >= FAST_CHARGING_KW
+                            },
+                            ResultFilter.Toggle("free", Res.string.filter_free) { details, _ -> details.tags["fee"] == "no" },
+                        ),
+                )
             PlaceCategory.ATTRACTIONS ->
                 CategoryProfile(
                     kind = { place, _ -> place.category?.toCategoryLabel() },
@@ -278,6 +304,35 @@ internal val PlaceDetails.stars: Int?
 
 private val PlaceDetails.fuels: List<String>
     get() = Fuels.filter { (key, _) -> tags[key] == "yes" }.map { it.second }
+
+/** Plug types from OSM `socket:*` tags, named as drivers know them. */
+internal val PlaceDetails.connectors: List<String>
+    get() = Connectors.filter { (key, _) -> tags["socket:$key"].let { it != null && it != "no" && it != "0" } }.map { it.second }.distinct()
+
+/** The highest charging power in any `socket:*:output` tag, in whole kilowatts. */
+internal val PlaceDetails.maxPowerKw: Int?
+    get() =
+        tags
+            .filterKeys { it.startsWith("socket:") && it.endsWith(":output") }
+            .values
+            .flatMap { value -> KilowattPattern.findAll(value).mapNotNull { it.groupValues[1].replace(',', '.').toDoubleOrNull() } }
+            .maxOrNull()
+            ?.toInt()
+
+private val KilowattPattern = Regex("(\\d+(?:[.,]\\d+)?)\\s*kW", RegexOption.IGNORE_CASE)
+private const val FAST_CHARGING_KW = 50
+
+private val Connectors =
+    listOf(
+        "type2_combo" to "CCS",
+        "type2" to "Type 2",
+        "type2_cable" to "Type 2",
+        "chademo" to "CHAdeMO",
+        "type1_combo" to "CCS1",
+        "type1" to "Type 1",
+        "tesla_supercharger" to "Tesla",
+        "schuko" to "Schuko",
+    )
 
 private val Fuels =
     listOf(

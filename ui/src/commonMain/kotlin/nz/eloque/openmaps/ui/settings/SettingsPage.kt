@@ -40,6 +40,9 @@ import nz.eloque.openmaps.core.model.SettingsStore
 import nz.eloque.openmaps.ui.components.Page
 import nz.eloque.openmaps.ui.resources.Res
 import nz.eloque.openmaps.ui.resources.about
+import nz.eloque.openmaps.ui.resources.api_keys
+import nz.eloque.openmaps.ui.resources.open_charge_map_key
+import nz.eloque.openmaps.ui.resources.open_charge_map_key_detail
 import nz.eloque.openmaps.ui.resources.server_category_search
 import nz.eloque.openmaps.ui.resources.server_invalid
 import nz.eloque.openmaps.ui.resources.server_place_details
@@ -70,6 +73,7 @@ fun SettingsPage(
     val transitUrl by settings.transitUrl.collectAsStateWithLifecycle()
     val placeDetailsUrl by settings.placeDetailsUrl.collectAsStateWithLifecycle()
     val categorySearchUrl by settings.categorySearchUrl.collectAsStateWithLifecycle()
+    val openChargeMapKey by settings.openChargeMapKey.collectAsStateWithLifecycle()
 
     Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).navigationBarsPadding()) {
         SectionTitle(Res.string.settings_routes)
@@ -103,6 +107,16 @@ fun SettingsPage(
         ServerUrlField(Res.string.server_category_search, categorySearchUrl, DEFAULT_CATEGORY_SEARCH_URL, settings::setCategorySearchUrl)
         HorizontalDivider(Modifier.padding(vertical = 8.dp))
 
+        SectionTitle(Res.string.api_keys)
+        Text(
+            stringResource(Res.string.open_charge_map_key_detail),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 16.dp),
+        )
+        KeyField(Res.string.open_charge_map_key, openChargeMapKey, settings::setOpenChargeMapKey)
+        HorizontalDivider(Modifier.padding(vertical = 8.dp))
+
         ListItem(
             headlineContent = { Text(stringResource(Res.string.about)) },
             leadingContent = { Icon(Icons.Outlined.Info, contentDescription = null) },
@@ -111,6 +125,39 @@ fun SettingsPage(
             modifier = Modifier.clickable(onClick = onOpenAbout).padding(bottom = 16.dp),
         )
     }
+}
+
+/** Saves when the keyboard's done action is used or the field loses focus. An empty field removes the key. */
+@Composable
+private fun KeyField(
+    label: StringResource,
+    current: String?,
+    onSave: (String?) -> Unit,
+) {
+    var text by rememberSaveable(current) { mutableStateOf(current.orEmpty()) }
+    val focusManager = LocalFocusManager.current
+
+    fun save() {
+        if (text.trim() != current.orEmpty()) onSave(text)
+    }
+
+    OutlinedTextField(
+        value = text,
+        onValueChange = { text = it },
+        label = { Text(stringResource(label)) },
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+        keyboardActions =
+            KeyboardActions(onDone = {
+                save()
+                focusManager.clearFocus()
+            }),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 4.dp)
+                .onFocusChanged { if (!it.isFocused) save() },
+    )
 }
 
 @Composable

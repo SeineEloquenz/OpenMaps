@@ -1,6 +1,7 @@
 package nz.eloque.openmaps.data.geocoding
 
 import nz.eloque.openmaps.core.model.CategorySearch
+import nz.eloque.openmaps.core.model.ChargingStations
 import nz.eloque.openmaps.core.model.PlaceDetailsSource
 import nz.eloque.openmaps.core.model.PlaceMediaSource
 import nz.eloque.openmaps.core.model.SettingsStore
@@ -21,4 +22,8 @@ fun geocodingModule(language: () -> String? = { null }) =
             PhotonCategorySearch(get(), language) { settings.categorySearchUrl.value ?: PHOTON_API }
         }
         single<PlaceMediaSource> { WikimediaMedia(get(), language) }
+        single<ChargingStations> {
+            val settings = get<SettingsStore>()
+            OpenChargeMapStations(get()) { settings.openChargeMapKey.value }
+        }
     }

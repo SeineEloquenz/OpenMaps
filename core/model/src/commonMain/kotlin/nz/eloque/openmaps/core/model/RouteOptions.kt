@@ -59,4 +59,9 @@ interface SettingsStore {
     val categorySearchUrl: StateFlow<String?>
 
     fun setCategorySearchUrl(url: String?)
+
+    /** The user's own Open Charge Map API key, or null to use OpenStreetMap for charging stations. */
+    val openChargeMapKey: StateFlow<String?>
+
+    fun setOpenChargeMapKey(key: String?)
 }

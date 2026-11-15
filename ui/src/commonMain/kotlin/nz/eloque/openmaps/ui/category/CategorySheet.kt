@@ -63,6 +63,7 @@ import nz.eloque.openmaps.ui.place.telUri
 import nz.eloque.openmaps.ui.resources.Res
 import nz.eloque.openmaps.ui.resources.call
 import nz.eloque.openmaps.ui.resources.category_none
+import nz.eloque.openmaps.ui.resources.charging_attribution
 import nz.eloque.openmaps.ui.resources.directions
 import nz.eloque.openmaps.ui.resources.search_this_area
 import nz.eloque.openmaps.ui.resources.website
@@ -105,7 +106,7 @@ fun CategorySheet(
     val profile = key.category.profile
     val origin = map.userLocation ?: map.center
     val shown =
-        all.filter { profile.allows(filters, it.osmId?.let(details::get), now) }.sortedBy { it.location.distanceTo(origin) }
+        all.filter { profile.allows(filters, details[it], now) }.sortedBy { it.location.distanceTo(origin) }
 
     LaunchedEffect(viewModel) {
         if (viewModel.searchedArea.value != null) return@LaunchedEffect
@@ -163,15 +164,28 @@ fun CategorySheet(
             PlaceResult(
                 profile = profile,
                 place = place,
-                details = place.osmId?.let(details::get),
+                details = details[place],
                 distance = formatDistance(place.location.distanceTo(origin), unit),
                 onOpen = { onOpenPlace(place) },
                 onDirections = { onDirections(place) },
             )
             HorizontalDivider(Modifier.padding(horizontal = 16.dp))
         }
+        if (viewModel.fromChargingDatabase && shown.isNotEmpty()) {
+            item {
+                val uriHandler = LocalUriHandler.current
+                Text(
+                    stringResource(Res.string.charging_attribution),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.clickable { uriHandler.openUri(OPEN_CHARGE_MAP_URL) }.padding(16.dp),
+                )
+            }
+        }
     }
 }
+
+private const val OPEN_CHARGE_MAP_URL = "https://openchargemap.org"
 
 @Composable
 private fun FilterRow(

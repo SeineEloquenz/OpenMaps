@@ -9,9 +9,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import nz.eloque.openmaps.core.model.CategorySearch
+import nz.eloque.openmaps.core.model.ChargingStations
 import nz.eloque.openmaps.core.model.GeoBounds
 import nz.eloque.openmaps.core.model.LatLng
-import nz.eloque.openmaps.core.model.OsmId
 import nz.eloque.openmaps.core.model.PlaceCategory
 import nz.eloque.openmaps.core.model.PlaceDetails
 import nz.eloque.openmaps.core.model.PlaceDetailsSource
@@ -23,14 +23,19 @@ import nz.eloque.openmaps.ui.place.toCategoryLabel
 class CategoryViewModel(
     private val search: CategorySearch,
     private val detailsSource: PlaceDetailsSource,
+    private val charging: ChargingStations,
     private val category: PlaceCategory,
 ) : ViewModel() {
+    /** Whether results come from the charging station database instead of OpenStreetMap, which needs attribution. */
+    val fromChargingDatabase: Boolean
+        get() = category == PlaceCategory.CHARGING && charging.available
+
     private val _results = MutableStateFlow<LoadState<List<SearchResult.Place>>>(LoadState.Loading)
     val results: StateFlow<LoadState<List<SearchResult.Place>>> = _results.asStateFlow()
 
     /** Opening hours, cuisine and more for the results, empty until loaded. */
-    private val _details = MutableStateFlow<Map<OsmId, PlaceDetails>>(emptyMap())
-    val details: StateFlow<Map<OsmId, PlaceDetails>> = _details.asStateFlow()
+    private val _details = MutableStateFlow<Map<SearchResult.Place, PlaceDetails>>(emptyMap())
+    val details: StateFlow<Map<SearchResult.Place, PlaceDetails>> = _details.asStateFlow()
 
     private val _filters = MutableStateFlow(CategoryFilters())
     val filters: StateFlow<CategoryFilters> = _filters.asStateFlow()
@@ -62,12 +67,24 @@ class CategoryViewModel(
         job?.cancel()
         job =
             viewModelScope.launch {
+                if (fromChargingDatabase) {
+                    val state = loadOnce { charging.stations(center, area).map { (place, details) -> place.withName() to details } }
+                    _details.value = (state as? LoadState.Loaded)?.value.orEmpty().toMap()
+                    _results.value =
+                        when (state) {
+                            is LoadState.Loaded -> LoadState.Loaded(state.value.map { it.first })
+                            LoadState.Failed -> LoadState.Failed
+                            LoadState.Loading -> LoadState.Loading
+                        }
+                    return@launch
+                }
                 val state = loadOnce { search.search(category, center, area).map { it.withName() } }
                 _results.value = state
-                val ids = (state as? LoadState.Loaded)?.value.orEmpty().mapNotNull { it.osmId }
-                if (ids.isEmpty()) return@launch
+                val places = (state as? LoadState.Loaded)?.value.orEmpty().filter { it.osmId != null }
+                if (places.isEmpty()) return@launch
                 try {
-                    _details.value = detailsSource.detailsOf(ids)
+                    val byId = detailsSource.detailsOf(places.mapNotNull { it.osmId })
+                    _details.value = places.mapNotNull { place -> byId[place.osmId]?.let { place to it } }.toMap()
                 } catch (e: CancellationException) {
                     throw e
                 } catch (_: Exception) {

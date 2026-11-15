@@ -122,6 +122,7 @@
     <string name="category_cafes">Cafés</string>
     <string name="category_supermarkets">Supermarkets</string>
     <string name="category_gas_stations">Gas stations</string>
+    <string name="category_charging">Charging</string>
     <string name="category_bars">Bars</string>
     <string name="category_attractions">Attractions</string>
     <string name="category_hotels">Hotels</string>
@@ -152,6 +153,11 @@
     <string name="source_nearby_detail">Photon by komoot, from OpenStreetMap data</string>
     <string name="source_media">Photos and summaries</string>
     <string name="source_media_detail">Wikimedia Commons, Wikidata and Wikipedia, under their stated licences</string>
+    <string name="source_charging">Charging stations</string>
+    <string name="source_charging_detail">Open Charge Map and its data providers, when you have entered a key. Otherwise OpenStreetMap.</string>
+    <string name="api_keys">API keys</string>
+    <string name="open_charge_map_key">Open Charge Map key</string>
+    <string name="open_charge_map_key_detail">With a free key from openchargemap.org, charging stations show plug types and power from Open Charge Map. Without one they come from OpenStreetMap.</string>
     <string name="privacy">Privacy</string>
     <string name="privacy_detail">There is no account and no tracking. Searches and routes are sent to Transitous, place details are looked up on Nominatim, nearby places on Photon, photos and summaries of places you open on Wikimedia, and map tiles come from OpenFreeMap. Your location only leaves the device as part of these requests.</string>
 
@@ -193,6 +199,9 @@
     <string name="filter_baby_changing">Baby changing</string>
     <string name="filter_stars">%1$d★ and up</string>
     <string name="filter_fuel">Fuel</string>
+    <string name="filter_connector">Connector</string>
+    <string name="filter_fast_charging">%1$d kW and up</string>
+    <string name="charging_attribution">Charging data from Open Charge Map and its data providers</string>
     <string name="filter_free_entry">Free entry</string>
     <string name="fact_free">Free</string>
     <string name="fact_paid">Paid</string>
