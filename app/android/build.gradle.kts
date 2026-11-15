@@ -80,6 +80,7 @@ dependencies {
     implementation(project(":core:platform"))
     implementation(project(":data:transit"))
     implementation(project(":data:geocoding"))
+    implementation(project(":data:routing"))
     implementation(project(":data:storage"))
     implementation(libs.androidx.activity.compose)
     implementation(libs.compose.runtime)

@@ -141,6 +141,7 @@
     <string name="service_key">%1$s key</string>
     <string name="service_help">About %1$s</string>
     <string name="role_transit">Routing and departures</string>
+    <string name="role_street_routing">Car, bike and walking routes</string>
     <string name="role_place_details">Place details</string>
     <string name="role_nearby_search">Nearby places</string>
     <string name="role_charging_stations">Charging stations</string>

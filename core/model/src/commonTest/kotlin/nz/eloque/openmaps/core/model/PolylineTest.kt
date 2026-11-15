@@ -1,6 +1,5 @@
-package nz.eloque.openmaps.data.transit
+package nz.eloque.openmaps.core.model
 
-import nz.eloque.openmaps.core.model.LatLng
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

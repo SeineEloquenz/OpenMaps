@@ -17,6 +17,8 @@ import nz.eloque.openmaps.core.model.PlanRequest
 import nz.eloque.openmaps.core.model.PlanResult
 import nz.eloque.openmaps.core.model.PlanTarget
 import nz.eloque.openmaps.core.model.SettingsStore
+import nz.eloque.openmaps.core.model.StreetRequest
+import nz.eloque.openmaps.core.model.StreetRouter
 import nz.eloque.openmaps.core.model.TransitRepository
 import nz.eloque.openmaps.core.model.TransportMode
 import nz.eloque.openmaps.core.model.TravelMode
@@ -48,6 +50,7 @@ data class DirectionsResult(
 
 class DirectionsViewModel(
     private val transit: TransitRepository,
+    private val streetRouter: StreetRouter,
     private val cache: ItineraryCache,
     private val settings: SettingsStore,
     directions: DirectionsKey,
@@ -177,17 +180,34 @@ class DirectionsViewModel(
         if (_street.value != null) return
         val walkKnown = (_result.value as? LoadState.Loaded)?.value?.direct != null
         val modes = setOf(TransportMode.CAR, TransportMode.BIKE) + if (walkKnown) emptySet() else setOf(TransportMode.WALK)
-        val request = request(pageCursor = null)?.copy(directModes = modes, withTransit = false) ?: return
+        val request = streetRequest(modes) ?: return
         _street.value = LoadState.Loading
         streetJob =
             viewModelScope.launch {
                 _street.value =
                     loadOnce {
-                        val direct = transit.plan(request).direct
+                        val direct = streetRouter.route(request)
                         cache.put(direct)
-                        direct.filter { it.legs.isNotEmpty() }.distinctBy { it.legs.first().mode }.associateBy { it.legs.first().mode }
+                        direct.filter { it.legs.isNotEmpty() }.associateBy { it.legs.first().mode }
                     }
             }
+    }
+
+    private fun streetRequest(modes: Set<TransportMode>): StreetRequest? {
+        val time = _time.value
+        return StreetRequest(
+            from = from?.location ?: userLocation ?: return null,
+            to = to?.location ?: userLocation ?: return null,
+            modes = modes,
+            time =
+                when (time) {
+                    TimeChoice.Now -> null
+                    is TimeChoice.DepartAt -> time.time
+                    is TimeChoice.ArriveBy -> time.time
+                },
+            arriveBy = time is TimeChoice.ArriveBy,
+            options = settings.routeOptions.value,
+        )
     }
 
     fun loadEarlier() = page(earlier = true)

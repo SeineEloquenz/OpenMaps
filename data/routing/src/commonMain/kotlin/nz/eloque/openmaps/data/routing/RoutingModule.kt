@@ -1,0 +1,57 @@
+package nz.eloque.openmaps.data.routing
+
+import kotlinx.coroutines.CancellationException
+import nz.eloque.openmaps.core.model.Itinerary
+import nz.eloque.openmaps.core.model.ServiceRole
+import nz.eloque.openmaps.core.model.ServiceSetting
+import nz.eloque.openmaps.core.model.ServiceSettingKind
+import nz.eloque.openmaps.core.model.SettingsStore
+import nz.eloque.openmaps.core.model.StreetRequest
+import nz.eloque.openmaps.core.model.StreetRouter
+import org.koin.core.scope.Scope
+import org.koin.dsl.module
+
+/** A Valhalla server for car, bike and walking routes. */
+val RoutingServer =
+    ServiceSetting(
+        "server.routing",
+        ServiceRole.STREET_ROUTING,
+        ServiceSettingKind.SERVER_URL,
+        "Valhalla",
+        default = null,
+        helpUrl = "https://github.com/valhalla/valhalla",
+    )
+
+/** The settings this module's sources read. */
+val routingServiceSettings = listOf(RoutingServer)
+
+/** Asks [primary] and [fallback] for the modes [primary] has no route for, such as outside its map or when it is not set up. */
+internal class FallbackStreetRouter(
+    private val primary: StreetRouter,
+    private val fallback: StreetRouter,
+) : StreetRouter {
+    override suspend fun route(request: StreetRequest): List<Itinerary> {
+        val routes =
+            try {
+                primary.route(request)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                emptyList()
+            }
+        val missing = request.modes - routes.mapNotNull { it.legs.firstOrNull()?.mode }.toSet()
+        return if (missing.isEmpty()) routes else routes + fallback.route(request.copy(modes = missing))
+    }
+}
+
+/** Routes through the server from [RoutingServer] and through [fallback] while none is set or it fails. */
+fun routingModule(fallback: Scope.() -> StreetRouter) =
+    module {
+        single<StreetRouter> {
+            val settings = get<SettingsStore>()
+            FallbackStreetRouter(
+                ValhallaStreetRouter(get(), baseUrl = { settings.serviceValue(RoutingServer.id).value?.takeIf { it.isNotBlank() } }),
+                fallback(),
+            )
+        }
+    }

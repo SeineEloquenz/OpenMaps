@@ -12,6 +12,7 @@ import nz.eloque.openmaps.core.model.SearchResult
 import nz.eloque.openmaps.core.model.TransportMode
 import nz.eloque.openmaps.core.model.VehicleKind
 import nz.eloque.openmaps.core.model.Waypoint
+import nz.eloque.openmaps.core.model.decodePolyline
 import kotlin.time.Instant
 
 private fun rentalMode(kind: VehicleKind): TransportMode =

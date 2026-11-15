@@ -1,10 +1,9 @@
-package nz.eloque.openmaps.data.transit
+package nz.eloque.openmaps.core.model
 
-import nz.eloque.openmaps.core.model.LatLng
 import kotlin.math.pow
 
 /** Decodes Google's encoded polyline format with the given decimal [precision]. */
-internal fun decodePolyline(
+fun decodePolyline(
     encoded: String,
     precision: Int,
 ): List<LatLng> {

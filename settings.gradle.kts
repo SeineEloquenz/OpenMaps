@@ -28,6 +28,7 @@ include(
     ":data:transit",
     ":data:geocoding",
     ":data:storage",
+    ":data:routing",
 )
 
 val localComposeKitPath = providers.environmentVariable("LOCAL_COMPOSE_KIT").orNull?.takeIf { it.isNotBlank() }
