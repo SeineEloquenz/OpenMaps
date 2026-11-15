@@ -58,6 +58,13 @@
     <string name="no_routes">No routes found</string>
     <string name="needs_location_for_route">Allow location access to plan from your location.</string>
     <string name="walk_only">Walk</string>
+    <string name="mode_transit">Public transport</string>
+    <string name="mode_car">Drive</string>
+    <string name="mode_bike">Cycle</string>
+    <string name="via_street">Via %1$s</string>
+    <string name="via_streets">Via %1$s and %2$s</string>
+    <string name="without_traffic">Arrive around %1$s, without traffic</string>
+    <string name="arrive_at">Arrive around %1$s</string>
     <string name="duration_minutes">%1$d min</string>
     <string name="duration_hours">%1$d h %2$d min</string>
     <string name="transfers">%1$d transfers</string>

@@ -15,6 +15,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.DirectionsTransit
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.SwapVert
@@ -31,6 +32,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.PrimaryTabRow
+import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -42,20 +45,26 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
+import nz.eloque.openmaps.core.model.DistanceUnit
 import nz.eloque.openmaps.core.model.Itinerary
 import nz.eloque.openmaps.core.model.Leg
 import nz.eloque.openmaps.core.model.PlacesStore
 import nz.eloque.openmaps.core.model.SettingsStore
+import nz.eloque.openmaps.core.model.TransportMode
+import nz.eloque.openmaps.core.model.TravelMode
 import nz.eloque.openmaps.map.MapController
 import nz.eloque.openmaps.ui.components.LineChip
 import nz.eloque.openmaps.ui.components.LoadState
 import nz.eloque.openmaps.ui.components.LoadStateContent
 import nz.eloque.openmaps.ui.components.clockTime
+import nz.eloque.openmaps.ui.components.formatDistance
 import nz.eloque.openmaps.ui.components.formatDuration
 import nz.eloque.openmaps.ui.components.icon
 import nz.eloque.openmaps.ui.components.timeRange
@@ -65,9 +74,13 @@ import nz.eloque.openmaps.ui.navigation.Endpoint
 import nz.eloque.openmaps.ui.navigation.toRouteEnd
 import nz.eloque.openmaps.ui.resources.Res
 import nz.eloque.openmaps.ui.resources.allow_location
+import nz.eloque.openmaps.ui.resources.arrive_at
 import nz.eloque.openmaps.ui.resources.departs_from
 import nz.eloque.openmaps.ui.resources.earlier
 import nz.eloque.openmaps.ui.resources.later
+import nz.eloque.openmaps.ui.resources.mode_bike
+import nz.eloque.openmaps.ui.resources.mode_car
+import nz.eloque.openmaps.ui.resources.mode_transit
 import nz.eloque.openmaps.ui.resources.needs_location_for_route
 import nz.eloque.openmaps.ui.resources.no_routes
 import nz.eloque.openmaps.ui.resources.no_transfers
@@ -78,13 +91,18 @@ import nz.eloque.openmaps.ui.resources.route_options
 import nz.eloque.openmaps.ui.resources.save_route
 import nz.eloque.openmaps.ui.resources.swap
 import nz.eloque.openmaps.ui.resources.transfers
+import nz.eloque.openmaps.ui.resources.via_street
+import nz.eloque.openmaps.ui.resources.via_streets
 import nz.eloque.openmaps.ui.resources.walk_only
+import nz.eloque.openmaps.ui.resources.without_traffic
 import nz.eloque.openmaps.ui.resources.your_location
 import nz.eloque.openmaps.ui.settings.RouteOptionsEditor
+import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import kotlin.time.Duration
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -97,15 +115,26 @@ fun DirectionsSheet(
 ) {
     val viewModel = koinViewModel<DirectionsViewModel> { parametersOf(directions) }
     val result by viewModel.result.collectAsStateWithLifecycle()
+    val street by viewModel.street.collectAsStateWithLifecycle()
+    val mode by viewModel.mode.collectAsStateWithLifecycle()
     val time by viewModel.time.collectAsStateWithLifecycle()
     val userLocation = map.userLocation
     LaunchedEffect(userLocation) { userLocation?.let(viewModel::setUserLocation) }
 
     val loaded = (result as? LoadState.Loaded)?.value
-    ShowItineraryOnMap(map, loaded?.itineraries?.firstOrNull() ?: loaded?.direct)
+    val direct = (street as? LoadState.Loaded)?.value.orEmpty()
+    val walk = loaded?.direct ?: direct[TransportMode.WALK]
+    val routes =
+        mapOf(
+            TravelMode.CAR to direct[TransportMode.CAR],
+            TravelMode.WALK to walk,
+            TravelMode.BIKE to direct[TransportMode.BIKE],
+        )
+    ShowItineraryOnMap(map, if (mode == TravelMode.TRANSIT) loaded?.itineraries?.firstOrNull() else routes[mode])
 
     val settings = koinInject<SettingsStore>()
     val options by settings.routeOptions.collectAsStateWithLifecycle()
+    val unit by settings.distanceUnit.collectAsStateWithLifecycle()
     var editingOptions by rememberSaveable { mutableStateOf(false) }
     if (editingOptions) {
         ModalBottomSheet(onDismissRequest = { editingOptions = false }) {
@@ -119,46 +148,140 @@ fun DirectionsSheet(
             SaveRouteButton(directions)
         }
         item {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
-                TimeChoiceRow(time, viewModel::setTime)
-                FilterChip(
-                    selected = !options.isDefault,
-                    onClick = { editingOptions = true },
-                    label = { Text(stringResource(Res.string.route_options)) },
-                    leadingIcon = { Icon(Icons.Default.Tune, contentDescription = null, modifier = Modifier.size(18.dp)) },
-                )
+            ModeTabs(
+                selected = mode,
+                durations =
+                    routes.mapValues { it.value?.duration } +
+                        (TravelMode.TRANSIT to loaded?.itineraries?.minOfOrNull { it.duration }),
+                onSelect = viewModel::selectMode,
+            )
+        }
+        if (mode == TravelMode.TRANSIT) {
+            item {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
+                    TimeChoiceRow(time, viewModel::setTime)
+                    FilterChip(
+                        selected = !options.isDefault,
+                        onClick = { editingOptions = true },
+                        label = { Text(stringResource(Res.string.route_options)) },
+                        leadingIcon = { Icon(Icons.Default.Tune, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                    )
+                }
             }
         }
-        when (val state = result) {
-            null ->
+        val state = if (mode == TravelMode.TRANSIT || (mode == TravelMode.WALK && walk != null && street == null)) result else street
+        when {
+            viewModel.needsUserLocation && !map.isLocationPermissionGranted ->
                 item {
-                    if (!map.isLocationPermissionGranted) {
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text(stringResource(Res.string.needs_location_for_route), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Button(onClick = map::requestLocationPermission) { Text(stringResource(Res.string.allow_location)) }
-                        }
-                    } else {
-                        LoadStateContent(LoadState.Loading, onRetry = {}) {}
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(stringResource(Res.string.needs_location_for_route), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Button(onClick = map::requestLocationPermission) { Text(stringResource(Res.string.allow_location)) }
                     }
                 }
-            is LoadState.Loaded -> {
-                val value = state.value
-                if (value.itineraries.isEmpty() && value.direct == null) {
+            state == null || state == LoadState.Loading -> item { LoadStateContent(LoadState.Loading, onRetry = {}) {} }
+            state == LoadState.Failed -> item { LoadStateContent(LoadState.Failed, onRetry = viewModel::retry) {} }
+            mode == TravelMode.TRANSIT && loaded != null -> {
+                if (loaded.itineraries.isEmpty()) {
                     item { Text(stringResource(Res.string.no_routes), color = MaterialTheme.colorScheme.onSurfaceVariant) }
                 }
-                value.direct?.let { direct -> item { DirectCard(direct, onClick = { onOpenRoute(direct) }) } }
-                if (value.earlierCursor != null && value.itineraries.isNotEmpty()) {
+                if (loaded.earlierCursor != null && loaded.itineraries.isNotEmpty()) {
                     item { TextButton(onClick = viewModel::loadEarlier) { Text(stringResource(Res.string.earlier)) } }
                 }
-                items(value.itineraries, key = { it.id }) { ItineraryCard(it, onClick = { onOpenRoute(it) }) }
-                if (value.laterCursor != null && value.itineraries.isNotEmpty()) {
+                items(loaded.itineraries, key = { it.id }) { ItineraryCard(it, onClick = { onOpenRoute(it) }) }
+                if (loaded.laterCursor != null && loaded.itineraries.isNotEmpty()) {
                     item { TextButton(onClick = viewModel::loadLater) { Text(stringResource(Res.string.later)) } }
                 }
             }
-            else -> item { LoadStateContent(state, onRetry = viewModel::plan) {} }
+            else ->
+                item {
+                    val route = routes[mode]
+                    if (route == null) {
+                        Text(stringResource(Res.string.no_routes), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    } else {
+                        StreetRouteCard(route, mode, unit, onClick = { onOpenRoute(route) })
+                    }
+                }
         }
     }
 }
+
+@Composable
+private fun ModeTabs(
+    selected: TravelMode,
+    durations: Map<TravelMode, Duration?>,
+    onSelect: (TravelMode) -> Unit,
+) {
+    PrimaryTabRow(selectedTabIndex = TravelMode.entries.indexOf(selected), containerColor = Color.Transparent) {
+        TravelMode.entries.forEach { mode ->
+            Tab(
+                selected = mode == selected,
+                onClick = { onSelect(mode) },
+                icon = { Icon(mode.icon, contentDescription = stringResource(mode.label)) },
+                text = { Text(durations[mode]?.let { formatDuration(it) } ?: "", maxLines = 1) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun StreetRouteCard(
+    itinerary: Itinerary,
+    mode: TravelMode,
+    unit: DistanceUnit,
+    onClick: () -> Unit,
+) {
+    val legs = itinerary.legs.filterIsInstance<Leg.Street>()
+    val meters = legs.mapNotNull { it.distanceMeters }.takeIf { it.isNotEmpty() }?.sum()
+    val streets = legs.flatMap { it.streets }.distinct().take(2)
+    Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    formatDuration(itinerary.duration),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f),
+                )
+                meters?.let { Text(formatDistance(it, unit), style = MaterialTheme.typography.titleMedium) }
+            }
+            if (streets.isNotEmpty()) {
+                Text(
+                    if (streets.size == 1) {
+                        stringResource(Res.string.via_street, streets[0])
+                    } else {
+                        stringResource(Res.string.via_streets, streets[0], streets[1])
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Text(
+                stringResource(if (mode == TravelMode.CAR) Res.string.without_traffic else Res.string.arrive_at, clockTime(itinerary.end)),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+private val TravelMode.icon: ImageVector
+    get() =
+        when (this) {
+            TravelMode.TRANSIT -> Icons.Default.DirectionsTransit
+            TravelMode.CAR -> TransportMode.CAR.icon
+            TravelMode.WALK -> TransportMode.WALK.icon
+            TravelMode.BIKE -> TransportMode.BIKE.icon
+        }
+
+private val TravelMode.label: StringResource
+    get() =
+        when (this) {
+            TravelMode.TRANSIT -> Res.string.mode_transit
+            TravelMode.CAR -> Res.string.mode_car
+            TravelMode.WALK -> Res.string.walk_only
+            TravelMode.BIKE -> Res.string.mode_bike
+        }
 
 @Composable
 private fun EndpointsCard(
@@ -244,21 +367,6 @@ private fun ItineraryCard(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-        }
-    }
-}
-
-@Composable
-private fun DirectCard(
-    itinerary: Itinerary,
-    onClick: () -> Unit,
-) {
-    val mode = itinerary.legs.firstOrNull()?.mode
-    Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
-        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            mode?.let { Icon(it.icon, contentDescription = null) }
-            Text(stringResource(Res.string.walk_only), modifier = Modifier.weight(1f).padding(start = 12.dp))
-            Text(formatDuration(itinerary.duration), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         }
     }
 }

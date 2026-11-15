@@ -58,6 +58,8 @@ sealed interface Leg {
         override val end: EventTime,
         override val geometry: List<LatLng>,
         val distanceMeters: Double?,
+        /** Names of the streets covering most of the leg, in travel order. */
+        val streets: List<String> = emptyList(),
     ) : Leg
 
     data class Transit(

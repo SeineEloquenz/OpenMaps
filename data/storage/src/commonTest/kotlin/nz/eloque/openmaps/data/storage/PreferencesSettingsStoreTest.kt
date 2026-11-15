@@ -3,6 +3,7 @@ package nz.eloque.openmaps.data.storage
 import com.russhwolf.settings.MapSettings
 import nz.eloque.openmaps.core.model.ModeGroup
 import nz.eloque.openmaps.core.model.RouteOptions
+import nz.eloque.openmaps.core.model.TravelMode
 import nz.eloque.openmaps.core.model.WalkingSpeed
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -11,6 +12,14 @@ class PreferencesSettingsStoreTest {
     @Test
     fun defaultsWhenEmpty() {
         assertEquals(RouteOptions(), PreferencesSettingsStore(MapSettings()).routeOptions.value)
+    }
+
+    @Test
+    fun remembersTheTravelMode() {
+        val settings = MapSettings()
+        assertEquals(TravelMode.TRANSIT, PreferencesSettingsStore(settings).travelMode.value)
+        PreferencesSettingsStore(settings).setTravelMode(TravelMode.BIKE)
+        assertEquals(TravelMode.BIKE, PreferencesSettingsStore(settings).travelMode.value)
     }
 
     @Test

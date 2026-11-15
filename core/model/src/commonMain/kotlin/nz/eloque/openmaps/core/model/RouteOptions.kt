@@ -15,6 +15,9 @@ enum class ModeGroup(
 
 enum class WalkingSpeed { SLOW, NORMAL, FAST }
 
+/** How the user wants to travel, one tab each in directions. */
+enum class TravelMode { TRANSIT, CAR, WALK, BIKE }
+
 data class RouteOptions(
     val modes: Set<ModeGroup> = ModeGroup.entries.toSet(),
     /** Null for no limit. */
@@ -32,6 +35,11 @@ interface SettingsStore {
     val routeOptions: StateFlow<RouteOptions>
 
     fun setRouteOptions(options: RouteOptions)
+
+    /** The directions tab used last. */
+    val travelMode: StateFlow<TravelMode>
+
+    fun setTravelMode(mode: TravelMode)
 
     val distanceUnit: StateFlow<DistanceUnit>
 

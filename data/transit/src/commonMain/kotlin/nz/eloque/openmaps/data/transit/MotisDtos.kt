@@ -81,6 +81,13 @@ internal data class LegDto(
     val alerts: List<AlertDto> = emptyList(),
     val cancelled: Boolean = false,
     val wheelchairAccessible: String? = null,
+    val steps: List<StepDto> = emptyList(),
+)
+
+@Serializable
+internal data class StepDto(
+    val streetName: String = "",
+    val distance: Double = 0.0,
 )
 
 @Serializable

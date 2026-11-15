@@ -8,6 +8,7 @@ import nz.eloque.openmaps.core.model.DistanceUnit
 import nz.eloque.openmaps.core.model.ModeGroup
 import nz.eloque.openmaps.core.model.RouteOptions
 import nz.eloque.openmaps.core.model.SettingsStore
+import nz.eloque.openmaps.core.model.TravelMode
 import nz.eloque.openmaps.core.model.WalkingSpeed
 
 /** Values this version does not know, such as a mode group added later, are ignored on read. */
@@ -23,6 +24,15 @@ internal class PreferencesSettingsStore(
         settings.putString(WALKING_SPEED, options.walkingSpeed.name)
         settings.putBoolean(WHEELCHAIR, options.wheelchair)
         _routeOptions.value = options
+    }
+
+    private val _travelMode =
+        MutableStateFlow(TravelMode.entries.firstOrNull { it.name == settings.getStringOrNull(TRAVEL_MODE) } ?: TravelMode.TRANSIT)
+    override val travelMode: StateFlow<TravelMode> = _travelMode.asStateFlow()
+
+    override fun setTravelMode(mode: TravelMode) {
+        settings.putString(TRAVEL_MODE, mode.name)
+        _travelMode.value = mode
     }
 
     private val _distanceUnit =
@@ -83,6 +93,7 @@ internal class PreferencesSettingsStore(
         const val WALKING_SPEED = "route.walkingSpeed"
         const val WHEELCHAIR = "route.wheelchair"
         const val NO_LIMIT = -1
+        const val TRAVEL_MODE = "route.travelMode"
         const val DISTANCE_UNIT = "units.distance"
         const val TRANSIT_URL = "server.transit"
         const val PLACE_DETAILS_URL = "server.placeDetails"

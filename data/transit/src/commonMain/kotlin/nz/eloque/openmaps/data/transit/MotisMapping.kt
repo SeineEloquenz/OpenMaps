@@ -94,7 +94,7 @@ internal fun LegDto.toLeg(): Leg {
     val geometry = decodePolyline(legGeometry.points, legGeometry.precision.toInt())
     val mode = transportMode(mode)
     if (!mode.isTransit) {
-        return Leg.Street(mode, from.toWaypoint(realTime), to.toWaypoint(realTime), start, end, geometry, distance)
+        return Leg.Street(mode, from.toWaypoint(realTime), to.toWaypoint(realTime), start, end, geometry, distance, mainStreets(steps))
     }
     return Leg.Transit(
         from = from.toWaypoint(realTime),
@@ -151,3 +151,23 @@ internal fun MatchDto.toSearchResult(): SearchResult {
         else -> SearchResult.Place(OsmId.parse(id), name, location, area, category)
     }
 }
+
+/** The [count] streets with the longest stretches, in the order the route reaches them. */
+internal fun mainStreets(
+    steps: List<StepDto>,
+    count: Int = MAIN_STREETS,
+): List<String> {
+    val named = steps.filter { it.streetName.isNotBlank() }
+    val longest =
+        named
+            .groupBy { it.streetName }
+            .mapValues { (_, stretch) -> stretch.sumOf { it.distance } }
+            .entries
+            .sortedByDescending { it.value }
+            .take(count)
+            .map { it.key }
+            .toSet()
+    return named.map { it.streetName }.distinct().filter { it in longest }
+}
+
+private const val MAIN_STREETS = 2

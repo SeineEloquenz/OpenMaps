@@ -34,6 +34,10 @@ data class PlanRequest(
     val arriveBy: Boolean = false,
     val pageCursor: String? = null,
     val options: RouteOptions = RouteOptions(),
+    /** Modes of routes that use no public transport. */
+    val directModes: Set<TransportMode> = setOf(TransportMode.WALK),
+    /** False to ask for direct routes only, skipping the public transport search. */
+    val withTransit: Boolean = true,
 )
 
 data class PlanResult(

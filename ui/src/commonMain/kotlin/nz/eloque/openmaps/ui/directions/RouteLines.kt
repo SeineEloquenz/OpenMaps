@@ -8,6 +8,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import nz.eloque.openmaps.core.model.Itinerary
 import nz.eloque.openmaps.core.model.Leg
+import nz.eloque.openmaps.core.model.TransportMode
 import nz.eloque.openmaps.map.MapController
 import nz.eloque.openmaps.map.MapLine
 
@@ -35,5 +36,5 @@ private fun Leg.toMapLine(
 ): MapLine =
     when (this) {
         is Leg.Transit -> MapLine(geometry, line.color?.let(::Color) ?: transitColor)
-        is Leg.Street -> MapLine(geometry, walkColor, width = 4.dp)
+        is Leg.Street -> if (mode == TransportMode.WALK) MapLine(geometry, walkColor, width = 4.dp) else MapLine(geometry, transitColor)
     }

@@ -149,6 +149,45 @@ class MotisClientTest {
         }
 
     @Test
+    fun streetOnlyPlanSkipsTransitAndAllowsLongDirectRoutes() =
+        runTest {
+            val repository = MotisTransitRepository(client(PLAN_JSON), { TRANSITOUS_API })
+            val target = PlanTarget.Coordinates(LatLng(1.0, 2.0))
+            repository.plan(PlanRequest(target, target, time = null))
+            repository.plan(
+                PlanRequest(
+                    target,
+                    target,
+                    time = null,
+                    options = RouteOptions(modes = setOf(ModeGroup.BUS)),
+                    directModes = setOf(TransportMode.CAR, TransportMode.BIKE),
+                    withTransit = false,
+                ),
+            )
+
+            val transit = requests[0].parameters
+            assertEquals("WALK", transit["directModes"])
+            assertEquals(null, transit["maxDirectTime"])
+            val street = requests[1].parameters
+            assertEquals("CAR,BIKE", street["directModes"])
+            assertEquals(listOf(""), street.getAll("transitModes"))
+            assertEquals("10800", street["maxDirectTime"])
+        }
+
+    @Test
+    fun mainStreetsAreTheLongestInTravelOrder() {
+        val steps =
+            listOf(
+                StepDto("", 20.0),
+                StepDto("Vorholzstraße", 50.0),
+                StepDto("Hirschstraße", 10.0),
+                StepDto("Kriegsstraße", 900.0),
+                StepDto("Vorholzstraße", 60.0),
+            )
+        assertEquals(listOf("Vorholzstraße", "Kriegsstraße"), mainStreets(steps))
+    }
+
+    @Test
     fun timesAreSentInWholeSeconds() =
         runTest {
             val repository = MotisTransitRepository(client(STOP_TIMES_JSON), { TRANSITOUS_API })

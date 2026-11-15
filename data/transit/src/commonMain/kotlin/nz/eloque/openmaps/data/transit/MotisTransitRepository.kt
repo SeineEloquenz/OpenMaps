@@ -46,9 +46,12 @@ internal class MotisTransitRepository(
                     parameter("toPlace", request.to.asParameter())
                     request.time?.let { parameter("time", it.asParameter()) }
                     parameter("arriveBy", request.arriveBy)
-                    parameter("directModes", "WALK")
+                    parameter("directModes", request.directModes.joinToString(",") { it.name })
+                    if (request.directModes.any { it != TransportMode.WALK } || !request.withTransit) {
+                        parameter("maxDirectTime", MAX_DIRECT_SECONDS)
+                    }
                     request.pageCursor?.let { parameter("pageCursor", it) }
-                    routeOptions(request.options)
+                    routeOptions(request.options, request.withTransit)
                 }.body()
         return PlanResult(
             itineraries = response.itineraries.map { it.toItinerary() },
@@ -105,8 +108,13 @@ private fun PlanTarget.asParameter(): String =
         is PlanTarget.Stop -> id
     }
 
-private fun HttpRequestBuilder.routeOptions(options: RouteOptions) {
-    if (options.modes.size < ModeGroup.entries.size) {
+private fun HttpRequestBuilder.routeOptions(
+    options: RouteOptions,
+    withTransit: Boolean,
+) {
+    if (!withTransit) {
+        parameter("transitModes", "")
+    } else if (options.modes.size < ModeGroup.entries.size) {
         val modes = options.modes.flatMap { it.modes }.map(::motisMode) + MINOR_MODES
         parameter("transitModes", modes.joinToString(","))
     }
@@ -128,6 +136,9 @@ private fun motisMode(mode: TransportMode): String =
 /** Rare modes without a group of their own stay allowed when the user restricts the main ones. */
 private val MINOR_MODES = listOf("FUNICULAR", "AERIAL_LIFT", "OTHER")
 private const val SLOW_WALK_METERS_PER_SECOND = 0.9
+
+/** Longest direct route looked for when more than a walk is asked for. */
+private const val MAX_DIRECT_SECONDS = 3 * 60 * 60
 private const val FAST_WALK_METERS_PER_SECOND = 1.6
 
 /** MOTIS misreads timestamps with more than millisecond precision, so times are sent in whole seconds. */
