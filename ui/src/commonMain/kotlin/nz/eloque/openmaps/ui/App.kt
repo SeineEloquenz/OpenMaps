@@ -30,6 +30,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -193,6 +194,10 @@ fun App(version: String) {
         }
 
         val top = backStack.lastOrNull()
+        val sheetTop = backStack.lastOrNull { !it.isPage() }
+        LaunchedEffect(sheetTop) {
+            if (sheetState.bottomSheetState.currentValue == SheetValue.Expanded) sheetState.bottomSheetState.partialExpand()
+        }
         val peekHeight =
             (if (top == HomeKey) HomePeekHeight else SheetPeekHeight) +
                 with(LocalDensity.current) { WindowInsets.navigationBars.getBottom(this).toDp() }
