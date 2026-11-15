@@ -191,7 +191,13 @@ class MapController internal constructor(
         return tiles
             .querySourceFeatures(setOf("poi"), matches)
             .mapNotNull { it.toPlace(tapped = null, named = false) }
-            .distinctBy { it.osmId ?: it.location }
+            .distinctBy { it.id ?: it.location }
+    }
+
+    /** A web map showing [location], for sharing places the data sources have no page for. */
+    fun linkTo(location: LatLng): String {
+        val (latitude, longitude) = location.latitude to location.longitude
+        return "https://www.openstreetmap.org/?mlat=$latitude&mlon=$longitude#map=18/$latitude/$longitude"
     }
 
     suspend fun fit(points: List<LatLng>) {

@@ -26,21 +26,10 @@ private const val METERS_PER_DEGREE = 111_320.0
 
 private fun Double.toRadians() = this * PI / 180
 
-enum class OsmType { NODE, WAY, RELATION }
-
-data class OsmId(
-    val type: OsmType,
-    val id: Long,
-) {
-    companion object {
-        /** Parses `node/123`, `way/123` or `relation/123`, returning null for anything else. */
-        fun parse(value: String): OsmId? {
-            val (type, id) = value.split('/').takeIf { it.size == 2 } ?: return null
-            val osmType = OsmType.entries.firstOrNull { it.name.equals(type, ignoreCase = true) } ?: return null
-            return id.toLongOrNull()?.let { OsmId(osmType, it) }
-        }
-    }
-}
+/** Identifies a place across searches and restarts. Only the source that issued it knows what [value] means. */
+data class PlaceId(
+    val value: String,
+)
 
 data class GeoBounds(
     val south: Double,

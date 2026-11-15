@@ -14,10 +14,14 @@ interface Geocoder {
 }
 
 interface PlaceDetailsSource {
-    suspend fun details(osmId: OsmId): PlaceDetails?
+    /** Null for places the source does not know, including ones another source issued [id] for. */
+    suspend fun details(id: PlaceId): PlaceDetails?
 
     /** Details of many places in as few requests as the service allows. Places it does not know are left out. */
-    suspend fun detailsOf(osmIds: List<OsmId>): Map<OsmId, PlaceDetails>
+    suspend fun detailsOf(ids: List<PlaceId>): Map<PlaceId, PlaceDetails>
+
+    /** A web page about the place, for sharing, or null. */
+    fun pageUrl(id: PlaceId): String?
 }
 
 sealed interface PlanTarget {

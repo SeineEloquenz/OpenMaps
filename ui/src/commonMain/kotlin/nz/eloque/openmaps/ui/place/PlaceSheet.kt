@@ -81,7 +81,7 @@ import nz.eloque.openmaps.ui.components.formatDistance
 import nz.eloque.openmaps.ui.components.rememberNow
 import nz.eloque.openmaps.ui.navigation.PlaceKey
 import nz.eloque.openmaps.ui.navigation.StopKey
-import nz.eloque.openmaps.ui.navigation.parsedOsmId
+import nz.eloque.openmaps.ui.navigation.parsedId
 import nz.eloque.openmaps.ui.navigation.toSearchResult
 import nz.eloque.openmaps.ui.resources.Res
 import nz.eloque.openmaps.ui.resources.address
@@ -126,7 +126,7 @@ fun PlaceSheet(
     onOpenStop: (StopKey) -> Unit,
     onOpenTrip: (tripId: String, stopName: String) -> Unit,
 ) {
-    val viewModel = koinViewModel<PlaceViewModel> { parametersOf(place.parsedOsmId, place.location, !place.pinned) }
+    val viewModel = koinViewModel<PlaceViewModel> { parametersOf(place.parsedId, place.location, !place.pinned) }
     val details by viewModel.details.collectAsStateWithLifecycle()
     val media by viewModel.media.collectAsStateWithLifecycle()
     val nearby by viewModel.nearby.collectAsStateWithLifecycle()
@@ -143,7 +143,7 @@ fun PlaceSheet(
             }
             StatusLine(place, loaded, map)
         }
-        ActionRow(place, loaded, onDirections)
+        ActionRow(place, loaded, shareUrl = viewModel.pageUrl ?: map.linkTo(place.location), onDirections)
         media?.let { MediaSection(it) }
         loaded?.description?.let {
             Text(it, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
@@ -199,6 +199,7 @@ private fun StatusLine(
 private fun ActionRow(
     place: PlaceKey,
     details: PlaceDetails?,
+    shareUrl: String,
     onDirections: () -> Unit,
 ) {
     val uriHandler = LocalUriHandler.current
@@ -215,7 +216,7 @@ private fun ActionRow(
         details?.website?.let { url ->
             item { ActionButton(Icons.Default.Language, Res.string.website) { uriHandler.openUri(url) } }
         }
-        item { ActionButton(Icons.Default.Share, Res.string.share) { sharer.share("${place.name}\n${place.shareUrl()}") } }
+        item { ActionButton(Icons.Default.Share, Res.string.share) { sharer.share("${place.name}\n$shareUrl") } }
     }
 }
 
@@ -374,10 +375,6 @@ private fun DetailRow(
 }
 
 internal fun String.telUri() = "tel:${filter { c -> c.isDigit() || c == '+' }}"
-
-private fun PlaceKey.shareUrl(): String =
-    parsedOsmId?.let { "https://www.openstreetmap.org/${it.type.name.lowercase()}/${it.id}" }
-        ?: "https://www.openstreetmap.org/?mlat=$latitude&mlon=$longitude#map=18/$latitude/$longitude"
 
 /** Turns an OSM tag value such as `fast_food`, or a MOTIS icon name such as `museum_16`, into a label. */
 fun String.toCategoryLabel(): String =

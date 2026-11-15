@@ -13,6 +13,7 @@ import nz.eloque.openmaps.core.model.Charger
 import nz.eloque.openmaps.core.model.Connector
 import nz.eloque.openmaps.core.model.GeoBounds
 import nz.eloque.openmaps.core.model.LatLng
+import nz.eloque.openmaps.core.model.PlaceId
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -52,6 +53,7 @@ class OpenChargeMapStationsTest {
             assertEquals(2, stations.size)
             val (place, details) = stations.first()
             assertEquals("Karlsruhe Hbf", place.name)
+            assertEquals(PlaceId("ocm:1"), place.id)
             assertEquals("Bahnhofplatz 1, 76137 Karlsruhe", details.address)
             assertEquals("EnBW", details.operator)
             assertEquals(listOf(Charger(Connector.CCS, 150, 3), Charger(Connector.TYPE_2, 22, 4)), details.chargers)

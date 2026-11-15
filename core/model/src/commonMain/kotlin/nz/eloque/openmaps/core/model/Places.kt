@@ -34,7 +34,7 @@ val SearchResult.storageKey: String
     get() =
         when (this) {
             is SearchResult.Stop -> "stop:$id"
-            is SearchResult.Place -> osmId?.let { "osm:${it.type.name.lowercase()}/${it.id}" } ?: geoKey()
+            is SearchResult.Place -> id?.value ?: geoKey()
             is SearchResult.Address -> geoKey()
         }
 

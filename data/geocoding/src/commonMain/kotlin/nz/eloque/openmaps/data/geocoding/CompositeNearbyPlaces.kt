@@ -42,11 +42,11 @@ internal class CompositeNearbyPlaces(
             suspend fun publish() = emit(NearbyResults(places.map { NearbyPlace(it, known[it]) }))
 
             suspend fun addDetails() {
-                val missing = places.filter { it.osmId != null && it !in known }
+                val missing = places.filter { it.id != null && it !in known }
                 if (missing.isEmpty()) return
                 try {
-                    val byId = details.detailsOf(missing.mapNotNull { it.osmId })
-                    missing.forEach { place -> byId[place.osmId]?.let { known[place] = it } }
+                    val byId = details.detailsOf(missing.mapNotNull { it.id })
+                    missing.forEach { place -> byId[place.id]?.let { known[place] = it } }
                 } catch (e: CancellationException) {
                     throw e
                 } catch (_: Exception) {
@@ -58,8 +58,8 @@ internal class CompositeNearbyPlaces(
             publish()
             addDetails()
             loaded?.places(category)?.collect { found ->
-                val have = places.mapNotNull { it.osmId }.toSet()
-                val added = found.filter { it.osmId != null && it.osmId !in have && area.contains(it.location) }
+                val have = places.mapNotNull { it.id }.toSet()
+                val added = found.filter { it.id != null && it.id !in have && area.contains(it.location) }
                 if (added.isEmpty()) return@collect
                 places = (places + added).nearest(center)
                 publish()

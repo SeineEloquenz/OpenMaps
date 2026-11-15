@@ -160,7 +160,7 @@ fun CategorySheet(
                 }
             }
         }
-        items(shown, key = { "${it.place.osmId ?: it.place.name}-${it.place.location}" }) { result ->
+        items(shown, key = { "${it.place.id?.value ?: it.place.name}-${it.place.location}" }) { result ->
             val place = result.place
             PlaceResult(
                 profile = profile,

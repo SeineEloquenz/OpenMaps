@@ -10,6 +10,9 @@ import androidx.room3.RoomDatabase
 import androidx.room3.RoomDatabaseConstructor
 import androidx.room3.Transaction
 import androidx.room3.Upsert
+import androidx.room3.migration.Migration
+import androidx.sqlite.SQLiteConnection
+import androidx.sqlite.execSQL
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -61,7 +64,7 @@ abstract class PlacesDao {
 
 @Database(
     entities = [FavouriteEntity::class, RecentEntity::class, SavedRouteEntity::class],
-    version = 2,
+    version = 3,
     exportSchema = true,
     autoMigrations = [AutoMigration(from = 1, to = 2)],
 )
@@ -74,3 +77,16 @@ abstract class OpenMapsDatabase : RoomDatabase() {
 expect object OpenMapsDatabaseConstructor : RoomDatabaseConstructor<OpenMapsDatabase> {
     override fun initialize(): OpenMapsDatabase
 }
+
+/** Renames the place id column and gives the OpenStreetMap ids stored before, like `way/123`, their `osm:` prefix. */
+internal val PlaceIdMigration =
+    object : Migration(2, 3) {
+        override suspend fun migrate(connection: SQLiteConnection) {
+            for (table in listOf("favourite", "recent")) {
+                connection.execSQL("ALTER TABLE `$table` RENAME COLUMN `osmId` TO `placeId`")
+                connection.execSQL(
+                    "UPDATE `$table` SET `placeId` = 'osm:' || `placeId` WHERE `placeId` IS NOT NULL AND `placeId` NOT LIKE '%:%'",
+                )
+            }
+        }
+    }

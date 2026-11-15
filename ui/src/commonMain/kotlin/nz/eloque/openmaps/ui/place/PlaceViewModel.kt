@@ -10,9 +10,9 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import nz.eloque.openmaps.core.model.LatLng
 import nz.eloque.openmaps.core.model.MediaLinks
-import nz.eloque.openmaps.core.model.OsmId
 import nz.eloque.openmaps.core.model.PlaceDetails
 import nz.eloque.openmaps.core.model.PlaceDetailsSource
+import nz.eloque.openmaps.core.model.PlaceId
 import nz.eloque.openmaps.core.model.PlaceMedia
 import nz.eloque.openmaps.core.model.PlaceMediaSource
 import nz.eloque.openmaps.core.model.TransitRepository
@@ -26,7 +26,7 @@ class PlaceViewModel(
     private val source: PlaceDetailsSource,
     private val mediaSource: PlaceMediaSource,
     transit: TransitRepository,
-    private val osmId: OsmId?,
+    private val id: PlaceId?,
     private val location: LatLng,
     /** False for dropped pins, which are not a place anyone photographs or writes about. */
     private val withMedia: Boolean,
@@ -41,14 +41,17 @@ class PlaceViewModel(
     private val _media = MutableStateFlow<PlaceMedia?>(null)
     val media: StateFlow<PlaceMedia?> = _media.asStateFlow()
 
+    /** A web page about the place for sharing, or null when its source has none. */
+    val pageUrl: String? = id?.let(source::pageUrl)
+
     init {
         load()
     }
 
     fun load() {
-        _details.value = if (osmId == null) LoadState.Loaded(null) else LoadState.Loading
+        _details.value = if (id == null) LoadState.Loaded(null) else LoadState.Loading
         viewModelScope.launch {
-            if (osmId != null) _details.value = loadOnce { source.details(osmId) }
+            if (id != null) _details.value = loadOnce { source.details(id) }
             val details = _details.value as? LoadState.Loaded ?: return@launch
             if (withMedia && _media.value == null) {
                 _media.value =

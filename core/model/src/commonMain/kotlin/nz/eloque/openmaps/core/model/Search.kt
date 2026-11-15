@@ -16,7 +16,7 @@ sealed interface SearchResult {
     ) : SearchResult
 
     data class Place(
-        val osmId: OsmId?,
+        val id: PlaceId?,
         override val name: String,
         override val location: LatLng,
         override val area: String?,

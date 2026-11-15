@@ -62,9 +62,8 @@ import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import nz.eloque.openmaps.core.model.LatLng
-import nz.eloque.openmaps.core.model.OsmId
-import nz.eloque.openmaps.core.model.OsmType
 import nz.eloque.openmaps.core.model.PlaceCategory
+import nz.eloque.openmaps.core.model.PlaceId
 import nz.eloque.openmaps.core.model.SearchResult
 import org.maplibre.compose.expressions.dsl.all
 import org.maplibre.compose.expressions.dsl.asNumber
@@ -252,14 +251,15 @@ internal fun Feature<*, JsonObject?>.toPlace(
     val name = properties["name"]?.jsonPrimitive?.content?.takeIf { it.isNotBlank() } ?: if (named) return null else ""
     val location = (geometry as? Point)?.coordinates?.toLatLng() ?: tapped ?: return null
     val encoded = id?.content?.toDoubleOrNull()?.toLong()
+    // OpenMapTiles encodes the OSM type in the last digit of the feature id.
     val type =
         when (encoded?.rem(10)) {
-            2L -> OsmType.WAY
-            3L -> OsmType.RELATION
-            else -> OsmType.NODE
+            2L -> "way"
+            3L -> "relation"
+            else -> "node"
         }
     val category = properties["subclass"]?.jsonPrimitive?.content ?: properties["class"]?.jsonPrimitive?.content
-    return SearchResult.Place(encoded?.let { OsmId(type, it / 10) }, name, location, area = null, category = category)
+    return SearchResult.Place(encoded?.let { PlaceId("osm:$type/${it / 10}") }, name, location, area = null, category = category)
 }
 
 /** Base style layers that draw places themselves, hidden in favour of [PlaceLayers]. */

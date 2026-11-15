@@ -7,7 +7,7 @@ import nz.eloque.openmaps.core.model.Itinerary
 import nz.eloque.openmaps.core.model.LatLng
 import nz.eloque.openmaps.core.model.Leg
 import nz.eloque.openmaps.core.model.Line
-import nz.eloque.openmaps.core.model.OsmId
+import nz.eloque.openmaps.core.model.PlaceId
 import nz.eloque.openmaps.core.model.SearchResult
 import nz.eloque.openmaps.core.model.TransportMode
 import nz.eloque.openmaps.core.model.Waypoint
@@ -148,7 +148,7 @@ internal fun MatchDto.toSearchResult(): SearchResult {
     return when (type) {
         "STOP" -> SearchResult.Stop(id, name, location, area, modes.map(::transportMode).toSet())
         "ADDRESS" -> SearchResult.Address(name, location, area, street, houseNumber, zip)
-        else -> SearchResult.Place(OsmId.parse(id), name, location, area, category)
+        else -> SearchResult.Place(id.takeIf { OsmObject.matches(it) }?.let { PlaceId("osm:$it") }, name, location, area, category)
     }
 }
 
@@ -171,3 +171,6 @@ internal fun mainStreets(
 }
 
 private const val MAIN_STREETS = 2
+
+/** Geocoded places carry their OpenStreetMap object as `way/123`. */
+private val OsmObject = Regex("(node|way|relation)/\\d+")

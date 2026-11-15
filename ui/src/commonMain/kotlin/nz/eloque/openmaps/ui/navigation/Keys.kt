@@ -4,8 +4,8 @@ import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 import nz.eloque.openmaps.core.model.FavouriteLabel
 import nz.eloque.openmaps.core.model.LatLng
-import nz.eloque.openmaps.core.model.OsmId
 import nz.eloque.openmaps.core.model.PlaceCategory
+import nz.eloque.openmaps.core.model.PlaceId
 import nz.eloque.openmaps.core.model.RouteEnd
 import nz.eloque.openmaps.core.model.SearchResult
 import nz.eloque.openmaps.core.model.TransportMode
@@ -71,7 +71,7 @@ data class PlaceKey(
     val longitude: Double,
     val subtitle: String?,
     val category: String?,
-    val osmId: String?,
+    val placeId: String?,
     /** True for a pin dropped by long-pressing the map. */
     val pinned: Boolean = false,
 ) : NavKey {
@@ -92,24 +92,24 @@ data class StopKey(
 fun StopKey.toSearchResult(): SearchResult = SearchResult.Stop(id, name, location, null, modes)
 
 fun PlaceKey.toSearchResult(): SearchResult =
-    if (osmId == null && category == null) {
+    if (placeId == null && category == null) {
         SearchResult.Address(name, location, subtitle, null, null, null)
     } else {
-        SearchResult.Place(parsedOsmId, name, location, subtitle, category)
+        SearchResult.Place(parsedId, name, location, subtitle, category)
     }
 
 fun SearchResult.toKey(): NavKey =
     when (this) {
         is SearchResult.Stop -> StopKey(id, name, location.latitude, location.longitude, modes)
         is SearchResult.Place ->
-            PlaceKey(name, location.latitude, location.longitude, area, category, osmId?.let { "${it.type.name.lowercase()}/${it.id}" })
+            PlaceKey(name, location.latitude, location.longitude, area, category, id?.value)
         is SearchResult.Address -> {
             val subtitle = listOfNotNull(postcode, area).joinToString(" ").takeIf { it.isNotBlank() }
-            PlaceKey(name, location.latitude, location.longitude, subtitle, category = null, osmId = null)
+            PlaceKey(name, location.latitude, location.longitude, subtitle, category = null, placeId = null)
         }
     }
 
-val PlaceKey.parsedOsmId: OsmId? get() = osmId?.let(OsmId::parse)
+val PlaceKey.parsedId: PlaceId? get() = placeId?.let(::PlaceId)
 
 /** One vehicle's run. [stopName] is the stop it was opened from, which is highlighted. */
 @Serializable

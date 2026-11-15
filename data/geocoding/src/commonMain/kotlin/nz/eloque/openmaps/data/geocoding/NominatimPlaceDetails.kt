@@ -8,10 +8,9 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import nz.eloque.openmaps.core.model.GeoBounds
 import nz.eloque.openmaps.core.model.MediaLinks
-import nz.eloque.openmaps.core.model.OsmId
-import nz.eloque.openmaps.core.model.OsmType
 import nz.eloque.openmaps.core.model.PlaceDetails
 import nz.eloque.openmaps.core.model.PlaceDetailsSource
+import nz.eloque.openmaps.core.model.PlaceId
 
 @Serializable
 internal data class LookupResultDto(
@@ -26,11 +25,12 @@ internal class NominatimPlaceDetails(
     private val client: HttpClient,
     private val baseUrl: () -> String,
 ) : PlaceDetailsSource {
-    override suspend fun details(osmId: OsmId): PlaceDetails? {
+    override suspend fun details(id: PlaceId): PlaceDetails? {
+        val osm = id.toOsm() ?: return null
         val results: List<LookupResultDto> =
             client
                 .get("${baseUrl()}/lookup") {
-                    parameter("osm_ids", osmId.asLookupId())
+                    parameter("osm_ids", osm.lookupId)
                     parameter("format", "jsonv2")
                     parameter("extratags", 1)
                     parameter("addressdetails", 1)
@@ -38,23 +38,25 @@ internal class NominatimPlaceDetails(
         return results.firstOrNull()?.toDetails()
     }
 
-    override suspend fun detailsOf(osmIds: List<OsmId>): Map<OsmId, PlaceDetails> =
-        osmIds.distinct().chunked(MAX_LOOKUP_IDS).flatMap { chunk ->
+    override suspend fun detailsOf(ids: List<PlaceId>): Map<PlaceId, PlaceDetails> =
+        ids.mapNotNull { it.toOsm() }.distinct().chunked(MAX_LOOKUP_IDS).flatMap { chunk ->
             val results: List<LookupResultDto> =
                 client
                     .get("${baseUrl()}/lookup") {
-                        parameter("osm_ids", chunk.joinToString(",") { it.asLookupId() })
+                        parameter("osm_ids", chunk.joinToString(",") { it.lookupId })
                         parameter("format", "jsonv2")
                         parameter("extratags", 1)
                         parameter("addressdetails", 1)
                     }.body()
-            results.mapNotNull { result -> result.osmIdOrNull()?.let { it to result.toDetails() } }
+            results.mapNotNull { result -> result.osmRef()?.let { it.placeId to result.toDetails() } }
         }.toMap()
+
+    override fun pageUrl(id: PlaceId): String? = id.toOsm()?.pageUrl
 }
 
 private const val MAX_LOOKUP_IDS = 50
 
-private fun LookupResultDto.osmIdOrNull(): OsmId? {
+private fun LookupResultDto.osmRef(): OsmRef? {
     val type =
         when (osmType) {
             "node" -> OsmType.NODE
@@ -62,7 +64,7 @@ private fun LookupResultDto.osmIdOrNull(): OsmId? {
             "relation" -> OsmType.RELATION
             else -> return null
         }
-    return osmId?.let { OsmId(type, it) }
+    return osmId?.let { OsmRef(type, it) }
 }
 
 private fun LookupResultDto.toDetails(): PlaceDetails {
@@ -93,14 +95,4 @@ private fun formatAddress(address: Map<String, String>): String? {
     val locality = address["city"] ?: address["town"] ?: address["village"] ?: address["municipality"]
     val place = listOfNotNull(address["postcode"], locality).joinToString(" ")
     return listOf(street, place).filter { it.isNotBlank() }.joinToString(", ").takeIf { it.isNotEmpty() }
-}
-
-private fun OsmId.asLookupId(): String {
-    val prefix =
-        when (type) {
-            OsmType.NODE -> "N"
-            OsmType.WAY -> "W"
-            OsmType.RELATION -> "R"
-        }
-    return "$prefix$id"
 }

@@ -8,8 +8,6 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import nz.eloque.openmaps.core.model.GeoBounds
 import nz.eloque.openmaps.core.model.LatLng
-import nz.eloque.openmaps.core.model.OsmId
-import nz.eloque.openmaps.core.model.OsmType
 import nz.eloque.openmaps.core.model.PlaceCategory
 import nz.eloque.openmaps.core.model.SearchResult
 
@@ -76,9 +74,9 @@ private fun PhotonFeatureDto.toPlace(): SearchResult.Place? {
             "R" -> OsmType.RELATION
             else -> null
         }
-    val osmId = if (type != null && properties.osmId != null) OsmId(type, properties.osmId) else null
+    val id = if (type != null && properties.osmId != null) OsmRef(type, properties.osmId).placeId else null
     val street = listOfNotNull(properties.street, properties.housenumber).joinToString(" ").takeIf { it.isNotBlank() }
-    return SearchResult.Place(osmId, name, LatLng(latitude, longitude), street ?: properties.city, properties.osmValue)
+    return SearchResult.Place(id, name, LatLng(latitude, longitude), street ?: properties.city, properties.osmValue)
 }
 
 private const val LIMIT = 30

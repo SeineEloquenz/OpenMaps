@@ -13,11 +13,14 @@ import nz.eloque.openmaps.core.model.Connector
 import nz.eloque.openmaps.core.model.GeoBounds
 import nz.eloque.openmaps.core.model.LatLng
 import nz.eloque.openmaps.core.model.PlaceDetails
+import nz.eloque.openmaps.core.model.PlaceDetailsSource
+import nz.eloque.openmaps.core.model.PlaceId
 import nz.eloque.openmaps.core.model.SearchResult
 import kotlin.math.roundToInt
 
 @Serializable
 internal data class OcmStationDto(
+    @SerialName("ID") val id: Long? = null,
     @SerialName("AddressInfo") val address: OcmAddressDto,
     @SerialName("OperatorInfo") val operator: OcmOperatorDto? = null,
     @SerialName("UsageCost") val usageCost: String? = null,
@@ -58,7 +61,8 @@ internal data class OcmStatusDto(
 internal class OpenChargeMapStations(
     private val client: HttpClient,
     private val key: () -> String?,
-) : ChargingStations {
+) : ChargingStations,
+    PlaceDetailsSource {
     override val attribution = Attribution("Open Charge Map", "https://openchargemap.org")
 
     override val available: Boolean
@@ -84,14 +88,38 @@ internal class OpenChargeMapStations(
             .map { it.toPlace() to it.toDetails() }
             .sortedBy { (place, _) -> place.location.distanceTo(center) }
     }
+
+    override suspend fun details(id: PlaceId): PlaceDetails? = detailsOf(listOf(id))[id]
+
+    override suspend fun detailsOf(ids: List<PlaceId>): Map<PlaceId, PlaceDetails> {
+        val numbers = ids.mapNotNull { it.ocmNumber() }
+        val apiKey = key()
+        if (numbers.isEmpty() || apiKey == null) return emptyMap()
+        val stations: List<OcmStationDto> =
+            client
+                .get("$OPEN_CHARGE_MAP_API/v3/poi") {
+                    header("X-API-Key", apiKey)
+                    parameter("output", "json")
+                    parameter("chargepointid", numbers.joinToString(","))
+                    parameter("compact", false)
+                    parameter("verbose", false)
+                }.body()
+        return stations.mapNotNull { station -> station.toPlace().id?.let { it to station.toDetails() } }.toMap()
+    }
+
+    override fun pageUrl(id: PlaceId): String? = id.ocmNumber()?.let { "https://openchargemap.org/site/poi/details/$it" }
 }
+
+private fun PlaceId.ocmNumber(): Long? = value.takeIf { it.startsWith(OCM_PREFIX) }?.removePrefix(OCM_PREFIX)?.toLongOrNull()
+
+private const val OCM_PREFIX = "ocm:"
 
 const val OPEN_CHARGE_MAP_API = "https://api.openchargemap.io"
 private const val MAX_RESULTS = 50
 
 internal fun OcmStationDto.toPlace() =
     SearchResult.Place(
-        osmId = null,
+        id = id?.let { PlaceId("$OCM_PREFIX$it") },
         name = address.title?.takeIf { it.isNotBlank() } ?: operatorName.orEmpty(),
         location = LatLng(address.latitude, address.longitude),
         area = address.town,

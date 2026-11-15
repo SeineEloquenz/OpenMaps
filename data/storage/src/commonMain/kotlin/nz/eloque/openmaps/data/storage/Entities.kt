@@ -4,7 +4,7 @@ import androidx.room3.Embedded
 import androidx.room3.Entity
 import androidx.room3.PrimaryKey
 import nz.eloque.openmaps.core.model.LatLng
-import nz.eloque.openmaps.core.model.OsmId
+import nz.eloque.openmaps.core.model.PlaceId
 import nz.eloque.openmaps.core.model.RouteEnd
 import nz.eloque.openmaps.core.model.SearchResult
 import nz.eloque.openmaps.core.model.TransportMode
@@ -16,7 +16,7 @@ data class PlaceColumns(
     val longitude: Double,
     val area: String? = null,
     val stopId: String? = null,
-    val osmId: String? = null,
+    val placeId: String? = null,
     val category: String? = null,
     val street: String? = null,
     val houseNumber: String? = null,
@@ -53,7 +53,7 @@ internal fun SearchResult.toColumns(): PlaceColumns {
                 lat,
                 lon,
                 area = area,
-                osmId = osmId?.let { "${it.type.name.lowercase()}/${it.id}" },
+                placeId = id?.value,
                 category = category,
             )
         is SearchResult.Address ->
@@ -70,7 +70,7 @@ internal fun PlaceColumns.toSearchResult(): SearchResult {
             SearchResult.Stop(stopId, name, location, area, parsedModes.toSet())
         }
         kind == KIND_ADDRESS -> SearchResult.Address(name, location, area, street, houseNumber, postcode)
-        else -> SearchResult.Place(osmId?.let(OsmId::parse), name, location, area, category)
+        else -> SearchResult.Place(placeId?.let(::PlaceId), name, location, area, category)
     }
 }
 

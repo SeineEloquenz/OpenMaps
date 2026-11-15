@@ -18,6 +18,7 @@ val storageModule =
         single<OpenMapsDatabase> {
             get<RoomDatabase.Builder<OpenMapsDatabase>>()
                 .setDriver(get<SQLiteDriver>())
+                .addMigrations(PlaceIdMigration)
                 .setQueryCoroutineContext(Dispatchers.IO)
                 .build()
         }

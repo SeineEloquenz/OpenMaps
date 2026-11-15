@@ -14,8 +14,7 @@ import nz.eloque.openmaps.core.model.GeoBounds
 import nz.eloque.openmaps.core.model.LatLng
 import nz.eloque.openmaps.core.model.Leg
 import nz.eloque.openmaps.core.model.ModeGroup
-import nz.eloque.openmaps.core.model.OsmId
-import nz.eloque.openmaps.core.model.OsmType
+import nz.eloque.openmaps.core.model.PlaceId
 import nz.eloque.openmaps.core.model.PlanRequest
 import nz.eloque.openmaps.core.model.PlanTarget
 import nz.eloque.openmaps.core.model.RouteOptions
@@ -49,7 +48,7 @@ class MotisClientTest {
             val results = geocoder.search("Rijksmuseum", near = LatLng(52.36, 4.89))
 
             val place = assertIs<SearchResult.Place>(results.first())
-            assertEquals(OsmId(OsmType.WAY, 29989787), place.osmId)
+            assertEquals(PlaceId("osm:way/29989787"), place.id)
             assertEquals("Amsterdam", place.area)
             assertTrue(results.any { it is SearchResult.Stop && TransportMode.TRAM in it.modes })
             assertEquals("52.36,4.89", requests.single().parameters["place"])

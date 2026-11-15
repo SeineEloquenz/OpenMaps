@@ -7,11 +7,10 @@ import nz.eloque.openmaps.core.model.Attribution
 import nz.eloque.openmaps.core.model.GeoBounds
 import nz.eloque.openmaps.core.model.LatLng
 import nz.eloque.openmaps.core.model.LoadedPlaces
-import nz.eloque.openmaps.core.model.OsmId
-import nz.eloque.openmaps.core.model.OsmType
 import nz.eloque.openmaps.core.model.PlaceCategory
 import nz.eloque.openmaps.core.model.PlaceDetails
 import nz.eloque.openmaps.core.model.PlaceDetailsSource
+import nz.eloque.openmaps.core.model.PlaceId
 import nz.eloque.openmaps.core.model.SearchResult
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -24,16 +23,18 @@ class CompositeNearbyPlacesTest {
     private fun place(
         id: Long,
         latitude: Double,
-    ) = SearchResult.Place(OsmId(OsmType.NODE, id), "Place $id", LatLng(latitude, 8.4), null, "toilets")
+    ) = SearchResult.Place(PlaceId("osm:node/$id"), "Place $id", LatLng(latitude, 8.4), null, "toilets")
 
-    private val lookups = mutableListOf<List<OsmId>>()
+    private val lookups = mutableListOf<List<PlaceId>>()
     private val details =
         object : PlaceDetailsSource {
-            override suspend fun details(osmId: OsmId) = null
+            override suspend fun details(id: PlaceId) = null
 
-            override suspend fun detailsOf(osmIds: List<OsmId>): Map<OsmId, PlaceDetails> {
-                lookups += osmIds
-                return osmIds.associateWith {
+            override fun pageUrl(id: PlaceId) = null
+
+            override suspend fun detailsOf(ids: List<PlaceId>): Map<PlaceId, PlaceDetails> {
+                lookups += ids
+                return ids.associateWith {
                     PlaceDetails(address = null, openingHours = null, website = null, phone = null, wheelchair = null)
                 }
             }
@@ -60,9 +61,9 @@ class CompositeNearbyPlacesTest {
 
             assertNull(emitted.first().places.single().details)
             val last = emitted.last()
-            assertEquals(listOf(2L, 1L), last.places.map { it.place.osmId?.id })
+            assertEquals(listOf("osm:node/2", "osm:node/1"), last.places.map { it.place.id?.value })
             assertEquals(2, last.places.count { it.details != null })
-            assertEquals(listOf(listOf(OsmId(OsmType.NODE, 1)), listOf(OsmId(OsmType.NODE, 2))), lookups)
+            assertEquals(listOf(listOf(PlaceId("osm:node/1")), listOf(PlaceId("osm:node/2"))), lookups)
             assertNull(last.attribution)
         }
 
@@ -74,7 +75,7 @@ class CompositeNearbyPlacesTest {
             val results = nearby.search(PlaceCategory.CHARGING, center, area, null).toList().single()
 
             assertEquals("Chargers", results.attribution?.source)
-            assertEquals(9L, results.places.single().place.osmId?.id)
+            assertEquals("osm:node/9", results.places.single().place.id?.value)
         }
 
     @Test
@@ -84,6 +85,6 @@ class CompositeNearbyPlacesTest {
 
             val results = nearby.search(PlaceCategory.CHARGING, center, area, null).toList().last()
 
-            assertEquals(1L, results.places.single().place.osmId?.id)
+            assertEquals("osm:node/1", results.places.single().place.id?.value)
         }
 }

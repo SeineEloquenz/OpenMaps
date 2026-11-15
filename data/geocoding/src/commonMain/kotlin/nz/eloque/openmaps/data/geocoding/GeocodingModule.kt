@@ -15,16 +15,21 @@ private const val OPEN_CHARGE_MAP_APP_KEY = "9fb1fe48-c6ed-4c88-9f65-03e9fee7afc
 /** Uses the servers from [SettingsStore] when set, otherwise the public Nominatim and Photon. Media always comes from Wikimedia. */
 fun geocodingModule(language: () -> String? = { null }) =
     module {
-        single<PlaceDetailsSource> {
+        single {
             val settings = get<SettingsStore>()
             NominatimPlaceDetails(get()) { settings.placeDetailsUrl.value ?: NOMINATIM_API }
         }
+        single {
+            val settings = get<SettingsStore>()
+            OpenChargeMapStations(get()) { settings.openChargeMapKey.value ?: OPEN_CHARGE_MAP_APP_KEY }
+        }
+        single<PlaceDetailsSource> { CombinedPlaceDetails(listOf(get<NominatimPlaceDetails>(), get<OpenChargeMapStations>())) }
         single<NearbyPlaces> {
             val settings = get<SettingsStore>()
             CompositeNearbyPlaces(
                 candidates = PhotonCategorySearch(get(), language) { settings.categorySearchUrl.value ?: PHOTON_API },
-                details = get(),
-                charging = OpenChargeMapStations(get()) { settings.openChargeMapKey.value ?: OPEN_CHARGE_MAP_APP_KEY },
+                details = get<NominatimPlaceDetails>(),
+                charging = get<OpenChargeMapStations>(),
             )
         }
         single<PlaceMediaSource> { WikimediaMedia(get(), language) }

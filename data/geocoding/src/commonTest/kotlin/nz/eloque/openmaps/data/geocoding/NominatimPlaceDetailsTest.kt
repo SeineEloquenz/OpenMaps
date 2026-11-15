@@ -12,9 +12,8 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import nz.eloque.openmaps.core.model.Accessibility
 import nz.eloque.openmaps.core.model.GeoBounds
-import nz.eloque.openmaps.core.model.OsmId
-import nz.eloque.openmaps.core.model.OsmType
 import nz.eloque.openmaps.core.model.PlaceFeature
+import nz.eloque.openmaps.core.model.PlaceId
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -47,10 +46,10 @@ class NominatimPlaceDetailsTest {
     @Test
     fun looksUpManyPlacesInOneRequest() =
         runTest {
-            val ids = listOf(OsmId(OsmType.WAY, 29989787), OsmId(OsmType.NODE, 1))
+            val ids = listOf(PlaceId("osm:way/29989787"), PlaceId("osm:node/1"), PlaceId("ocm:5"))
             val details = source(LOOKUP_JSON).detailsOf(ids)
 
-            assertEquals(setOf(OsmId(OsmType.WAY, 29989787)), details.keys)
+            assertEquals(setOf(PlaceId("osm:way/29989787")), details.keys)
             assertEquals("Mo-Su 09:00-17:00", details.values.single().openingHours)
             assertEquals("W29989787,N1", requests.single().parameters["osm_ids"])
         }
@@ -58,7 +57,7 @@ class NominatimPlaceDetailsTest {
     @Test
     fun readsExtraTags() =
         runTest {
-            val details = source(LOOKUP_JSON).details(OsmId(OsmType.WAY, 29989787))
+            val details = source(LOOKUP_JSON).details(PlaceId("osm:way/29989787"))
 
             assertEquals("Mo-Su 09:00-17:00", details?.openingHours)
             assertEquals("https://www.rijksmuseum.nl/", details?.website)
@@ -75,6 +74,7 @@ class NominatimPlaceDetailsTest {
     @Test
     fun returnsNullWhenNothingFound() =
         runTest {
-            assertNull(source("[]").details(OsmId(OsmType.NODE, 1)))
+            assertNull(source("[]").details(PlaceId("osm:node/1")))
+            assertNull(source("[]").details(PlaceId("ocm:1")))
         }
 }
