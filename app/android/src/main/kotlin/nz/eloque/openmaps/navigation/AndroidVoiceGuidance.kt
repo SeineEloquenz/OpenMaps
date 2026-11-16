@@ -29,7 +29,8 @@ class AndroidVoiceGuidance(
     announcements: Flow<Announcement>,
     scope: CoroutineScope,
 ) : VoiceGuidance {
-    private val _muted = MutableStateFlow(false)
+    private val preferences = context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
+    private val _muted = MutableStateFlow(preferences.getBoolean(MUTED, false))
     override val muted: StateFlow<Boolean> = _muted.asStateFlow()
     private val _status = MutableStateFlow(VoiceStatus.READY)
     override val status: StateFlow<VoiceStatus> = _status.asStateFlow()
@@ -63,6 +64,7 @@ class AndroidVoiceGuidance(
 
     override fun setMuted(muted: Boolean) {
         _muted.value = muted
+        preferences.edit().putBoolean(MUTED, muted).apply()
         if (muted) engine?.stop()
     }
 
@@ -118,6 +120,8 @@ class AndroidVoiceGuidance(
 
     private companion object {
         const val UTTERANCE = "navigation"
+        const val PREFERENCES = "voice"
+        const val MUTED = "muted"
         val URGENT_PATTERN = longArrayOf(0, 300, 150, 300)
     }
 }
