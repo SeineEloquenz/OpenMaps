@@ -30,6 +30,7 @@ import nz.eloque.openmaps.core.model.RoadEvent
 import nz.eloque.openmaps.core.model.RoadEventKind
 import nz.eloque.openmaps.core.model.RoadEvents
 import nz.eloque.openmaps.ui.components.clockTime
+import nz.eloque.openmaps.ui.components.formatDate
 import nz.eloque.openmaps.ui.navigation.RoadEventKey
 import nz.eloque.openmaps.ui.resources.Res
 import nz.eloque.openmaps.ui.resources.road_closed
@@ -114,7 +115,8 @@ private fun period(event: RoadEvent): String? {
     }
 }
 
-private fun dateTime(time: Instant): String = "${time.toLocalDateTime(TimeZone.currentSystemDefault()).date} ${clockTime(time)}"
+private fun dateTime(time: Instant): String =
+    "${formatDate(time.toLocalDateTime(TimeZone.currentSystemDefault()).date)}, ${clockTime(time)}"
 
 val RoadEvent.color: Color
     get() = if (closed) ClosedColor else WorksColor
