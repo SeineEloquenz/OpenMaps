@@ -45,6 +45,14 @@ internal class PreferencesSettingsStore(
         _distanceUnit.value = unit
     }
 
+    private val _speedingAlert = MutableStateFlow(settings.getBoolean(SPEEDING_ALERT, false))
+    override val speedingAlert: StateFlow<Boolean> = _speedingAlert.asStateFlow()
+
+    override fun setSpeedingAlert(enabled: Boolean) {
+        settings.putBoolean(SPEEDING_ALERT, enabled)
+        _speedingAlert.value = enabled
+    }
+
     private val serviceValues = mutableMapOf<String, MutableStateFlow<String?>>()
 
     override fun serviceValue(id: String): StateFlow<String?> = serviceState(id).asStateFlow()
@@ -88,5 +96,6 @@ internal class PreferencesSettingsStore(
         const val NO_LIMIT = -1
         const val TRAVEL_MODE = "route.travelMode"
         const val DISTANCE_UNIT = "units.distance"
+        const val SPEEDING_ALERT = "navigation.speeding_alert"
     }
 }

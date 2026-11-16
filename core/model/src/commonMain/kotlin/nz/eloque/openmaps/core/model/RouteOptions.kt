@@ -47,6 +47,11 @@ interface SettingsStore {
 
     fun setDistanceUnit(unit: DistanceUnit)
 
+    /** Whether navigation plays a sound when driving clearly above the speed limit. */
+    val speedingAlert: StateFlow<Boolean>
+
+    fun setSpeedingAlert(enabled: Boolean)
+
     /** The user's value for the [ServiceSetting] with [id], or null to use its default. */
     fun serviceValue(id: String): StateFlow<String?>
 

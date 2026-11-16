@@ -19,6 +19,19 @@ enum class ManeuverType {
     OTHER,
 }
 
+enum class LaneDirection { SHARP_LEFT, LEFT, SLIGHT_LEFT, STRAIGHT, SLIGHT_RIGHT, RIGHT, SHARP_RIGHT, U_TURN }
+
+/** One lane at a maneuver, left to right. */
+data class Lane(
+    val directions: List<LaneDirection>,
+    /** True when the lane leads along the route. */
+    val valid: Boolean,
+    /** True for the lanes best to take. */
+    val recommended: Boolean,
+    /** The direction to follow in a valid lane. */
+    val chosen: LaneDirection?,
+)
+
 /** What to do at the next maneuver, as shown on screen. */
 data class NavigationInstruction(
     val text: String,
@@ -26,6 +39,8 @@ data class NavigationInstruction(
     val maneuver: ManeuverType,
     /** The exit to take at a roundabout. */
     val exit: Int?,
+    /** Empty where the map has no lane data. */
+    val lanes: List<Lane> = emptyList(),
 )
 
 enum class NavigationStatus { NAVIGATING, REROUTING, OFF_ROUTE, ARRIVED }
@@ -45,7 +60,27 @@ data class NavigationState(
     val remainingMeters: Double,
     val remainingTime: Duration,
     val status: NavigationStatus,
-)
+    /** In km/h, null where unknown or unlimited. */
+    val speedLimit: Int? = null,
+    /** In metres per second, from the last fix. */
+    val speed: Double? = null,
+) {
+    val speeding: Boolean
+        get() = isSpeeding(speed, speedLimit)
+}
+
+/** True when [metersPerSecond] is above [limitKph] by more than 5 km/h or 10 percent, whichever is more. */
+fun isSpeeding(
+    metersPerSecond: Double?,
+    limitKph: Int?,
+): Boolean {
+    if (metersPerSecond == null || limitKph == null) return false
+    val kph = metersPerSecond * 3.6
+    return kph > limitKph + maxOf(SPEEDING_MARGIN_KPH, limitKph * SPEEDING_MARGIN_SHARE)
+}
+
+private const val SPEEDING_MARGIN_KPH = 5.0
+private const val SPEEDING_MARGIN_SHARE = 0.1
 
 /** A direction to speak, in [language] as a BCP 47 tag. [urgent] ones also vibrate. */
 data class Announcement(

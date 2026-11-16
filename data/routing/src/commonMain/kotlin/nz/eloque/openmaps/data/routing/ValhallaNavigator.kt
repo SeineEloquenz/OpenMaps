@@ -1,6 +1,7 @@
 package nz.eloque.openmaps.data.routing
 
 import io.ktor.client.HttpClient
+import io.ktor.client.call.body
 import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
@@ -27,6 +28,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import nz.eloque.openmaps.core.model.Announcement
 import nz.eloque.openmaps.core.model.DistanceUnit
+import nz.eloque.openmaps.core.model.Lane
 import nz.eloque.openmaps.core.model.LatLng
 import nz.eloque.openmaps.core.model.LocationFix
 import nz.eloque.openmaps.core.model.LocationUpdates
@@ -89,6 +91,29 @@ internal class ValhallaNavigationRoutes(
 ) {
     val isConfigured: Boolean
         get() = baseUrl() != null
+
+    /** Speed limits along [route] for driving, from the road segments it is matched to. */
+    suspend fun speedLimits(route: DirectionsRoute): SpeedLimits {
+        val url = checkNotNull(baseUrl()) { "No Valhalla server set" }.trimEnd('/')
+        val body =
+            TraceAttributesRequestDto(
+                encodedPolyline = route.geometry,
+                costing = "auto",
+                shapeMatch = "edge_walk",
+                filters =
+                    TraceFiltersDto(
+                        attributes = listOf("edge.speed_limit", "edge.begin_shape_index", "edge.end_shape_index"),
+                        action = "include",
+                    ),
+            )
+        val edges: TraceAttributesDto =
+            client
+                .post("$url/trace_attributes") {
+                    contentType(ContentType.Application.Json)
+                    setBody(body)
+                }.body()
+        return SpeedLimits.of(route.points(), edges.edges)
+    }
 
     /** Null when Valhalla finds no route. [heading] keeps a rerouted trip going the way the user faces. */
     suspend fun route(
@@ -180,6 +205,8 @@ internal class ValhallaNavigator(
         var lastReroute: Long = 0,
         var lastLocation: Location? = null,
         var recheck: Job? = null,
+        var limits: SpeedLimits? = null,
+        var routeVersion: Int = 0,
     )
 
     override suspend fun start(
@@ -204,6 +231,7 @@ internal class ValhallaNavigator(
         navigation.addOffRouteListener { location -> reroute(trip, location) }
         _state.value = initialState(trip, route)
         navigation.startNavigation(route)
+        loadLimits(trip, route)
         if (mode == TransportMode.CAR && replay == null) trip.recheck = scope.launch { recheck(trip) }
     }
 
@@ -222,6 +250,7 @@ internal class ValhallaNavigator(
             if ((route.duration.seconds - remaining).absoluteValue > RECHECK_DIFFERENCE) {
                 trip.geometry = route.points()
                 trip.navigation.startNavigation(route)
+                loadLimits(trip, route)
             }
         }
     }
@@ -257,7 +286,7 @@ internal class ValhallaNavigator(
                 position = LatLng(location.latitude, location.longitude),
                 bearing = location.bearing?.toDouble(),
                 travelledMeters = progress.distanceTraveled,
-                instruction = step?.upcoming(progress.stepDistanceRemaining, next),
+                instruction = step?.upcoming(progress.stepDistanceRemaining, next)?.copy(lanes = progress.lanesAhead()),
                 metersToManeuver = progress.stepDistanceRemaining,
                 then = next?.upcoming(next.distance, steps.getOrNull(progress.stepIndex + 2)),
                 remainingMeters = progress.distanceRemaining,
@@ -268,6 +297,8 @@ internal class ValhallaNavigator(
                         trip.rerouting -> NavigationStatus.REROUTING
                         else -> NavigationStatus.NAVIGATING
                     },
+                speedLimit = trip.limits?.at(progress.distanceTraveled),
+                speed = location.speedMetersPerSeconds?.toDouble(),
             )
     }
 
@@ -294,6 +325,21 @@ internal class ValhallaNavigator(
             trip.geometry = route.points()
             trip.voiceLanguage = route.voiceLanguage ?: trip.voiceLanguage
             trip.navigation.startNavigation(route)
+            loadLimits(trip, route)
+        }
+    }
+
+    /** Fetches the speed limits for a car trip's new [route], replacing those of the route before. */
+    private fun loadLimits(
+        trip: Trip,
+        route: DirectionsRoute,
+    ) {
+        trip.limits = null
+        val version = ++trip.routeVersion
+        if (trip.mode != TransportMode.CAR) return
+        scope.launch {
+            val limits = runCatching { routes.speedLimits(route) }.getOrNull()
+            if (this@ValhallaNavigator.trip === trip && trip.routeVersion == version) trip.limits = limits
         }
     }
 
@@ -317,6 +363,16 @@ internal class ValhallaNavigator(
             status = NavigationStatus.NAVIGATING,
         )
     }
+}
+
+/** Lanes at the next intersection ahead that has lane data, once it is close. */
+private fun RouteProgress.lanesAhead(): List<Lane> {
+    val intersection = upcomingIntersection ?: return emptyList()
+    val lanes = intersection.lanes?.takeIf { it.isNotEmpty() } ?: return emptyList()
+    val step = currentLeg.steps.getOrNull(stepIndex) ?: return emptyList()
+    val travelled = step.distance - stepDistanceRemaining
+    val ahead = (intersectionDistancesAlongStep?.get(intersection) ?: return emptyList()) - travelled
+    return if (ahead in 0.0..LANES_AHEAD_METERS) lanes.map { it.toLane() } else emptyList()
 }
 
 /** Feeds MapLibre Navigation from the app's own location provider. */
@@ -410,6 +466,7 @@ private fun navigationOptions(mode: TransportMode): MapLibreNavigationOptions {
 private val RECHECK_INTERVAL = 5.minutes
 private val RECHECK_DIFFERENCE = 1.minutes
 private const val HEADING_TOLERANCE = 45
+private const val LANES_AHEAD_METERS = 500.0
 private const val ARRIVAL_METERS = 25.0
 private const val REROUTE_PAUSE_MILLIS = 5_000L
 private const val WALK_OFF_ROUTE_FACTOR = 2.0
