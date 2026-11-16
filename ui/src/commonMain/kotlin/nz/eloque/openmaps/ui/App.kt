@@ -67,14 +67,17 @@ import coil3.network.ktor3.KtorNetworkFetcherFactory
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsText
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass
 import nz.eloque.openmaps.core.model.Geocoder
+import nz.eloque.openmaps.core.model.Navigator
 import nz.eloque.openmaps.core.model.PlaceCategory
 import nz.eloque.openmaps.core.model.PlacesStore
 import nz.eloque.openmaps.core.model.RoadEvents
+import nz.eloque.openmaps.core.model.TripGuide
 import nz.eloque.openmaps.map.MapController
 import nz.eloque.openmaps.map.OpenMap
 import nz.eloque.openmaps.map.rememberMapController
@@ -87,6 +90,7 @@ import nz.eloque.openmaps.ui.components.StopsOnMap
 import nz.eloque.openmaps.ui.directions.DirectionsSheet
 import nz.eloque.openmaps.ui.directions.RouteSheet
 import nz.eloque.openmaps.ui.directions.TripSheet
+import nz.eloque.openmaps.ui.guidance.ActiveTrip
 import nz.eloque.openmaps.ui.guidance.NavigationBanner
 import nz.eloque.openmaps.ui.guidance.NavigationSheet
 import nz.eloque.openmaps.ui.guidance.TransitGuidanceBanner
@@ -174,6 +178,7 @@ fun App(
     }
     OpenMapsTheme {
         val backStack = rememberNavBackStack(navConfiguration, HomeKey)
+        GuidedTripLifecycle(backStack)
         val map = rememberMapController(loadStyle = { url -> http.get(url).bodyAsText() })
         val snackbar = remember { SnackbarHostState() }
         val sheetState =
@@ -532,6 +537,25 @@ private fun SearchPill(
             }
             IconButton(onClick = onSettings) {
                 Icon(Icons.Outlined.Settings, contentDescription = stringResource(Res.string.settings))
+            }
+        }
+    }
+}
+
+/** Reopens the screen of a trip still running from before the app was closed, and stops the trip once its screen leaves. */
+@Composable
+private fun GuidedTripLifecycle(backStack: MutableList<NavKey>) {
+    val active = koinInject<ActiveTrip>()
+    val navigator = koinInject<Navigator>()
+    val guide = koinInject<TripGuide>()
+    LaunchedEffect(backStack) {
+        val running = navigator.state.value != null || guide.state.value != null
+        active.key?.takeIf { running && it !in backStack }?.let { backStack.add(it) }
+        snapshotFlow { backStack.any { it is NavigationKey || it is TransitGuidanceKey } }.filter { !it }.collect {
+            if (active.key != null) {
+                navigator.stop()
+                guide.stop()
+                active.key = null
             }
         }
     }

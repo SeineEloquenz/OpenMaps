@@ -35,6 +35,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filter
 import nz.eloque.openmaps.core.model.LatLng
 import nz.eloque.openmaps.core.model.NavigationState
@@ -69,6 +70,7 @@ import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import kotlin.time.Clock
+import kotlin.time.Duration.Companion.seconds
 
 /** The running trip: time and distance left, and the buttons to end it or bring the camera back to the user. */
 @Composable
@@ -91,6 +93,13 @@ fun NavigationSheet(
     LaunchedEffect(map) { if (!key.simulate && !map.isLocationPermissionGranted) map.requestLocationPermission() }
     LaunchedEffect(map) { snapshotFlow { map.isMovedByUser }.filter { it }.collect { following = false } }
     ShowTripOnMap(map, state, following)
+    val arrived = state?.status == NavigationStatus.ARRIVED
+    LaunchedEffect(arrived) {
+        if (arrived) {
+            delay(END_AFTER_ARRIVAL)
+            onEnd()
+        }
+    }
 
     Column(
         Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
@@ -259,5 +268,6 @@ private fun zoom(mode: TransportMode) = if (mode == TransportMode.CAR) 16.5 else
 private fun tilt(mode: TransportMode) = if (mode == TransportMode.CAR) 50.0 else 30.0
 
 private const val LINE_STEP_METERS = 10
+internal val END_AFTER_ARRIVAL = 30.seconds
 private val TravelledColor = Color(0xFF9E9E9E)
 private val LineWidth = 8.dp

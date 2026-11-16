@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filter
 import nz.eloque.openmaps.core.model.Leg
 import nz.eloque.openmaps.core.model.TripStage
@@ -57,6 +58,13 @@ fun TransitGuidanceSheet(
     val state by viewModel.state.collectAsStateWithLifecycle()
     var following by rememberSaveable { mutableStateOf(true) }
     val itinerary = state?.itinerary ?: viewModel.itinerary
+    val arrived = state?.progress?.stage == TripStage.ARRIVED
+    LaunchedEffect(arrived) {
+        if (arrived) {
+            delay(END_AFTER_ARRIVAL)
+            onEnd()
+        }
+    }
 
     ShowItineraryOnMap(map, itinerary, fit = false)
     LaunchedEffect(viewModel.itinerary) { viewModel.itinerary?.let { map.fit(it.legs.flatMap(Leg::geometry)) } }

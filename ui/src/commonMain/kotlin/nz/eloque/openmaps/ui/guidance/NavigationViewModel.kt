@@ -20,11 +20,12 @@ import nz.eloque.openmaps.ui.navigation.NavigationKey
 class NavigationViewModel(
     private val navigator: Navigator,
     private val settings: SettingsStore,
+    private val active: ActiveTrip,
     private val key: NavigationKey,
 ) : ViewModel() {
     val state: StateFlow<NavigationState?> = navigator.state
 
-    private val _start = MutableStateFlow<LoadState<Unit>?>(null)
+    private val _start = MutableStateFlow<LoadState<Unit>?>(if (resumed()) LoadState.Loaded(Unit) else null)
 
     /** Null until a start position is known. */
     val start: StateFlow<LoadState<Unit>?> = _start.asStateFlow()
@@ -34,6 +35,7 @@ class NavigationViewModel(
         if (_start.value != null && _start.value != LoadState.Failed) return
         val from = key.from?.location ?: userLocation ?: return
         _start.value = LoadState.Loading
+        active.key = key
         viewModelScope.launch {
             _start.value =
                 loadOnce {
@@ -42,9 +44,7 @@ class NavigationViewModel(
         }
     }
 
-    override fun onCleared() {
-        navigator.stop()
-    }
+    private fun resumed() = active.key == key && navigator.state.value != null
 }
 
 val TravelMode.transportMode: TransportMode

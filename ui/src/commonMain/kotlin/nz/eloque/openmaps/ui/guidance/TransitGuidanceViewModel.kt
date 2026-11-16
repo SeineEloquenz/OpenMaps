@@ -10,8 +10,9 @@ import nz.eloque.openmaps.ui.navigation.TransitGuidanceKey
 
 /** Guides one public transport trip for as long as its screen is open. */
 class TransitGuidanceViewModel(
-    private val guide: TripGuide,
+    guide: TripGuide,
     cache: ItineraryCache,
+    active: ActiveTrip,
     key: TransitGuidanceKey,
 ) : ViewModel() {
     /** Null when the itinerary is no longer cached, as after the app was restarted. */
@@ -20,10 +21,12 @@ class TransitGuidanceViewModel(
     val state: StateFlow<TripGuidance?> = guide.state
 
     init {
-        itinerary?.let { guide.start(it, key.simulate) }
-    }
-
-    override fun onCleared() {
-        guide.stop()
+        val resumed = active.key == key && guide.state.value != null
+        if (!resumed) {
+            itinerary?.let {
+                active.key = key
+                guide.start(it, key.simulate)
+            }
+        }
     }
 }

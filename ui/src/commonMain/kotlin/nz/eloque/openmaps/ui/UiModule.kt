@@ -5,6 +5,7 @@ import nz.eloque.openmaps.ui.category.CategoryViewModel
 import nz.eloque.openmaps.ui.directions.DirectionsViewModel
 import nz.eloque.openmaps.ui.directions.ItineraryCache
 import nz.eloque.openmaps.ui.directions.TripViewModel
+import nz.eloque.openmaps.ui.guidance.ActiveTrip
 import nz.eloque.openmaps.ui.guidance.NavigationViewModel
 import nz.eloque.openmaps.ui.guidance.TransitGuidanceViewModel
 import nz.eloque.openmaps.ui.guidance.TransitTripGuide
@@ -25,9 +26,10 @@ val uiModule =
         viewModel { params -> PlaceViewModel(get(), get(), get(), params.getOrNull(), params.get(), params.get()) }
         single { ItineraryCache() }
         viewModel { params -> DirectionsViewModel(get(), get(), get(), get(), params.get()) }
-        viewModel { params -> NavigationViewModel(get(), get(), params.get()) }
+        single { ActiveTrip() }
+        viewModel { params -> NavigationViewModel(get(), get(), get(), params.get()) }
         single<TripGuide> { TransitTripGuide(get(), get()) }
-        viewModel { params -> TransitGuidanceViewModel(get(), get(), params.get()) }
+        viewModel { params -> TransitGuidanceViewModel(get(), get(), get(), params.get()) }
         viewModel { params -> TripViewModel(get(), params.get()) }
         viewModel { params -> CategoryViewModel(get(), params.get()) }
         viewModel { SharingViewModel(get()) }
