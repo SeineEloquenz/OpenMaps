@@ -41,6 +41,13 @@ private fun tankPulsJson(price: Int) =
     "city":"Karlsruhe","lat":49.00763,"lng":8.42285,"priceCents":$price,"priceTs":"2026-11-16 11:06:06.202696+00"},
     {"id":"b","name":"Leer","lat":49.0,"lng":8.4,"priceCents":null,"priceTs":null}]}"""
 
+// Shaped like the Spanish ministry's province answer, trimmed to the fields read.
+private const val SPAIN_JSON =
+    """{"Fecha":"16/11/2026 13:01:59","ListaEESSPrecio":[{"Latitud":"40,528778","Longitud (WGS84)":"-3,481639",
+    "Rótulo":"PLENERGY","Dirección":"CALLE MAYOR, 5","C.P.":"28100","Localidad":"ALCOBENDAS","Precio Gasoleo A":"1,729",
+    "Precio Gasolina 95 E5":"1,499","Precio Gasolina 98 E5":""},
+    {"Latitud":"0,000000","Longitud (WGS84)":"0,000000","Rótulo":"BROKEN","Precio Gasoleo A":"1,700"}],"Nota":"","ResultadoConsulta":"OK"}"""
+
 class FuelSourcesTest {
     private val requests = mutableListOf<String>()
 
@@ -112,6 +119,28 @@ class FuelSourcesTest {
             assertEquals(Instant.parse("2026-11-16T11:06:06.202696Z"), station.prices.first().updated)
             assertEquals("Durlacher Allee 46, 76131 Karlsruhe", station.address)
             assertEquals("Aral", station.brand)
+        }
+
+    @Test
+    fun spainReadsCommaDecimalsAsMadridTimeAndReusesAProvinceForAWhile() =
+        runTest {
+            var now = Instant.parse("2026-11-16T12:00:00Z")
+            val source = SpainPrices(client { url -> if (url.endsWith("/28")) SPAIN_JSON else """{"ListaEESSPrecio":[]}""" }) { now }
+            val madridRequests = { requests.count { it.endsWith("FiltroProvincia/28") } }
+            val madrid = GeoBounds(40.40, -3.60, 40.60, -3.40)
+
+            val station = source.stations(LatLng(40.5, -3.5), madrid).single()
+            source.stations(LatLng(40.5, -3.5), madrid)
+
+            assertEquals(1, madridRequests())
+            assertEquals(mapOf(Fuel.DIESEL to 1.729, Fuel.PETROL_95 to 1.499), station.prices.associate { it.fuel to it.price })
+            assertEquals(Instant.parse("2026-11-16T12:01:59Z"), station.prices.first().updated)
+            assertEquals("Plenergy", station.brand)
+            assertEquals("Calle Mayor, 5, 28100 Alcobendas", station.address)
+
+            now = Instant.parse("2026-11-16T12:06:00Z")
+            source.stations(LatLng(40.5, -3.5), madrid)
+            assertEquals(2, madridRequests())
         }
 
     @Test

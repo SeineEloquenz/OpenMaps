@@ -110,7 +110,7 @@ private fun price(
 private fun parisTime(value: String) =
     runCatching { LocalDateTime.parse(value.take(LOCAL_DATE_TIME_LENGTH)).toInstant(TimeZone.of("Europe/Paris")) }.getOrNull()
 
-private fun String.titleCase() = lowercase().split(" ").joinToString(" ") { word -> word.replaceFirstChar { it.uppercaseChar() } }
+internal fun String.titleCase() = lowercase().split(" ").joinToString(" ") { word -> word.replaceFirstChar { it.uppercaseChar() } }
 
 private const val FRANCE_RECORDS =
     "https://data.economie.gouv.fr/api/explore/v2.1/catalog/datasets/prix-des-carburants-en-france-flux-instantane-v2/records"

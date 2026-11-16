@@ -11,5 +11,6 @@ val fuelModule =
         single { FrancePrices(get()) } bind FuelPriceSource::class
         single { AustriaPrices(get()) } bind FuelPriceSource::class
         single { TankPulsPrices(get()) } bind FuelPriceSource::class
+        single { SpainPrices(get()) } bind FuelPriceSource::class
         single<FuelPrices> { CombinedFuelPrices(getAll()) }
     }
