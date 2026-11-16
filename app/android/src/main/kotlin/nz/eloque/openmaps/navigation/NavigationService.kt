@@ -11,15 +11,20 @@ import android.content.pm.ServiceInfo
 import android.os.IBinder
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import nz.eloque.openmaps.MainActivity
 import nz.eloque.openmaps.R
+import nz.eloque.openmaps.core.model.Leg
 import nz.eloque.openmaps.core.model.NavigationState
 import nz.eloque.openmaps.core.model.NavigationStatus
 import nz.eloque.openmaps.core.model.Navigator
 import nz.eloque.openmaps.core.model.SettingsStore
+import nz.eloque.openmaps.core.model.TripGuidance
+import nz.eloque.openmaps.core.model.TripGuide
+import nz.eloque.openmaps.core.model.TripStage
+import nz.eloque.openmaps.ui.components.clockTime
 import nz.eloque.openmaps.ui.components.formatDistance
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -29,6 +34,7 @@ class NavigationService :
     Service(),
     KoinComponent {
     private val navigator: Navigator by inject()
+    private val guide: TripGuide by inject()
     private val settings: SettingsStore by inject()
     private val scope = MainScope()
 
@@ -41,21 +47,20 @@ class NavigationService :
             NotificationChannel(CHANNEL, getString(R.string.navigation_channel), NotificationManager.IMPORTANCE_LOW),
         )
         try {
-            startForeground(ID, notification(navigator.state.value), ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION)
+            startForeground(ID, notification(current()), ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION)
         } catch (_: SecurityException) {
             // Without location permission, as on a simulated trip, the trip runs in the foreground only.
             stopSelf()
             return
         }
         scope.launch {
-            navigator.state
-                .map { it?.let(::text) }
+            combine(navigator.state, guide.state) { street, transit -> street?.let(::text) ?: transit?.let(::text) }
                 .distinctUntilChanged()
                 .collect { text ->
                     if (text == null) {
                         stopSelf()
                     } else {
-                        manager.notify(ID, notification(navigator.state.value))
+                        manager.notify(ID, notification(text))
                     }
                 }
         }
@@ -66,7 +71,9 @@ class NavigationService :
         super.onDestroy()
     }
 
-    private fun notification(state: NavigationState?): Notification {
+    private fun current(): Pair<String, String?>? = navigator.state.value?.let(::text) ?: guide.state.value?.let(::text)
+
+    private fun notification(text: Pair<String, String?>?): Notification {
         val open =
             PendingIntent.getActivity(
                 this,
@@ -74,7 +81,7 @@ class NavigationService :
                 Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
             )
-        val (title, body) = state?.let(::text) ?: (getString(R.string.navigation_channel) to null)
+        val (title, body) = text ?: (getString(R.string.navigation_channel) to null)
         return Notification
             .Builder(this, CHANNEL)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
@@ -87,7 +94,39 @@ class NavigationService :
             .build()
     }
 
-    private fun text(state: NavigationState): Pair<String, String> {
+    private fun text(trip: TripGuidance): Pair<String, String?> {
+        val legs = trip.itinerary.legs
+        val leg = legs.getOrNull(trip.progress.legIndex)
+        return when (trip.progress.stage) {
+            TripStage.WALK -> {
+                val vehicle = legs.getOrNull(trip.progress.legIndex + 1) as? Leg.Transit
+                if (vehicle == null) {
+                    getString(R.string.guide_walk_end) to null
+                } else {
+                    getString(R.string.guide_walk_to, vehicle.from.name) to
+                        getString(R.string.guide_leaves, vehicle.line.label, clockTime(vehicle.start.actual))
+                }
+            }
+            TripStage.WAIT -> {
+                val vehicle = leg as Leg.Transit
+                getString(R.string.guide_wait, vehicle.line.label, vehicle.headsign.orEmpty()) to
+                    getString(R.string.guide_leaves, vehicle.line.label, clockTime(vehicle.start.actual))
+            }
+            TripStage.RIDE -> {
+                val vehicle = leg as Leg.Transit
+                getString(R.string.guide_ride, vehicle.to.name) to
+                    resources.getQuantityString(
+                        R.plurals.guide_stops_left,
+                        trip.progress.stopsLeft,
+                        trip.progress.stopsLeft,
+                        clockTime(vehicle.end.actual),
+                    )
+            }
+            TripStage.ARRIVED -> getString(R.string.navigation_arrived) to null
+        }
+    }
+
+    private fun text(state: NavigationState): Pair<String, String?> {
         val unit = settings.distanceUnit.value
         val minutes = ((state.remainingTime.inWholeSeconds + 30) / 60).coerceAtLeast(1)
         val left = getString(R.string.navigation_left, formatDistance(state.remainingMeters, unit), minutes)

@@ -89,6 +89,8 @@ import nz.eloque.openmaps.ui.directions.RouteSheet
 import nz.eloque.openmaps.ui.directions.TripSheet
 import nz.eloque.openmaps.ui.guidance.NavigationBanner
 import nz.eloque.openmaps.ui.guidance.NavigationSheet
+import nz.eloque.openmaps.ui.guidance.TransitGuidanceBanner
+import nz.eloque.openmaps.ui.guidance.TransitGuidanceSheet
 import nz.eloque.openmaps.ui.home.HomeSheet
 import nz.eloque.openmaps.ui.navigation.AboutKey
 import nz.eloque.openmaps.ui.navigation.CategoryKey
@@ -103,6 +105,7 @@ import nz.eloque.openmaps.ui.navigation.SavedKey
 import nz.eloque.openmaps.ui.navigation.SearchKey
 import nz.eloque.openmaps.ui.navigation.SettingsKey
 import nz.eloque.openmaps.ui.navigation.StopKey
+import nz.eloque.openmaps.ui.navigation.TransitGuidanceKey
 import nz.eloque.openmaps.ui.navigation.TripKey
 import nz.eloque.openmaps.ui.navigation.toEndpoint
 import nz.eloque.openmaps.ui.navigation.toKey
@@ -144,6 +147,7 @@ private val navConfiguration =
                     subclass(TripKey::class)
                     subclass(RoadEventKey::class)
                     subclass(NavigationKey::class)
+                    subclass(TransitGuidanceKey::class)
                 }
             }
     }
@@ -231,7 +235,7 @@ fun App(
             when {
                 top == HomeKey -> HomePeekHeight
                 top is CategoryKey -> windowHeight * CATEGORY_PEEK_FRACTION
-                top is NavigationKey -> NavigationPeekHeight
+                top is NavigationKey || top is TransitGuidanceKey -> NavigationPeekHeight
                 else -> SheetPeekHeight
             } +
                 with(LocalDensity.current) { WindowInsets.navigationBars.getBottom(this).toDp() }
@@ -342,7 +346,11 @@ fun App(
                                         canSimulate = debug,
                                     )
                                 }
-                                entry<RouteKey> { RouteSheet(it, map, snackbar) }
+                                entry<RouteKey> { route ->
+                                    RouteSheet(route, map, snackbar, canSimulate = debug) { simulate ->
+                                        backStack.add(TransitGuidanceKey(route.itineraryId, route.destinationName, simulate))
+                                    }
+                                }
                                 entry<CategoryKey> {
                                     if (it.category == PlaceCategory.SHARED_VEHICLES) {
                                         SharingSheet(map)
@@ -358,6 +366,17 @@ fun App(
                                 entry<TripKey> { TripSheet(it, map) }
                                 entry<RoadEventKey> { RoadEventSheet(it) }
                                 entry<NavigationKey> { NavigationSheet(it, map, onEnd = { backStack.removeLastOrNull() }) }
+                                entry<TransitGuidanceKey> {
+                                    TransitGuidanceSheet(
+                                        it,
+                                        map,
+                                        onEnd = { backStack.removeLastOrNull() },
+                                        onReplan = { destination ->
+                                            backStack.removeLastOrNull()
+                                            backStack.add(DirectionsKey(from = null, to = destination))
+                                        },
+                                    )
+                                }
                             },
                     )
                 },
@@ -366,7 +385,12 @@ fun App(
                     map = map,
                     peekHeight = peekHeight,
                     showSearchBar = top == HomeKey || top is CategoryKey,
-                    navigating = top is NavigationKey,
+                    banner =
+                        when (top) {
+                            is NavigationKey -> { modifier -> NavigationBanner(modifier) }
+                            is TransitGuidanceKey -> { modifier -> TransitGuidanceBanner(modifier) }
+                            else -> null
+                        },
                     category = (top as? CategoryKey)?.category,
                     onCategory = { category ->
                         if (top is CategoryKey) backStack.removeLastOrNull()
@@ -406,7 +430,7 @@ private fun MapLayer(
     map: MapController,
     peekHeight: Dp,
     showSearchBar: Boolean,
-    navigating: Boolean,
+    banner: (@Composable (Modifier) -> Unit)?,
     category: PlaceCategory?,
     onCategory: (PlaceCategory?) -> Unit,
     onSearch: () -> Unit,
@@ -423,7 +447,7 @@ private fun MapLayer(
                 safe.calculateTopPadding() +
                     when {
                         showSearchBar -> SearchBarHeight + CategoryChipsHeight + ControlMargin * 2
-                        navigating -> NavigationBannerHeight
+                        banner != null -> NavigationBannerHeight
                         else -> 0.dp
                     },
             end = safe.calculateEndPadding(direction),
@@ -451,8 +475,8 @@ private fun MapLayer(
             }
         }
 
-        if (navigating) {
-            NavigationBanner(Modifier.statusBarsPadding().padding(ControlMargin))
+        if (banner != null) {
+            banner(Modifier.statusBarsPadding().padding(ControlMargin))
             return@Box
         }
 

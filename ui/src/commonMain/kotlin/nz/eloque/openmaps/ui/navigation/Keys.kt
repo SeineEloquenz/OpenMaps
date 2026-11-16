@@ -131,6 +131,14 @@ data class NavigationKey(
     val simulate: Boolean = false,
 ) : NavKey
 
+/** Guidance along a cached public transport itinerary. [simulate] follows it on the timetable by itself. */
+@Serializable
+data class TransitGuidanceKey(
+    val itineraryId: String,
+    val destinationName: String?,
+    val simulate: Boolean = false,
+) : NavKey
+
 /** A tapped road event, as the properties of its map feature. */
 @Serializable
 data class RoadEventKey(

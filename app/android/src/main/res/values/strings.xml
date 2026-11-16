@@ -8,4 +8,13 @@
     <string name="navigation_arrived">You have arrived</string>
     <string name="navigation_rerouting">Finding a new route</string>
     <string name="navigation_off_route">Return to the route</string>
+    <string name="guide_walk_to">Walk to %1$s</string>
+    <string name="guide_walk_end">Walk to your destination</string>
+    <string name="guide_wait">%1$s towards %2$s</string>
+    <string name="guide_leaves">%1$s leaves %2$s</string>
+    <string name="guide_ride">Get off at %1$s</string>
+    <plurals name="guide_stops_left">
+        <item quantity="one">Next stop · arrive %2$s</item>
+        <item quantity="other">%1$d more stops · arrive %2$s</item>
+    </plurals>
 </resources>

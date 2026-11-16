@@ -4,25 +4,29 @@ import android.content.Context
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import nz.eloque.openmaps.core.model.Announcement
-import nz.eloque.openmaps.core.model.Navigator
 import nz.eloque.openmaps.core.model.VoiceGuidance
 import nz.eloque.openmaps.core.model.VoiceStatus
 import java.util.Locale
 
-/** Speaks announcements through the platform speech engine, ducking other audio meanwhile. Holds the engine only during trips. */
+/**
+ * Speaks announcements through the platform speech engine, ducking other audio meanwhile, and vibrates for urgent ones.
+ * Holds the engine only while [active].
+ */
 class AndroidVoiceGuidance(
     private val context: Context,
-    navigator: Navigator,
+    active: Flow<Boolean>,
+    announcements: Flow<Announcement>,
     scope: CoroutineScope,
 ) : VoiceGuidance {
     private val _muted = MutableStateFlow(false)
@@ -47,9 +51,14 @@ class AndroidVoiceGuidance(
 
     init {
         scope.launch {
-            navigator.state.map { it != null }.distinctUntilChanged().collect { running -> if (running) open() else close() }
+            active.collect { running -> if (running) open() else close() }
         }
-        scope.launch { navigator.announcements.collect(::speak) }
+        scope.launch {
+            announcements.collect {
+                if (it.urgent) vibrate()
+                speak(it)
+            }
+        }
     }
 
     override fun setMuted(muted: Boolean) {
@@ -83,6 +92,10 @@ class AndroidVoiceGuidance(
             }
     }
 
+    private fun vibrate() {
+        context.getSystemService(Vibrator::class.java)?.vibrate(VibrationEffect.createWaveform(URGENT_PATTERN, -1))
+    }
+
     private fun close() {
         engine?.shutdown()
         engine = null
@@ -105,5 +118,6 @@ class AndroidVoiceGuidance(
 
     private companion object {
         const val UTTERANCE = "navigation"
+        val URGENT_PATTERN = longArrayOf(0, 300, 150, 300)
     }
 }

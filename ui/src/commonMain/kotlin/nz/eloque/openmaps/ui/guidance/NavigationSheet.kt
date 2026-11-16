@@ -181,7 +181,7 @@ private val VoiceStatus.problem
         }
 
 @Composable
-private fun EndButton(onEnd: () -> Unit) {
+internal fun EndButton(onEnd: () -> Unit) {
     Button(
         onClick = onEnd,
         colors =

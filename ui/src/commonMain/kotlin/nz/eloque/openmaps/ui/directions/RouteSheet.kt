@@ -13,10 +13,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -53,6 +56,8 @@ import nz.eloque.openmaps.ui.navigation.RouteKey
 import nz.eloque.openmaps.ui.resources.Res
 import nz.eloque.openmaps.ui.resources.bike_leg
 import nz.eloque.openmaps.ui.resources.drive_leg
+import nz.eloque.openmaps.ui.resources.guide_start
+import nz.eloque.openmaps.ui.resources.navigation_simulate
 import nz.eloque.openmaps.ui.resources.platform
 import nz.eloque.openmaps.ui.resources.rental_leg
 import nz.eloque.openmaps.ui.resources.rental_pick_up
@@ -70,6 +75,8 @@ fun RouteSheet(
     route: RouteKey,
     map: MapController,
     snackbar: SnackbarHostState,
+    canSimulate: Boolean = false,
+    onGuide: (simulate: Boolean) -> Unit = {},
 ) {
     val itinerary = koinInject<ItineraryCache>()[route.itineraryId]
     ShowItineraryOnMap(map, itinerary)
@@ -81,7 +88,7 @@ fun RouteSheet(
         )
         return
     }
-    RouteTimeline(itinerary, route.destinationName ?: stringResource(Res.string.your_location), snackbar)
+    RouteTimeline(itinerary, route.destinationName ?: stringResource(Res.string.your_location), snackbar, canSimulate, onGuide)
 }
 
 @Composable
@@ -89,6 +96,8 @@ private fun RouteTimeline(
     itinerary: Itinerary,
     destinationName: String,
     snackbar: SnackbarHostState,
+    canSimulate: Boolean,
+    onGuide: (simulate: Boolean) -> Unit,
 ) {
     val unit by koinInject<SettingsStore>().distanceUnit.collectAsState()
     LazyColumn(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
@@ -100,6 +109,15 @@ private fun RouteTimeline(
                     modifier = Modifier.weight(1f),
                 )
                 Text(formatDuration(itinerary.duration), style = MaterialTheme.typography.titleMedium)
+            }
+            if (itinerary.legs.any { it is Leg.Transit }) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 8.dp)) {
+                    Button(onClick = { onGuide(false) }) {
+                        Icon(Icons.Default.Navigation, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Text(stringResource(Res.string.guide_start), modifier = Modifier.padding(start = 8.dp))
+                    }
+                    if (canSimulate) OutlinedButton(onClick = { onGuide(true) }) { Text(stringResource(Res.string.navigation_simulate)) }
+                }
             }
             ReminderButton(itinerary, destinationName, snackbar, Modifier.padding(bottom = 8.dp))
             HorizontalDivider()

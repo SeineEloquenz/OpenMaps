@@ -3,12 +3,9 @@ package nz.eloque.openmaps
 import android.app.Application
 import android.content.Intent
 import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import nz.eloque.openmaps.core.model.LocationUpdates
-import nz.eloque.openmaps.core.model.Navigator
 import nz.eloque.openmaps.core.model.ServiceCatalog
 import nz.eloque.openmaps.core.model.VoiceGuidance
 import nz.eloque.openmaps.core.platform.ReminderScheduler
@@ -24,6 +21,8 @@ import nz.eloque.openmaps.data.transit.transitModule
 import nz.eloque.openmaps.data.transit.transitServiceSettings
 import nz.eloque.openmaps.navigation.AndroidVoiceGuidance
 import nz.eloque.openmaps.navigation.NavigationService
+import nz.eloque.openmaps.navigation.guidanceActive
+import nz.eloque.openmaps.navigation.guidanceAnnouncements
 import nz.eloque.openmaps.reminder.AndroidReminderScheduler
 import nz.eloque.openmaps.ui.uiModule
 import org.koin.android.ext.android.get
@@ -44,7 +43,14 @@ class OpenMapsApplication : Application() {
                     single { createHttpClient(USER_AGENT) }
                     single<ReminderScheduler> { reminders }
                     single<LocationUpdates> { AndroidLocationUpdates(this@OpenMapsApplication) }
-                    single<VoiceGuidance> { AndroidVoiceGuidance(this@OpenMapsApplication, get(), MainScope()) }
+                    single<VoiceGuidance> {
+                        AndroidVoiceGuidance(
+                            this@OpenMapsApplication,
+                            guidanceActive(get(), get()),
+                            guidanceAnnouncements(get(), get()),
+                            MainScope(),
+                        )
+                    }
                     single { ServiceCatalog(transitServiceSettings + routingServiceSettings + geocodingServiceSettings) }
                     single<Sharer> {
                         Sharer { text ->
@@ -62,12 +68,7 @@ class OpenMapsApplication : Application() {
         }
         get<VoiceGuidance>()
         MainScope().launch {
-            get<Navigator>()
-                .state
-                .map { it != null }
-                .distinctUntilChanged()
-                .filter { it }
-                .collect { NavigationService.start(this@OpenMapsApplication) }
+            guidanceActive(get(), get()).filter { it }.collect { NavigationService.start(this@OpenMapsApplication) }
         }
     }
 
