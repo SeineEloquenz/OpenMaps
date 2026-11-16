@@ -27,7 +27,7 @@ val RoutingServer =
 
 const val FOSSGIS_VALHALLA = "https://valhalla1.openstreetmap.de"
 
-/** A Valhalla server with footpaths and cycleways for walking and cycling routes. */
+/** A Valhalla server with footpaths and cycleways for walking and cycling routes, also asked for car routes [RoutingServer] has none for. */
 val ActiveRoutingServer =
     ServiceSetting(
         "server.routing.active",
@@ -71,8 +71,8 @@ internal class FallbackStreetRouter(
 }
 
 /**
- * Routes cars through [RoutingServer], walking and cycling through [ActiveRoutingServer], and each mode through
- * [fallback] while its server is not set or fails.
+ * Routes cars through [RoutingServer] and then [ActiveRoutingServer], walking and cycling through [ActiveRoutingServer],
+ * and each mode through [fallback] when its servers have no route or fail.
  * Navigation needs the server and a [LocationUpdates] from the app. [language] is a BCP 47 tag for spoken directions.
  */
 fun routingModule(

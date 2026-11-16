@@ -44,7 +44,14 @@ internal data class LocationDto(
     val lat: Double,
     val lon: Double,
     @SerialName("search_filter") val searchFilter: SearchFilterDto,
+    @SerialName("search_cutoff") val searchCutoff: Int,
 )
+
+/**
+ * How far from a location Valhalla may look for a road, in meters. Valhalla's own 35 km would snap places outside a
+ * server's area onto its border roads, giving a wrong route instead of none, and no fallback to the next server.
+ */
+internal const val SEARCH_CUTOFF_METERS = 1000
 
 @Serializable
 internal data class SearchFilterDto(
@@ -100,11 +107,11 @@ internal class ValhallaStreetRouter(
     override suspend fun route(request: StreetRequest): List<Itinerary> =
         coroutineScope {
             request.modes
-                .filter { servers.url(it) != null }
+                .filter { servers.urls(it).isNotEmpty() }
                 .mapNotNull { mode -> costing(mode)?.let { mode to it } }
                 .map { (mode, costing) ->
                     async {
-                        runCatching { servers.call(mode) { url -> route(url, request, mode, costing) } }
+                        runCatching { servers.first(mode) { url -> route(url, request, mode, costing) } }
                             .onFailure { if (it is CancellationException) throw it }
                             .getOrNull()
                     }
@@ -122,7 +129,7 @@ internal class ValhallaStreetRouter(
             RouteRequestDto(
                 locations =
                     listOf(request.from, request.to).map {
-                        LocationDto(it.latitude, it.longitude, SearchFilterDto(excludeClosures = false))
+                        LocationDto(it.latitude, it.longitude, SearchFilterDto(excludeClosures = false), SEARCH_CUTOFF_METERS)
                     },
                 costing = costing,
                 costingOptions = mapOf(costing to costingOptions(mode, request.options)),

@@ -78,6 +78,7 @@ internal data class NavigationLocationDto(
     val lat: Double,
     val lon: Double,
     @SerialName("search_filter") val searchFilter: SearchFilterDto,
+    @SerialName("search_cutoff") val searchCutoff: Int,
     val heading: Int? = null,
     @SerialName("heading_tolerance") val headingTolerance: Int? = null,
 )
@@ -89,11 +90,11 @@ internal class ValhallaNavigationRoutes(
     private val language: () -> String?,
     private val units: () -> DistanceUnit,
 ) {
-    fun isConfigured(mode: TransportMode) = costing(mode) != null && servers.url(mode) != null
+    fun isConfigured(mode: TransportMode) = costing(mode) != null && servers.urls(mode).isNotEmpty()
 
-    /** Speed limits along [route] for driving, from the road segments it is matched to. */
+    /** Speed limits along [route] for driving, from the road segments it is matched to on the server it came from. */
     suspend fun speedLimits(route: DirectionsRoute): SpeedLimits {
-        val url = checkNotNull(servers.url(TransportMode.CAR)) { "No Valhalla server set for driving" }
+        val server = checkNotNull(route.routeOptions?.baseUrl) { "The route has no server" }
         val body =
             TraceAttributesRequestDto(
                 encodedPolyline = route.geometry,
@@ -106,11 +107,13 @@ internal class ValhallaNavigationRoutes(
                     ),
             )
         val edges: TraceAttributesDto =
-            client
-                .post("$url/trace_attributes") {
-                    contentType(ContentType.Application.Json)
-                    setBody(body)
-                }.body()
+            servers.at(server) { url ->
+                client
+                    .post("$url/trace_attributes") {
+                        contentType(ContentType.Application.Json)
+                        setBody(body)
+                    }.body()
+            }
         return SpeedLimits.of(route.points(), edges.edges)
     }
 
@@ -128,12 +131,17 @@ internal class ValhallaNavigationRoutes(
                 from.latitude,
                 from.longitude,
                 SearchFilterDto(excludeClosures = false),
+                SEARCH_CUTOFF_METERS,
                 heading = heading?.toInt(),
                 headingTolerance = heading?.let { HEADING_TOLERANCE },
             )
         val body =
             NavigationRequestDto(
-                locations = listOf(start, NavigationLocationDto(to.latitude, to.longitude, SearchFilterDto(excludeClosures = false))),
+                locations =
+                    listOf(
+                        start,
+                        NavigationLocationDto(to.latitude, to.longitude, SearchFilterDto(excludeClosures = false), SEARCH_CUTOFF_METERS),
+                    ),
                 costing = costing,
                 costingOptions = mapOf(costing to costingOptions(mode, options)),
                 // Valhalla only applies live closures to routes leaving now.
@@ -145,22 +153,23 @@ internal class ValhallaNavigationRoutes(
                 language = language(),
                 units = if (units() == DistanceUnit.IMPERIAL) "miles" else "kilometers",
             )
-        val (url, text) =
-            try {
-                servers.call(mode) { url ->
-                    url to
+        val (url, route) =
+            servers.first(mode) { url ->
+                val text =
+                    try {
                         client
                             .post("$url/route") {
                                 contentType(ContentType.Application.Json)
                                 setBody(body)
                             }.bodyAsText()
-                }
-            } catch (e: ClientRequestException) {
-                if (e.response.status == HttpStatusCode.BadRequest) return null
-                throw e
-            }
+                    } catch (e: ClientRequestException) {
+                        if (e.response.status == HttpStatusCode.BadRequest) return@first null
+                        throw e
+                    }
+                DirectionsResponse.fromJson(text).routes.firstOrNull()?.let { url to it }
+            } ?: return null
         val language = body.language
-        return DirectionsResponse.fromJson(text).routes.firstOrNull()?.let { route ->
+        return route.let { route ->
             route.copy(
                 routeOptions =
                     NavigationRouteOptions(

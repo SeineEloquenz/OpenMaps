@@ -83,6 +83,7 @@ class ValhallaStreetRouterTest {
             assertTrue("\"costing\":\"pedestrian\"" in body)
             assertTrue("\"date_time\":{\"type\":0}" in body)
             assertTrue("\"exclude_closures\":false" in body)
+            assertTrue("\"search_cutoff\":1000" in body)
             assertTrue("\"type\":\"wheelchair\"" in body)
         }
 
