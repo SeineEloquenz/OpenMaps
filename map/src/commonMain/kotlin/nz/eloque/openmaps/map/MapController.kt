@@ -43,6 +43,7 @@ import kotlinx.serialization.json.put
 import nz.eloque.openmaps.core.model.GeoBounds
 import nz.eloque.openmaps.core.model.LatLng
 import nz.eloque.openmaps.core.model.LoadedPlaces
+import nz.eloque.openmaps.core.model.PlaceCategory
 import nz.eloque.openmaps.core.model.RoadEventTiles
 import nz.eloque.openmaps.core.model.SearchResult
 import nz.eloque.openmaps.core.model.TransportMode
@@ -261,6 +262,7 @@ class MapController internal constructor(
         return tiles
             .querySourceFeatures(setOf("poi"), matches)
             .mapNotNull { it.toPlace(tapped = null, named = false) }
+            .filter { place -> place.category in values || PlaceCategory.entries.none { place.category in it.tileValues } }
             .distinctBy { it.id ?: it.location }
     }
 
