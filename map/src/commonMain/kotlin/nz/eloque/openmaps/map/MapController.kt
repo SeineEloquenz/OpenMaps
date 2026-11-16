@@ -418,11 +418,22 @@ fun rememberMapController(
             RouteLabels(routesState.value, routeColors) { id -> controllerRef[0]?.onRouteClick?.invoke(id) }
             puckState.value?.let { puck ->
                 val source = rememberGeoJsonSource(GeoJsonData.Features(Point(puck.position.toPosition())))
+                if (puck.bearing == null) {
+                    CircleLayer(
+                        id = "navigation-puck",
+                        source = source,
+                        color = const(markerColor),
+                        radius = const(9.dp),
+                        strokeColor = const(Color.White),
+                        strokeWidth = const(3.dp),
+                    )
+                    return@let
+                }
                 SymbolLayer(
                     id = "navigation-puck",
                     source = source,
                     iconImage = puckIcon,
-                    iconRotate = const((puck.bearing ?: 0.0).toFloat()),
+                    iconRotate = const(puck.bearing.toFloat()),
                     iconRotationAlignment = const(IconRotationAlignment.Map),
                     iconPitchAlignment = const(IconPitchAlignment.Viewport),
                     iconAllowOverlap = const(true),
