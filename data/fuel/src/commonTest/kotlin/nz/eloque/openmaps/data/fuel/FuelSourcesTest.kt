@@ -48,6 +48,14 @@ private const val SPAIN_JSON =
     "Precio Gasolina 95 E5":"1,499","Precio Gasolina 98 E5":""},
     {"Latitud":"0,000000","Longitud (WGS84)":"0,000000","Rótulo":"BROKEN","Precio Gasoleo A":"1,700"}],"Nota":"","ResultadoConsulta":"OK"}"""
 
+// Shaped like the DGEG's district search, one row per station and fuel.
+private const val PORTUGAL_JSON =
+    """{"status":true,"resultado":[{"Id":93159,"Nome":"Transforpel","Marca":"TRANSFORPEL","Preco":"1,949 €",
+    "Combustivel":"Gasóleo simples","DataAtualizacao":"2026-11-13 16:55","Morada":"Rua 25 de Abril","Localidade":"Chão de Sapo",
+    "CodPostal":"2550-362","Latitude":39.223868,"Longitude":-9.076041},{"Id":93159,"Marca":"TRANSFORPEL","Preco":"1,859 €",
+    "Combustivel":"Gasolina simples 95","DataAtualizacao":"2026-11-13 16:55","Latitude":39.223868,"Longitude":-9.076041},
+    {"Id":93159,"Preco":"1,631 €","Combustivel":"Gasóleo colorido","Latitude":39.223868,"Longitude":-9.076041}]}"""
+
 class FuelSourcesTest {
     private val requests = mutableListOf<String>()
 
@@ -141,6 +149,20 @@ class FuelSourcesTest {
             now = Instant.parse("2026-11-16T12:06:00Z")
             source.stations(LatLng(40.5, -3.5), madrid)
             assertEquals(2, madridRequests())
+        }
+
+    @Test
+    fun portugalJoinsTheFuelsOfAStationInOneDistrictRequest() =
+        runTest {
+            val source = PortugalPrices(client { url -> if ("idDistrito=11" in url) PORTUGAL_JSON else """{"resultado":[]}""" })
+
+            val station = source.stations(LatLng(39.22, -9.07), GeoBounds(39.2, -9.1, 39.25, -9.05)).single()
+
+            assertTrue(requests.any { "idDistrito=11" in it })
+            assertEquals(mapOf(Fuel.DIESEL to 1.949, Fuel.PETROL_95 to 1.859), station.prices.associate { it.fuel to it.price })
+            assertEquals(Instant.parse("2026-11-13T16:55:00Z"), station.prices.first().updated)
+            assertEquals("Transforpel", station.brand)
+            assertEquals("Rua 25 de Abril, 2550-362 Chão de Sapo", station.address)
         }
 
     @Test

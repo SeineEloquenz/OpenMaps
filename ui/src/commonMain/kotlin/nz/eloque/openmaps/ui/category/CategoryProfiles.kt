@@ -210,7 +210,7 @@ internal val PlaceCategory.profile: CategoryProfile
                 CategoryProfile(
                     kind = { place, details ->
                         listOfNotNull(
-                            details?.brand?.takeIf { it != place.name },
+                            details?.brand?.takeIf { !it.equals(place.name, ignoreCase = true) },
                             details?.fuels?.takeIf { it.isNotEmpty() && details.fuelPrices.isEmpty() }?.joinToString(", ") { it.label },
                         ).joinToString(" · ")
                     },
