@@ -30,5 +30,9 @@ val fuelModule =
             val settings = get<SettingsStore>()
             TankerkoenigPrices(get()) { settings.serviceValue(TankerkoenigKey.id).value }
         } bind FuelPriceSource::class
+        single {
+            val settings = get<SettingsStore>()
+            TankPulsPrices(get()) { settings.serviceValue(TankerkoenigKey.id).value == null }
+        } bind FuelPriceSource::class
         single<FuelPrices> { CombinedFuelPrices(getAll()) }
     }

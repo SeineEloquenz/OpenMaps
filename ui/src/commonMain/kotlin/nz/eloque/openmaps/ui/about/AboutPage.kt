@@ -30,6 +30,8 @@ import nz.eloque.openmaps.ui.resources.privacy
 import nz.eloque.openmaps.ui.resources.privacy_detail
 import nz.eloque.openmaps.ui.resources.source_charging
 import nz.eloque.openmaps.ui.resources.source_charging_detail
+import nz.eloque.openmaps.ui.resources.source_fuel
+import nz.eloque.openmaps.ui.resources.source_fuel_detail
 import nz.eloque.openmaps.ui.resources.source_map
 import nz.eloque.openmaps.ui.resources.source_map_detail
 import nz.eloque.openmaps.ui.resources.source_media
@@ -63,6 +65,7 @@ fun AboutPage(
         SourceRow(Res.string.source_nearby, Res.string.source_nearby_detail, "https://photon.komoot.io")
         SourceRow(Res.string.source_media, Res.string.source_media_detail, "https://commons.wikimedia.org")
         SourceRow(Res.string.source_charging, Res.string.source_charging_detail, "https://openchargemap.org")
+        SourceRow(Res.string.source_fuel, Res.string.source_fuel_detail, "https://www.tankpuls.de")
         HorizontalDivider(Modifier.padding(vertical = 12.dp))
 
         SectionTitle(Res.string.privacy)

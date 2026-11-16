@@ -40,6 +40,11 @@ private const val TANKERKOENIG_JSON =
     """{"ok":true,"stations":[{"id":"a","name":"Aral Tankstelle","brand":"ARAL","street":"DURLACHER ALLEE","houseNumber":"7 ",
     "postCode":76131,"place":"KARLSRUHE","lat":49.009,"lng":8.42,"dist":0.5,"diesel":1.659,"e5":false,"e10":1.759,"isOpen":true}]}"""
 
+private fun tankPulsJson(price: Int) =
+    """{"count":2,"items":[{"id":"a","name":"Aral Tankstelle","brandName":"Aral","street":"Durlacher Allee 46","postcode":"76131",
+    "city":"Karlsruhe","lat":49.00763,"lng":8.42285,"priceCents":$price,"priceTs":"2026-11-16 11:06:06.202696+00"},
+    {"id":"b","name":"Leer","lat":49.0,"lng":8.4,"priceCents":null,"priceTs":null}]}"""
+
 class FuelSourcesTest {
     private val requests = mutableListOf<String>()
 
@@ -104,6 +109,29 @@ class FuelSourcesTest {
             assertEquals("ARAL", station.brand)
             assertEquals("Durlacher Allee 7, 76131 Karlsruhe", station.address)
             assertTrue(requests.single().contains("apikey=secret"))
+        }
+
+    @Test
+    fun tankPulsJoinsOneRequestPerFuelAndReadsThousandths() =
+        runTest {
+            val source =
+                TankPulsPrices(
+                    client { url ->
+                        when {
+                            "fuel=diesel" in url -> tankPulsJson(2409)
+                            "fuel=e10" in url -> tankPulsJson(2209)
+                            else -> tankPulsJson(0)
+                        }
+                    },
+                )
+
+            val station = source.stations(LatLng(49.0, 8.4), GeoBounds(48.99, 8.38, 49.02, 8.43)).single()
+
+            assertEquals(3, requests.size)
+            assertEquals(mapOf(Fuel.DIESEL to 2.409, Fuel.E10 to 2.209), station.prices.associate { it.fuel to it.price })
+            assertEquals(Instant.parse("2026-11-16T11:06:06.202696Z"), station.prices.first().updated)
+            assertEquals("Durlacher Allee 46, 76131 Karlsruhe", station.address)
+            assertEquals("Aral", station.brand)
         }
 
     @Test

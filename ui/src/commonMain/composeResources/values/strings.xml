@@ -251,10 +251,12 @@
     <string name="source_media_detail">Wikimedia Commons, Wikidata and Wikipedia, under their stated licences</string>
     <string name="source_charging">Charging stations</string>
     <string name="source_charging_detail">Open Charge Map and its data providers</string>
+    <string name="source_fuel">Fuel prices</string>
+    <string name="source_fuel_detail">France: prix-carburants.gouv.fr under the Licence Ouverte 2.0. Austria: E-Control Spritpreisrechner. Germany: Markttransparenzstelle für Kraftstoffe (MTS-K) via Tankerkönig under CC BY 4.0, served by TankPuls. German prices may only be used to inform consumers and not by the oil industry.</string>
     <string name="api_keys">API keys</string>
     <string name="api_keys_detail">Some services work through a key built into OpenMaps and shared by everyone using it. If one runs into its limits, enter your own free key.</string>
     <string name="privacy">Privacy</string>
-    <string name="privacy_detail">There is no account and no tracking. Searches and routes are sent to Transitous, place details are looked up on Nominatim, nearby places on Photon, photos and summaries of places you open on Wikimedia, and map tiles come from OpenFreeMap. Your location only leaves the device as part of these requests.</string>
+    <string name="privacy_detail">There is no account and no tracking. Searches and routes are sent to Transitous, place details are looked up on Nominatim, nearby places on Photon, photos and summaries of places you open on Wikimedia, fuel prices for the area you search on the price services of France, Austria or Germany, and map tiles come from OpenFreeMap. Your location only leaves the device as part of these requests.</string>
 
     <string name="opening_hours">Opening hours</string>
     <string name="open_now">Open</string>
