@@ -55,6 +55,9 @@ data class PlaceDetails(
     /** Hotel stars. */
     val stars: Int? = null,
     val fuels: Set<Fuel> = emptySet(),
+    /** Current pump prices, from [priceSource]. */
+    val fuelPrices: List<FuelPrice> = emptyList(),
+    val priceSource: Attribution? = null,
     val chargers: List<Charger> = emptyList(),
     val links: MediaLinks = MediaLinks(),
     /** The area the place covers, for buildings and parks. */
@@ -79,7 +82,7 @@ enum class PlaceFeature {
     BOTTLE_REFILL,
 }
 
-enum class Fuel { DIESEL, PETROL_95, E10, PETROL_98, LPG, CNG }
+enum class Fuel { DIESEL, PETROL_95, E10, PETROL_98, E85, LPG, CNG }
 
 enum class Connector { CCS, TYPE_2, CHADEMO, CCS1, TYPE_1, TESLA, SCHUKO, CEE }
 

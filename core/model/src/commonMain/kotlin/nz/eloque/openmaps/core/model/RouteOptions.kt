@@ -52,6 +52,11 @@ interface SettingsStore {
 
     fun setSpeedingAlert(enabled: Boolean)
 
+    /** The fuel whose price gas station results show, null until the user picks one. */
+    val preferredFuel: StateFlow<Fuel?>
+
+    fun setPreferredFuel(fuel: Fuel?)
+
     /** The user's value for the [ServiceSetting] with [id], or null to use its default. */
     fun serviceValue(id: String): StateFlow<String?>
 

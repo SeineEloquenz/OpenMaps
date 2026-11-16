@@ -60,6 +60,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -69,9 +70,11 @@ import nz.eloque.openmaps.core.model.OpeningHours
 import nz.eloque.openmaps.core.model.PlaceDetails
 import nz.eloque.openmaps.core.model.PlaceFeature
 import nz.eloque.openmaps.core.model.PlaceMedia
+import nz.eloque.openmaps.core.model.PricedStation
 import nz.eloque.openmaps.core.model.SettingsStore
 import nz.eloque.openmaps.core.platform.Sharer
 import nz.eloque.openmaps.map.MapController
+import nz.eloque.openmaps.ui.category.label
 import nz.eloque.openmaps.ui.components.DirectionsButton
 import nz.eloque.openmaps.ui.components.FocusOnMap
 import nz.eloque.openmaps.ui.components.LoadState
@@ -79,6 +82,8 @@ import nz.eloque.openmaps.ui.components.LoadStateContent
 import nz.eloque.openmaps.ui.components.NearbyStopCard
 import nz.eloque.openmaps.ui.components.SaveButton
 import nz.eloque.openmaps.ui.components.formatDistance
+import nz.eloque.openmaps.ui.components.formatDuration
+import nz.eloque.openmaps.ui.components.formatPrice
 import nz.eloque.openmaps.ui.components.rememberNow
 import nz.eloque.openmaps.ui.navigation.PlaceKey
 import nz.eloque.openmaps.ui.navigation.StopKey
@@ -102,11 +107,14 @@ import nz.eloque.openmaps.ui.resources.feature_vegetarian
 import nz.eloque.openmaps.ui.resources.feature_wifi
 import nz.eloque.openmaps.ui.resources.filter_baby_changing
 import nz.eloque.openmaps.ui.resources.filter_bottle_refill
+import nz.eloque.openmaps.ui.resources.fuel_prices
 import nz.eloque.openmaps.ui.resources.nearby_departures
 import nz.eloque.openmaps.ui.resources.operator
 import nz.eloque.openmaps.ui.resources.phone
 import nz.eloque.openmaps.ui.resources.photos_commons
 import nz.eloque.openmaps.ui.resources.photos_nearby
+import nz.eloque.openmaps.ui.resources.prices_from
+import nz.eloque.openmaps.ui.resources.prices_updated
 import nz.eloque.openmaps.ui.resources.read_on_wikipedia
 import nz.eloque.openmaps.ui.resources.share
 import nz.eloque.openmaps.ui.resources.website
@@ -119,6 +127,7 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import kotlin.time.Instant
 
 @Composable
 fun PlaceSheet(
@@ -128,10 +137,11 @@ fun PlaceSheet(
     onOpenStop: (StopKey) -> Unit,
     onOpenTrip: (tripId: String, stopName: String) -> Unit,
 ) {
-    val viewModel = koinViewModel<PlaceViewModel> { parametersOf(place.parsedId, place.location, !place.pinned) }
+    val viewModel = koinViewModel<PlaceViewModel> { parametersOf(place.parsedId, place.location, !place.pinned, place.category == "fuel") }
     val details by viewModel.details.collectAsStateWithLifecycle()
     val media by viewModel.media.collectAsStateWithLifecycle()
     val nearby by viewModel.nearby.collectAsStateWithLifecycle()
+    val prices by viewModel.prices.collectAsStateWithLifecycle()
     val now by rememberNow()
     val loaded = (details as? LoadState.Loaded)?.value
     FocusOnMap(map, place.location, zoomIn = !place.pinned)
@@ -152,6 +162,7 @@ fun PlaceSheet(
         }
         HorizontalDivider(Modifier.padding(horizontal = 16.dp).padding(top = 12.dp))
         Column(Modifier.padding(horizontal = 16.dp)) {
+            prices?.let { FuelPriceSection(it, now) }
             LoadStateContent(details, onRetry = viewModel::load) { it?.let { DetailRows(it, place.name) } }
             val stops = (nearby as? LoadState.Loaded)?.value.orEmpty()
             if (stops.isNotEmpty()) {
@@ -381,3 +392,29 @@ internal fun String.telUri() = "tel:${filter { c -> c.isDigit() || c == '+' }}"
 
 /** Turns a place type or cuisine code such as `fast_food` into a label. */
 fun String.toCategoryLabel(): String = replace('_', ' ').let { if (it == "atm") "ATM" else it.replaceFirstChar { c -> c.uppercase() } }
+
+@Composable
+private fun FuelPriceSection(
+    station: PricedStation,
+    now: Instant,
+) {
+    val uriHandler = LocalUriHandler.current
+    Text(stringResource(Res.string.fuel_prices), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 8.dp))
+    station.prices.sortedBy { it.fuel }.forEach { price ->
+        Row(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+            Text(price.fuel.label, modifier = Modifier.weight(1f))
+            Text(formatPrice(price.price, price.currency), fontWeight = FontWeight.Bold)
+        }
+    }
+    val updated = station.prices.mapNotNull { it.updated }.maxOrNull()
+    Text(
+        listOfNotNull(
+            updated?.let { stringResource(Res.string.prices_updated, formatDuration(now - it)) },
+            stringResource(Res.string.prices_from, station.source.source),
+        ).joinToString(" · "),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.clickable { uriHandler.openUri(station.source.url) }.padding(vertical = 4.dp),
+    )
+    HorizontalDivider(Modifier.padding(vertical = 8.dp))
+}

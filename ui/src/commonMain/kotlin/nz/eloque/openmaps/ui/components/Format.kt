@@ -32,6 +32,16 @@ fun formatDistance(
         }
     }
 
+/** Three decimals, as pumps show them, with the symbol for euros. */
+fun formatPrice(
+    price: Double,
+    currency: String,
+): String {
+    val thousandths = (price * 1000).roundToInt()
+    val amount = "${thousandths / 1000}.${(thousandths % 1000).toString().padStart(3, '0')}"
+    return if (currency == "EUR") "$amount €" else "$amount $currency"
+}
+
 private fun oneDecimal(value: Double): String {
     val tenths = (value * 10).roundToInt()
     return "${tenths / 10}.${tenths % 10}"

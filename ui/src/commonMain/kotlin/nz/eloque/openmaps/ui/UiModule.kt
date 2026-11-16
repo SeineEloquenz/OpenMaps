@@ -23,7 +23,9 @@ val uiModule =
         viewModelOf(::HomeViewModel)
         viewModelOf(::SearchViewModel)
         viewModel { params -> StopViewModel(get(), params.get()) }
-        viewModel { params -> PlaceViewModel(get(), get(), get(), params.getOrNull(), params.get(), params.get()) }
+        viewModel { params ->
+            PlaceViewModel(get(), get(), get(), getOrNull(), params.getOrNull(), params.get(), params.get(), params.get())
+        }
         single { ItineraryCache() }
         viewModel { params -> DirectionsViewModel(get(), get(), get(), get(), params.get()) }
         single { ActiveTrip() }
@@ -31,6 +33,6 @@ val uiModule =
         single<TripGuide> { TransitTripGuide(get(), get()) }
         viewModel { params -> TransitGuidanceViewModel(get(), get(), get(), params.get()) }
         viewModel { params -> TripViewModel(get(), params.get()) }
-        viewModel { params -> CategoryViewModel(get(), params.get()) }
+        viewModel { params -> CategoryViewModel(get(), get(), params.get()) }
         viewModel { SharingViewModel(get()) }
     }

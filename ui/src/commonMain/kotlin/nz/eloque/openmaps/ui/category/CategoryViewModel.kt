@@ -8,26 +8,39 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import nz.eloque.openmaps.core.model.Fuel
 import nz.eloque.openmaps.core.model.GeoBounds
 import nz.eloque.openmaps.core.model.LatLng
 import nz.eloque.openmaps.core.model.LoadedPlaces
 import nz.eloque.openmaps.core.model.NearbyPlaces
 import nz.eloque.openmaps.core.model.NearbyResults
 import nz.eloque.openmaps.core.model.PlaceCategory
+import nz.eloque.openmaps.core.model.SettingsStore
 import nz.eloque.openmaps.ui.components.LoadState
 
 class CategoryViewModel(
     private val nearby: NearbyPlaces,
+    private val settings: SettingsStore,
     private val category: PlaceCategory,
 ) : ViewModel() {
     private val _results = MutableStateFlow<LoadState<NearbyResults>>(LoadState.Loading)
     val results: StateFlow<LoadState<NearbyResults>> = _results.asStateFlow()
 
-    private val _filters = MutableStateFlow(CategoryFilters())
+    private val _filters =
+        MutableStateFlow(
+            CategoryFilters(
+                choices =
+                    settings.preferredFuel.value
+                        ?.takeIf { category == PlaceCategory.GAS_STATIONS }
+                        ?.let { mapOf(FUEL_FILTER to it.name) }
+                        .orEmpty(),
+            ),
+        )
     val filters: StateFlow<CategoryFilters> = _filters.asStateFlow()
 
     fun setFilters(filters: CategoryFilters) {
         _filters.value = filters
+        if (category == PlaceCategory.GAS_STATIONS) settings.setPreferredFuel(filters.choices[FUEL_FILTER]?.let(Fuel::valueOf))
     }
 
     /** The area the current results cover, or null before the first search. */

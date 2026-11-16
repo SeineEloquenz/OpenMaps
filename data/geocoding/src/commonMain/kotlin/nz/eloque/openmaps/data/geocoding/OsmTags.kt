@@ -106,6 +106,7 @@ private val FuelTags =
         "fuel:octane_95" to Fuel.PETROL_95,
         "fuel:e10" to Fuel.E10,
         "fuel:octane_98" to Fuel.PETROL_98,
+        "fuel:e85" to Fuel.E85,
         "fuel:lpg" to Fuel.LPG,
         "fuel:cng" to Fuel.CNG,
     )

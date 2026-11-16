@@ -29,6 +29,7 @@ include(
     ":data:geocoding",
     ":data:storage",
     ":data:routing",
+    ":data:fuel",
 )
 
 val localComposeKitPath = providers.environmentVariable("LOCAL_COMPOSE_KIT").orNull?.takeIf { it.isNotBlank() }

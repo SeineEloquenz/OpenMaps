@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import nz.eloque.openmaps.core.model.DistanceUnit
+import nz.eloque.openmaps.core.model.Fuel
 import nz.eloque.openmaps.core.model.ModeGroup
 import nz.eloque.openmaps.core.model.RouteOptions
 import nz.eloque.openmaps.core.model.SettingsStore
@@ -53,6 +54,14 @@ internal class PreferencesSettingsStore(
         _speedingAlert.value = enabled
     }
 
+    private val _preferredFuel = MutableStateFlow(Fuel.entries.firstOrNull { it.name == settings.getStringOrNull(PREFERRED_FUEL) })
+    override val preferredFuel: StateFlow<Fuel?> = _preferredFuel.asStateFlow()
+
+    override fun setPreferredFuel(fuel: Fuel?) {
+        if (fuel == null) settings.remove(PREFERRED_FUEL) else settings.putString(PREFERRED_FUEL, fuel.name)
+        _preferredFuel.value = fuel
+    }
+
     private val serviceValues = mutableMapOf<String, MutableStateFlow<String?>>()
 
     override fun serviceValue(id: String): StateFlow<String?> = serviceState(id).asStateFlow()
@@ -97,5 +106,6 @@ internal class PreferencesSettingsStore(
         const val TRAVEL_MODE = "route.travelMode"
         const val DISTANCE_UNIT = "units.distance"
         const val SPEEDING_ALERT = "navigation.speeding_alert"
+        const val PREFERRED_FUEL = "places.preferred_fuel"
     }
 }

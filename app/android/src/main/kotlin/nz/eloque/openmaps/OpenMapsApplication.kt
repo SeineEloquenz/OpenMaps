@@ -11,6 +11,8 @@ import nz.eloque.openmaps.core.model.VoiceGuidance
 import nz.eloque.openmaps.core.platform.ReminderScheduler
 import nz.eloque.openmaps.core.platform.Sharer
 import nz.eloque.openmaps.core.platform.createHttpClient
+import nz.eloque.openmaps.data.fuel.fuelModule
+import nz.eloque.openmaps.data.fuel.fuelServiceSettings
 import nz.eloque.openmaps.data.geocoding.geocodingModule
 import nz.eloque.openmaps.data.geocoding.geocodingServiceSettings
 import nz.eloque.openmaps.data.routing.routingModule
@@ -52,7 +54,9 @@ class OpenMapsApplication : Application() {
                             MainScope(),
                         )
                     }
-                    single { ServiceCatalog(transitServiceSettings + routingServiceSettings + geocodingServiceSettings) }
+                    single {
+                        ServiceCatalog(transitServiceSettings + routingServiceSettings + geocodingServiceSettings + fuelServiceSettings)
+                    }
                     single<Sharer> {
                         Sharer { text ->
                             val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text)
@@ -63,6 +67,7 @@ class OpenMapsApplication : Application() {
                 transitModule(language = { Locale.getDefault().language }),
                 routingModule(fallback = { get<TransitStreetRouter>() }, language = { Locale.getDefault().toLanguageTag() }),
                 geocodingModule(language = { Locale.getDefault().language }),
+                fuelModule,
                 storageModule,
                 uiModule,
             )

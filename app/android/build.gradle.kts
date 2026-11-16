@@ -82,6 +82,7 @@ dependencies {
     implementation(project(":data:geocoding"))
     implementation(project(":data:routing"))
     implementation(project(":data:storage"))
+    implementation(project(":data:fuel"))
     implementation(libs.androidx.activity.compose)
     implementation(libs.compose.runtime)
     implementation(libs.koin.android)

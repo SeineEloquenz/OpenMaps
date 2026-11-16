@@ -66,6 +66,7 @@ fun geocodingModule(language: () -> String? = { null }) =
                 candidates = PhotonCategorySearch(get(), language) { settings.serviceValue(NearbySearchServer.id).value ?: PHOTON_API },
                 details = get<NominatimPlaceDetails>(),
                 charging = get<OpenChargeMapStations>(),
+                fuel = getOrNull(),
             )
         }
         single<PlaceMediaSource> { WikimediaMedia(get(), language) }

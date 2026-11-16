@@ -35,7 +35,7 @@ data class Attribution(
 data class NearbyResults(
     /** Nearest to the search center first. */
     val places: List<NearbyPlace>,
-    val attribution: Attribution? = null,
+    val attributions: List<Attribution> = emptyList(),
 )
 
 /** Places already at hand on the device, such as in loaded map data, which can include ones search services miss. */

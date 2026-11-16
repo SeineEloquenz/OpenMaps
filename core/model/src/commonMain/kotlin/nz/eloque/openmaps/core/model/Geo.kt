@@ -37,6 +37,10 @@ data class GeoBounds(
     val north: Double,
     val east: Double,
 ) {
+    operator fun contains(point: LatLng) = point.latitude in south..north && point.longitude in west..east
+
+    fun intersects(other: GeoBounds) = south <= other.north && other.south <= north && west <= other.east && other.west <= east
+
     /** These bounds, grown where needed to reach at least [radiusMeters] from [center] in every direction. */
     fun coveringAtLeast(
         center: LatLng,

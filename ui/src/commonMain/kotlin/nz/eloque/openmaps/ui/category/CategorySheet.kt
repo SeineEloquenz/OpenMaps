@@ -42,13 +42,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import nz.eloque.openmaps.core.model.GeoBounds
+import nz.eloque.openmaps.core.model.NearbyPlace
 import nz.eloque.openmaps.core.model.OpeningHours
+import nz.eloque.openmaps.core.model.PlaceCategory
 import nz.eloque.openmaps.core.model.PlaceDetails
 import nz.eloque.openmaps.core.model.SearchResult
 import nz.eloque.openmaps.core.model.SettingsStore
@@ -56,6 +59,7 @@ import nz.eloque.openmaps.map.MapController
 import nz.eloque.openmaps.ui.components.LoadState
 import nz.eloque.openmaps.ui.components.LoadStateContent
 import nz.eloque.openmaps.ui.components.formatDistance
+import nz.eloque.openmaps.ui.components.formatPrice
 import nz.eloque.openmaps.ui.components.rememberNow
 import nz.eloque.openmaps.ui.navigation.CategoryKey
 import nz.eloque.openmaps.ui.place.OpenStatusText
@@ -66,6 +70,7 @@ import nz.eloque.openmaps.ui.resources.call
 import nz.eloque.openmaps.ui.resources.category_none
 import nz.eloque.openmaps.ui.resources.data_attribution
 import nz.eloque.openmaps.ui.resources.directions
+import nz.eloque.openmaps.ui.resources.prices_from
 import nz.eloque.openmaps.ui.resources.search_this_area
 import nz.eloque.openmaps.ui.resources.website
 import org.jetbrains.compose.resources.StringResource
@@ -109,8 +114,14 @@ fun CategorySheet(
     val all = found?.places.orEmpty()
     val profile = key.category.profile
     val origin = map.userLocation ?: map.center
+    val price = profile.price?.takeIf { CHEAPEST_FILTER in filters.on }
     val shown =
-        all.filter { profile.allows(filters, it.details, now) }.sortedBy { it.place.location.distanceTo(origin) }
+        all
+            .filter { profile.allows(filters, it.details, now) }
+            .sortedWith(
+                compareBy<NearbyPlace, Double?>(nullsLast()) { result -> result.details?.let { price?.invoke(it, filters) }?.price }
+                    .thenBy { it.place.location.distanceTo(origin) },
+            )
 
     LaunchedEffect(viewModel) {
         if (viewModel.searchedArea.value != null) return@LaunchedEffect
@@ -170,17 +181,21 @@ fun CategorySheet(
                 profile = profile,
                 place = place,
                 details = result.details,
+                filters = filters,
                 distance = formatDistance(place.location.distanceTo(origin), unit),
                 onOpen = { onOpenPlace(place.named()) },
                 onDirections = { onDirections(place.named()) },
             )
             HorizontalDivider(Modifier.padding(horizontal = 16.dp))
         }
-        found?.attribution?.takeIf { shown.isNotEmpty() }?.let { attribution ->
-            item {
+        items(found?.attributions?.takeIf { shown.isNotEmpty() }.orEmpty()) { attribution ->
+            run {
                 val uriHandler = LocalUriHandler.current
                 Text(
-                    stringResource(Res.string.data_attribution, attribution.source),
+                    stringResource(
+                        if (key.category == PlaceCategory.GAS_STATIONS) Res.string.prices_from else Res.string.data_attribution,
+                        attribution.source,
+                    ),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.clickable { uriHandler.openUri(attribution.url) }.padding(16.dp),
@@ -281,17 +296,44 @@ private fun PlaceResult(
     profile: CategoryProfile,
     place: SearchResult.Place,
     details: PlaceDetails?,
+    filters: CategoryFilters,
     distance: String,
     onOpen: () -> Unit,
     onDirections: () -> Unit,
 ) {
     val uriHandler = LocalUriHandler.current
     val facts = details?.let(profile.facts).orEmpty().map { stringResource(it) }
+    val chosenPrice = details?.let { profile.price?.invoke(it, filters) }
+    val prices =
+        details?.fuelPrices.orEmpty().takeIf { chosenPrice == null && profile.price != null }?.joinToString(" · ") {
+            "${it.fuel.label} ${formatPrice(it.price, it.currency)}"
+        }
     Column(
         Modifier.fillMaxWidth().clickable(onClick = onOpen).padding(vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
-        Text(place.named().name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 16.dp))
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 16.dp)) {
+            Text(place.named().name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+            chosenPrice?.let {
+                Text(
+                    formatPrice(it.price, it.currency),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(start = 8.dp),
+                )
+            }
+        }
+        prices?.takeIf { it.isNotEmpty() }?.let {
+            Text(
+                it,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(horizontal = 16.dp),
+            )
+        }
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 16.dp)) {
             Text(
                 (listOfNotNull(profile.kind(place, details)?.takeIf { it.isNotBlank() }, distance) + facts).joinToString(" · "),

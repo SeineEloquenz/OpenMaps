@@ -14,6 +14,7 @@ import kotlinx.datetime.toLocalDateTime
 import nz.eloque.openmaps.core.model.Accessibility
 import nz.eloque.openmaps.core.model.Connector
 import nz.eloque.openmaps.core.model.Fuel
+import nz.eloque.openmaps.core.model.FuelPrice
 import nz.eloque.openmaps.core.model.OpenStatus
 import nz.eloque.openmaps.core.model.OpeningHours
 import nz.eloque.openmaps.core.model.PlaceCategory
@@ -33,6 +34,7 @@ import nz.eloque.openmaps.ui.resources.filter_baby_changing
 import nz.eloque.openmaps.ui.resources.filter_bank
 import nz.eloque.openmaps.ui.resources.filter_bottle_refill
 import nz.eloque.openmaps.ui.resources.filter_chain
+import nz.eloque.openmaps.ui.resources.filter_cheapest
 import nz.eloque.openmaps.ui.resources.filter_connector
 import nz.eloque.openmaps.ui.resources.filter_fast_charging
 import nz.eloque.openmaps.ui.resources.filter_free
@@ -52,13 +54,13 @@ internal sealed interface ResultFilter {
     val id: String
     val label: StringResource
 
-    /** Switched on or off, with [labelArgs] filled into [label]. */
+    /** Switched on or off, with [labelArgs] filled into [label]. Without [matches] it hides nothing and only reorders. */
     class Toggle(
         override val id: String,
         override val label: StringResource,
         val icon: ImageVector? = null,
         val labelArgs: List<Any> = emptyList(),
-        val matches: (PlaceDetails, Instant) -> Boolean,
+        val matches: ((PlaceDetails, Instant) -> Boolean)? = null,
     ) : ResultFilter
 
     /** One value picked from a menu of the values among the results. */
@@ -79,6 +81,8 @@ internal class CategoryProfile(
     val icons: (PlaceDetails) -> List<ImageVector> = { emptyList() },
     val filters: List<ResultFilter>,
     val showsDescription: Boolean = false,
+    /** The price shown and sorted by for the active filters, such as the chosen fuel's. */
+    val price: ((PlaceDetails, CategoryFilters) -> FuelPrice?)? = null,
 )
 
 /** Values of the active filters, by filter id. */
@@ -94,7 +98,8 @@ internal fun CategoryProfile.allows(
 ): Boolean =
     this.filters.all { filter ->
         when (filter) {
-            is ResultFilter.Toggle -> filter.id !in filters.on || (details != null && filter.matches(details, now))
+            is ResultFilter.Toggle ->
+                filter.id !in filters.on || filter.matches == null || (details != null && filter.matches.invoke(details, now))
             is ResultFilter.Choice ->
                 filters.choices[filter.id]?.let { chosen -> details != null && chosen in filter.values(details) }
                     ?: true
@@ -206,15 +211,24 @@ internal val PlaceCategory.profile: CategoryProfile
                     kind = { place, details ->
                         listOfNotNull(
                             details?.brand?.takeIf { it != place.name },
-                            details?.fuels?.takeIf { it.isNotEmpty() }?.joinToString(", ") { it.label },
+                            details?.fuels?.takeIf { it.isNotEmpty() && details.fuelPrices.isEmpty() }?.joinToString(", ") { it.label },
                         ).joinToString(" · ")
                     },
                     filters =
                         listOf(
                             OpenNow,
-                            ResultFilter.Choice("fuel", Res.string.filter_fuel, values = { details -> details.fuels.map { it.label } }),
+                            ResultFilter.Choice(
+                                FUEL_FILTER,
+                                Res.string.filter_fuel,
+                                values = { details -> (details.fuels + details.fuelPrices.map { it.fuel }).map { it.name } },
+                                display = { Fuel.valueOf(it).label },
+                            ),
+                            ResultFilter.Toggle(CHEAPEST_FILTER, Res.string.filter_cheapest),
                             Chain,
                         ),
+                    price = { details, filters ->
+                        filters.choices[FUEL_FILTER]?.let { chosen -> details.fuelPrices.firstOrNull { it.fuel.name == chosen } }
+                    },
                 )
             PlaceCategory.CHARGING ->
                 CategoryProfile(
@@ -349,13 +363,17 @@ private val Connector.label: String
             Connector.CEE -> "CEE"
         }
 
-private val Fuel.label: String
+internal val Fuel.label: String
     get() =
         when (this) {
             Fuel.DIESEL -> "Diesel"
             Fuel.PETROL_95 -> "Super 95"
             Fuel.E10 -> "E10"
             Fuel.PETROL_98 -> "Super 98"
+            Fuel.E85 -> "E85"
             Fuel.LPG -> "LPG"
             Fuel.CNG -> "CNG"
         }
+
+internal const val FUEL_FILTER = "fuel"
+internal const val CHEAPEST_FILTER = "cheapest"
