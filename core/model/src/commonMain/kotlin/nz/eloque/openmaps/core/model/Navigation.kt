@@ -47,10 +47,11 @@ data class NavigationState(
     val status: NavigationStatus,
 )
 
-/** A direction to speak, in [language] as a BCP 47 tag. */
+/** A direction to speak, in [language] as a BCP 47 tag. [urgent] ones also vibrate. */
 data class Announcement(
     val text: String,
     val language: String?,
+    val urgent: Boolean = false,
 )
 
 /** A position from the device's location provider. */
