@@ -213,6 +213,7 @@
     <string name="role_place_details">Place details</string>
     <string name="role_nearby_search">Nearby places</string>
     <string name="role_charging_stations">Charging stations</string>
+    <string name="role_fuel_prices">Fuel prices</string>
     <string name="category_restaurants">Restaurants</string>
     <string name="category_cafes">Cafés</string>
     <string name="category_supermarkets">Supermarkets</string>
@@ -256,11 +257,11 @@
     <string name="source_charging">Charging stations</string>
     <string name="source_charging_detail">Open Charge Map and its data providers</string>
     <string name="source_fuel">Fuel prices</string>
-    <string name="source_fuel_detail">France: prix-carburants.gouv.fr under the Licence Ouverte 2.0. Austria: E-Control Spritpreisrechner. Spain: Ministerio para la Transición Ecológica y el Reto Demográfico. Portugal: DGEG, for non-commercial use. Germany: Markttransparenzstelle für Kraftstoffe (MTS-K) via Tankerkönig under CC BY 4.0, served by TankPuls. German prices may only be used to inform consumers and not by the oil industry.</string>
+    <string name="source_fuel_detail">France: prix-carburants.gouv.fr under the Licence Ouverte 2.0. Spain: Ministerio para la Transición Ecológica y el Reto Demográfico. Portugal: DGEG, for non-commercial use. Italy: Ministero delle Imprese e del Made in Italy under the IODL 2.0. Mexico: Comisión Nacional de Energía (Fuente: CNE). These five come through an open-fuel-prices server, if one is set. Austria: E-Control Spritpreisrechner. Germany: Markttransparenzstelle für Kraftstoffe (MTS-K) via Tankerkönig under CC BY 4.0, served by TankPuls. German prices may only be used to inform consumers and not by the oil industry.</string>
     <string name="api_keys">API keys</string>
     <string name="api_keys_detail">Some services work through a key built into OpenMaps and shared by everyone using it. If one runs into its limits, enter your own free key.</string>
     <string name="privacy">Privacy</string>
-    <string name="privacy_detail">There is no account and no tracking. Searches and routes are sent to Transitous, walking and cycling routes to the Valhalla server of FOSSGIS e.V., place details are looked up on Nominatim, nearby places on Photon, photos and summaries of places you open on Wikimedia, fuel prices for the area you search on the price services of France, Austria, Spain, Portugal or Germany, and map tiles come from OpenFreeMap. Your location only leaves the device as part of these requests.</string>
+    <string name="privacy_detail">There is no account and no tracking. Searches and routes are sent to Transitous, walking and cycling routes to the Valhalla server of FOSSGIS e.V., place details are looked up on Nominatim, nearby places on Photon, photos and summaries of places you open on Wikimedia, fuel prices for the area you search on the price services of Austria or Germany and, if you set one, an open-fuel-prices server, and map tiles come from OpenFreeMap. Your location only leaves the device as part of these requests.</string>
 
     <string name="opening_hours">Opening hours</string>
     <string name="open_now">Open</string>

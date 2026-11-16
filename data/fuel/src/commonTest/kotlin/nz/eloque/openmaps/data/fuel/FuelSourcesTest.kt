@@ -5,8 +5,10 @@ import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import io.ktor.serialization.kotlinx.json.json
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import nz.eloque.openmaps.core.model.Attribution
@@ -18,15 +20,11 @@ import nz.eloque.openmaps.core.model.LatLng
 import nz.eloque.openmaps.core.model.PricedStation
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlin.time.Instant
 
 // Trimmed from real answers of each service.
-private const val FRANCE_JSON =
-    """{"total_count":1,"results":[{"geom":{"lon":7.76077,"lat":48.58715},"adresse":"9 AVENUE ALSACE","ville":"STRASBOURG",
-    "cp":"67000","gazole_prix":2.369,"gazole_maj":"2026-11-16T06:00:00+00:00","sp95_prix":null,"sp95_maj":null,
-    "e10_prix":2.129,"e10_maj":"2026-11-16T06:00:00+00:00","e85_prix":0.999,"e85_maj":"2026-11-16T06:00:00+00:00"}]}"""
-
 private const val AUSTRIA_DIESEL =
     """[{"id":1,"name":"TMC","location":{"address":"Rechte Wienzeile 43","postalCode":"1050","city":"Wien",
     "latitude":48.196,"longitude":16.358},"open":true,"prices":[{"fuelType":"DIE","amount":1.995,"label":"Diesel"}]},
@@ -41,20 +39,17 @@ private fun tankPulsJson(price: Int) =
     "city":"Karlsruhe","lat":49.00763,"lng":8.42285,"priceCents":$price,"priceTs":"2026-11-16 11:06:06.202696+00"},
     {"id":"b","name":"Leer","lat":49.0,"lng":8.4,"priceCents":null,"priceTs":null}]}"""
 
-// Shaped like the Spanish ministry's province answer, trimmed to the fields read.
-private const val SPAIN_JSON =
-    """{"Fecha":"16/11/2026 13:01:59","ListaEESSPrecio":[{"Latitud":"40,528778","Longitud (WGS84)":"-3,481639",
-    "Rótulo":"PLENERGY","Dirección":"CALLE MAYOR, 5","C.P.":"28100","Localidad":"ALCOBENDAS","Precio Gasoleo A":"1,729",
-    "Precio Gasolina 95 E5":"1,499","Precio Gasolina 98 E5":""},
-    {"Latitud":"0,000000","Longitud (WGS84)":"0,000000","Rótulo":"BROKEN","Precio Gasoleo A":"1,700"}],"Nota":"","ResultadoConsulta":"OK"}"""
+// Shaped like an open-fuel-prices server's files.
+private const val OFP_INDEX =
+    """{"updated":"2026-11-16T22:10:52Z","cell_degrees":0.5,"cells":"cells/{x}/{y}.json","sources":[
+    {"id":"it","country":"IT","attribution":"Ministero delle Imprese e del Made in Italy","attribution_url":"https://www.mimit.gov.it",
+    "licence":"IODL-2.0","bounds":[35.4,6.6,47.1,18.6],"fetched":"2026-11-16T22:10:49Z","stations":21501}]}"""
 
-// Shaped like the DGEG's district search, one row per station and fuel.
-private const val PORTUGAL_JSON =
-    """{"status":true,"resultado":[{"Id":93159,"Nome":"Transforpel","Marca":"TRANSFORPEL","Preco":"1,949 €",
-    "Combustivel":"Gasóleo simples","DataAtualizacao":"2026-11-13 16:55","Morada":"Rua 25 de Abril","Localidade":"Chão de Sapo",
-    "CodPostal":"2550-362","Latitude":39.223868,"Longitude":-9.076041},{"Id":93159,"Marca":"TRANSFORPEL","Preco":"1,859 €",
-    "Combustivel":"Gasolina simples 95","DataAtualizacao":"2026-11-13 16:55","Latitude":39.223868,"Longitude":-9.076041},
-    {"Id":93159,"Preco":"1,631 €","Combustivel":"Gasóleo colorido","Latitude":39.223868,"Longitude":-9.076041}]}"""
+private const val OFP_ROME_CELL =
+    """{"stations":[{"id":"it:1","source":"it","lat":41.9,"lon":12.55,"brand":"Agip Eni","address":"Via Roma 1, Roma (RM)",
+    "prices":[{"fuel":"petrol_95","price":1.799,"currency":"EUR","updated":"2026-11-15T07:00:00Z"},
+    {"fuel":"hydrogen","price":9.9,"currency":"EUR","updated":null}]},
+    {"id":"it:2","source":"it","lat":41.99,"lon":12.99,"prices":[{"fuel":"diesel","price":1.7,"currency":"EUR","updated":null}]}]}"""
 
 class FuelSourcesTest {
     private val requests = mutableListOf<String>()
@@ -68,17 +63,50 @@ class FuelSourcesTest {
         ) { install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) } }
 
     @Test
-    fun franceReadsPricesAsParisTime() =
+    fun oriReadsOnlyTheCellsOfTheAreaAndSkipsCountriesItLacks() =
         runTest {
-            val source = FrancePrices(client { FRANCE_JSON })
+            val server = MutableStateFlow<String?>("https://ori.example.org/fuel/")
+            val client =
+                HttpClient(
+                    MockEngine { request ->
+                        val url = request.url.toString()
+                        requests += url
+                        when {
+                            url.endsWith(
+                                "/sources.json",
+                            ) -> respond(OFP_INDEX, headers = headersOf(HttpHeaders.ContentType, "application/json"))
+                            url.endsWith("/cells/385/263.json") ->
+                                respond(OFP_ROME_CELL, headers = headersOf(HttpHeaders.ContentType, "application/json"))
+                            else -> respond("", HttpStatusCode.NotFound)
+                        }
+                    },
+                ) {
+                    expectSuccess = true
+                    install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
+                }
+            val source = OriFuelPrices(client, server)
 
-            val station = source.stations(LatLng(48.58, 7.75), GeoBounds(48.55, 7.70, 48.62, 7.80)).single()
+            val station = source.stations(LatLng(41.9, 12.55), GeoBounds(41.85, 12.52, 41.95, 12.6)).single()
+            val germany = source.stations(LatLng(49.0, 8.4), GeoBounds(48.9, 8.3, 49.1, 8.5))
 
-            assertEquals(listOf(Fuel.DIESEL, Fuel.E10, Fuel.E85), station.prices.map { it.fuel })
-            assertEquals(Instant.parse("2026-11-16T05:00:00Z"), station.prices.first().updated)
-            assertEquals("9 Avenue Alsace, 67000 Strasbourg", station.address)
-            assertTrue(requests.single().contains("in_bbox"))
+            assertEquals(
+                listOf("https://ori.example.org/fuel/v1/sources.json", "https://ori.example.org/fuel/v1/cells/385/263.json"),
+                requests,
+            )
+            assertEquals(listOf(Fuel.PETROL_95), station.prices.map { it.fuel })
+            assertEquals("Agip Eni", station.brand)
+            assertEquals("Ministero delle Imprese e del Made in Italy", station.source.source)
+            assertTrue(germany.isEmpty())
+
+            server.value = null
+            assertFalse(source.available)
         }
+
+    @Test
+    fun cellsCoverTheAreaAcrossCellEdges() {
+        assertEquals(listOf(385 to 263), cellsCovering(GeoBounds(41.85, 12.52, 41.95, 12.6), 0.5))
+        assertEquals(4, cellsCovering(GeoBounds(41.9, 12.9, 42.1, 13.1), 0.5).size)
+    }
 
     @Test
     fun austriaJoinsTheFuelsOfOneStation() =
@@ -127,42 +155,6 @@ class FuelSourcesTest {
             assertEquals(Instant.parse("2026-11-16T11:06:06.202696Z"), station.prices.first().updated)
             assertEquals("Durlacher Allee 46, 76131 Karlsruhe", station.address)
             assertEquals("Aral", station.brand)
-        }
-
-    @Test
-    fun spainReadsCommaDecimalsAsMadridTimeAndReusesAProvinceForAWhile() =
-        runTest {
-            var now = Instant.parse("2026-11-16T12:00:00Z")
-            val source = SpainPrices(client { url -> if (url.endsWith("/28")) SPAIN_JSON else """{"ListaEESSPrecio":[]}""" }) { now }
-            val madridRequests = { requests.count { it.endsWith("FiltroProvincia/28") } }
-            val madrid = GeoBounds(40.40, -3.60, 40.60, -3.40)
-
-            val station = source.stations(LatLng(40.5, -3.5), madrid).single()
-            source.stations(LatLng(40.5, -3.5), madrid)
-
-            assertEquals(1, madridRequests())
-            assertEquals(mapOf(Fuel.DIESEL to 1.729, Fuel.PETROL_95 to 1.499), station.prices.associate { it.fuel to it.price })
-            assertEquals(Instant.parse("2026-11-16T12:01:59Z"), station.prices.first().updated)
-            assertEquals("Plenergy", station.brand)
-            assertEquals("Calle Mayor, 5, 28100 Alcobendas", station.address)
-
-            now = Instant.parse("2026-11-16T12:06:00Z")
-            source.stations(LatLng(40.5, -3.5), madrid)
-            assertEquals(2, madridRequests())
-        }
-
-    @Test
-    fun portugalJoinsTheFuelsOfAStationInOneDistrictRequest() =
-        runTest {
-            val source = PortugalPrices(client { url -> if ("idDistrito=11" in url) PORTUGAL_JSON else """{"resultado":[]}""" })
-
-            val station = source.stations(LatLng(39.22, -9.07), GeoBounds(39.2, -9.1, 39.25, -9.05)).single()
-
-            assertTrue(requests.any { "idDistrito=11" in it })
-            assertEquals(mapOf(Fuel.DIESEL to 1.949, Fuel.PETROL_95 to 1.859), station.prices.associate { it.fuel to it.price })
-            assertEquals(Instant.parse("2026-11-13T16:55:00Z"), station.prices.first().updated)
-            assertEquals("Transforpel", station.brand)
-            assertEquals("Rua 25 de Abril, 2550-362 Chão de Sapo", station.address)
         }
 
     @Test

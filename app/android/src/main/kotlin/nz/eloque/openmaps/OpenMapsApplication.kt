@@ -12,6 +12,7 @@ import nz.eloque.openmaps.core.platform.ReminderScheduler
 import nz.eloque.openmaps.core.platform.Sharer
 import nz.eloque.openmaps.core.platform.createHttpClient
 import nz.eloque.openmaps.data.fuel.fuelModule
+import nz.eloque.openmaps.data.fuel.fuelServiceSettings
 import nz.eloque.openmaps.data.geocoding.geocodingModule
 import nz.eloque.openmaps.data.geocoding.geocodingServiceSettings
 import nz.eloque.openmaps.data.routing.routingModule
@@ -54,7 +55,7 @@ class OpenMapsApplication : Application() {
                         )
                     }
                     single {
-                        ServiceCatalog(transitServiceSettings + routingServiceSettings + geocodingServiceSettings)
+                        ServiceCatalog(transitServiceSettings + routingServiceSettings + geocodingServiceSettings + fuelServiceSettings)
                     }
                     single<Sharer> {
                         Sharer { text ->

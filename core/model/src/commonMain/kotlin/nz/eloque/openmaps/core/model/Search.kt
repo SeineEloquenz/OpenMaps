@@ -82,7 +82,8 @@ enum class PlaceFeature {
     BOTTLE_REFILL,
 }
 
-enum class Fuel { DIESEL, PETROL_95, E10, PETROL_98, E85, LPG, CNG }
+/** [REGULAR] and [PREMIUM] are the grades of countries whose petrol is not sold as 95 and 98 octane, such as Mexico. */
+enum class Fuel { DIESEL, PETROL_95, E10, PETROL_98, E85, LPG, CNG, REGULAR, PREMIUM }
 
 enum class Connector { CCS, TYPE_2, CHADEMO, CCS1, TYPE_1, TESLA, SCHUKO, CEE }
 

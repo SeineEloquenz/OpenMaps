@@ -373,6 +373,8 @@ internal val Fuel.label: String
             Fuel.E85 -> "E85"
             Fuel.LPG -> "LPG"
             Fuel.CNG -> "CNG"
+            Fuel.REGULAR -> "Regular"
+            Fuel.PREMIUM -> "Premium"
         }
 
 internal const val FUEL_FILTER = "fuel"
