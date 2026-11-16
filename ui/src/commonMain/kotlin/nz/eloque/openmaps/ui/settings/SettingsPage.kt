@@ -49,6 +49,7 @@ import nz.eloque.openmaps.ui.resources.Res
 import nz.eloque.openmaps.ui.resources.about
 import nz.eloque.openmaps.ui.resources.api_keys
 import nz.eloque.openmaps.ui.resources.api_keys_detail
+import nz.eloque.openmaps.ui.resources.role_active_routing
 import nz.eloque.openmaps.ui.resources.role_charging_stations
 import nz.eloque.openmaps.ui.resources.role_nearby_search
 import nz.eloque.openmaps.ui.resources.role_place_details
@@ -212,6 +213,7 @@ private val ServiceRole.label: StringResource
         when (this) {
             ServiceRole.TRANSIT -> Res.string.role_transit
             ServiceRole.STREET_ROUTING -> Res.string.role_street_routing
+            ServiceRole.ACTIVE_ROUTING -> Res.string.role_active_routing
             ServiceRole.ROAD_EVENTS -> Res.string.role_road_events
             ServiceRole.PLACE_DETAILS -> Res.string.role_place_details
             ServiceRole.NEARBY_SEARCH -> Res.string.role_nearby_search

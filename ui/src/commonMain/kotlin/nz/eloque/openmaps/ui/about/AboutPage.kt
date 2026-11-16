@@ -30,6 +30,8 @@ import nz.eloque.openmaps.ui.resources.privacy
 import nz.eloque.openmaps.ui.resources.privacy_detail
 import nz.eloque.openmaps.ui.resources.source_charging
 import nz.eloque.openmaps.ui.resources.source_charging_detail
+import nz.eloque.openmaps.ui.resources.source_fix_map
+import nz.eloque.openmaps.ui.resources.source_fix_map_detail
 import nz.eloque.openmaps.ui.resources.source_fuel
 import nz.eloque.openmaps.ui.resources.source_fuel_detail
 import nz.eloque.openmaps.ui.resources.source_map
@@ -44,6 +46,8 @@ import nz.eloque.openmaps.ui.resources.source_tiles
 import nz.eloque.openmaps.ui.resources.source_tiles_detail
 import nz.eloque.openmaps.ui.resources.source_transit
 import nz.eloque.openmaps.ui.resources.source_transit_detail
+import nz.eloque.openmaps.ui.resources.source_walking
+import nz.eloque.openmaps.ui.resources.source_walking_detail
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -60,7 +64,9 @@ fun AboutPage(
         SectionTitle(Res.string.data_sources)
         SourceRow(Res.string.source_transit, Res.string.source_transit_detail, "https://transitous.org/sources/")
         SourceRow(Res.string.source_map, Res.string.source_map_detail, "https://www.openstreetmap.org/copyright")
+        SourceRow(Res.string.source_fix_map, Res.string.source_fix_map_detail, "https://www.openstreetmap.org/fixthemap")
         SourceRow(Res.string.source_tiles, Res.string.source_tiles_detail, "https://openfreemap.org")
+        SourceRow(Res.string.source_walking, Res.string.source_walking_detail, "https://fossgis.de")
         SourceRow(Res.string.source_places, Res.string.source_places_detail, "https://nominatim.org")
         SourceRow(Res.string.source_nearby, Res.string.source_nearby_detail, "https://photon.komoot.io")
         SourceRow(Res.string.source_media, Res.string.source_media_detail, "https://commons.wikimedia.org")

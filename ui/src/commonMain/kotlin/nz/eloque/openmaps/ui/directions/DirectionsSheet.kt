@@ -81,6 +81,7 @@ import nz.eloque.openmaps.ui.components.formatDuration
 import nz.eloque.openmaps.ui.components.icon
 import nz.eloque.openmaps.ui.components.label
 import nz.eloque.openmaps.ui.components.timeRange
+import nz.eloque.openmaps.ui.guidance.transportMode
 import nz.eloque.openmaps.ui.navigation.DirectionsField
 import nz.eloque.openmaps.ui.navigation.DirectionsKey
 import nz.eloque.openmaps.ui.navigation.Endpoint
@@ -246,7 +247,7 @@ fun DirectionsSheet(
                     if (route == null) {
                         Text(stringResource(Res.string.no_routes), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     } else {
-                        val navigable = directions.to != null && koinInject<Navigator>().isAvailable
+                        val navigable = directions.to != null && koinInject<Navigator>().isAvailable(mode.transportMode)
                         StreetRouteCard(
                             route,
                             mode,

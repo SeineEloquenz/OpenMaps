@@ -54,7 +54,7 @@ class ValhallaStreetRouterTest {
             expectSuccess = true
             install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
         },
-        baseUrl = { url },
+        servers = ValhallaServers(car = { url }, active = { url }, activeInterval = kotlin.time.Duration.ZERO),
         now = { Now },
     )
 

@@ -14,7 +14,7 @@ import nz.eloque.openmaps.core.model.StreetRouter
 import org.koin.core.scope.Scope
 import org.koin.dsl.module
 
-/** A Valhalla server for car, bike and walking routes. */
+/** A Valhalla server for car routes, which knows current closures when it runs open-road-incidents. */
 val RoutingServer =
     ServiceSetting(
         "server.routing",
@@ -23,6 +23,19 @@ val RoutingServer =
         "Valhalla",
         default = null,
         helpUrl = "https://github.com/valhalla/valhalla",
+    )
+
+const val FOSSGIS_VALHALLA = "https://valhalla1.openstreetmap.de"
+
+/** A Valhalla server with footpaths and cycleways for walking and cycling routes. */
+val ActiveRoutingServer =
+    ServiceSetting(
+        "server.routing.active",
+        ServiceRole.ACTIVE_ROUTING,
+        ServiceSettingKind.SERVER_URL,
+        "Valhalla",
+        default = FOSSGIS_VALHALLA,
+        helpUrl = "https://fossgis.de/arbeitsgruppen/osm-server/nutzungsbedingungen/",
     )
 
 /** An open-road-incidents server for roadworks and closures on the map. */
@@ -36,7 +49,7 @@ val RoadEventsServer =
     )
 
 /** The settings this module's sources read. */
-val routingServiceSettings = listOf(RoutingServer, RoadEventsServer)
+val routingServiceSettings = listOf(RoutingServer, ActiveRoutingServer, RoadEventsServer)
 
 /** Asks [primary] and [fallback] for the modes [primary] has no route for, such as outside its map or when it is not set up. */
 internal class FallbackStreetRouter(
@@ -58,26 +71,28 @@ internal class FallbackStreetRouter(
 }
 
 /**
- * Routes through the server from [RoutingServer] and through [fallback] while none is set or it fails.
+ * Routes cars through [RoutingServer], walking and cycling through [ActiveRoutingServer], and each mode through
+ * [fallback] while its server is not set or fails.
  * Navigation needs the server and a [LocationUpdates] from the app. [language] is a BCP 47 tag for spoken directions.
  */
 fun routingModule(
     fallback: Scope.() -> StreetRouter,
     language: () -> String? = { null },
 ) = module {
-    single<StreetRouter> {
+    single {
         val settings = get<SettingsStore>()
-        FallbackStreetRouter(
-            ValhallaStreetRouter(get(), baseUrl = { settings.serviceValue(RoutingServer.id).value?.takeIf { it.isNotBlank() } }),
-            fallback(),
+        ValhallaServers(
+            car = { settings.serviceValue(RoutingServer.id).value },
+            active = { settings.serviceValue(ActiveRoutingServer.id).value ?: FOSSGIS_VALHALLA },
         )
     }
+    single<StreetRouter> { FallbackStreetRouter(ValhallaStreetRouter(get(), get()), fallback()) }
     single<Navigator> {
         val settings = get<SettingsStore>()
         ValhallaNavigator(
             ValhallaNavigationRoutes(
                 get(),
-                baseUrl = { settings.serviceValue(RoutingServer.id).value?.takeIf { it.isNotBlank() } },
+                get(),
                 language = language,
                 units = { settings.distanceUnit.value },
             ),

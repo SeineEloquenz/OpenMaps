@@ -44,7 +44,7 @@ class ValhallaNavigatorTest {
                 expectSuccess = true
                 install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
             },
-            baseUrl = { "http://localhost:8002" },
+            ValhallaServers(car = { "http://localhost:8002" }, active = { "http://localhost:8002" }),
             language = { "en-US" },
             units = { DistanceUnit.METRIC },
         )

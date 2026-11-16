@@ -8,6 +8,7 @@ import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -90,22 +91,26 @@ internal data class ManeuverDto(
     val length: Double = 0.0,
 )
 
-/** Street routes from a Valhalla server, which also knows about current road closures. */
+/** Street routes from Valhalla servers, which can also know about current road closures. Modes without a server are left out. */
 internal class ValhallaStreetRouter(
     private val client: HttpClient,
-    private val baseUrl: () -> String?,
+    private val servers: ValhallaServers,
     private val now: () -> Instant = { Clock.System.now() },
 ) : StreetRouter {
-    override suspend fun route(request: StreetRequest): List<Itinerary> {
-        val url = checkNotNull(baseUrl()) { "No Valhalla server set" }.trimEnd('/')
-        return coroutineScope {
+    override suspend fun route(request: StreetRequest): List<Itinerary> =
+        coroutineScope {
             request.modes
+                .filter { servers.url(it) != null }
                 .mapNotNull { mode -> costing(mode)?.let { mode to it } }
-                .map { (mode, costing) -> async { route(url, request, mode, costing) } }
-                .awaitAll()
+                .map { (mode, costing) ->
+                    async {
+                        runCatching { servers.call(mode) { url -> route(url, request, mode, costing) } }
+                            .onFailure { if (it is CancellationException) throw it }
+                            .getOrNull()
+                    }
+                }.awaitAll()
                 .filterNotNull()
         }
-    }
 
     private suspend fun route(
         url: String,

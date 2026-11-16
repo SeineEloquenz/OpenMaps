@@ -85,16 +85,15 @@ internal data class NavigationLocationDto(
 /** Routes with banner and voice instructions in the Mapbox Directions format MapLibre Navigation reads. */
 internal class ValhallaNavigationRoutes(
     private val client: HttpClient,
-    private val baseUrl: () -> String?,
+    private val servers: ValhallaServers,
     private val language: () -> String?,
     private val units: () -> DistanceUnit,
 ) {
-    val isConfigured: Boolean
-        get() = baseUrl() != null
+    fun isConfigured(mode: TransportMode) = costing(mode) != null && servers.url(mode) != null
 
     /** Speed limits along [route] for driving, from the road segments it is matched to. */
     suspend fun speedLimits(route: DirectionsRoute): SpeedLimits {
-        val url = checkNotNull(baseUrl()) { "No Valhalla server set" }.trimEnd('/')
+        val url = checkNotNull(servers.url(TransportMode.CAR)) { "No Valhalla server set for driving" }
         val body =
             TraceAttributesRequestDto(
                 encodedPolyline = route.geometry,
@@ -123,7 +122,6 @@ internal class ValhallaNavigationRoutes(
         mode: TransportMode,
         options: RouteOptions,
     ): DirectionsRoute? {
-        val url = checkNotNull(baseUrl()) { "No Valhalla server set" }.trimEnd('/')
         val costing = checkNotNull(costing(mode)) { "No street routing for $mode" }
         val start =
             NavigationLocationDto(
@@ -147,13 +145,16 @@ internal class ValhallaNavigationRoutes(
                 language = language(),
                 units = if (units() == DistanceUnit.IMPERIAL) "miles" else "kilometers",
             )
-        val text =
+        val (url, text) =
             try {
-                client
-                    .post("$url/route") {
-                        contentType(ContentType.Application.Json)
-                        setBody(body)
-                    }.bodyAsText()
+                servers.call(mode) { url ->
+                    url to
+                        client
+                            .post("$url/route") {
+                                contentType(ContentType.Application.Json)
+                                setBody(body)
+                            }.bodyAsText()
+                }
             } catch (e: ClientRequestException) {
                 if (e.response.status == HttpStatusCode.BadRequest) return null
                 throw e
@@ -188,8 +189,8 @@ internal class ValhallaNavigator(
     override val state: StateFlow<NavigationState?> = _state.asStateFlow()
     private val _announcements = MutableSharedFlow<Announcement>(extraBufferCapacity = 8)
     override val announcements: Flow<Announcement> = _announcements.asSharedFlow()
-    override val isAvailable: Boolean
-        get() = routes.isConfigured
+
+    override fun isAvailable(mode: TransportMode) = routes.isConfigured(mode)
 
     private var trip: Trip? = null
 

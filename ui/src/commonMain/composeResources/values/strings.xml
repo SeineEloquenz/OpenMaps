@@ -141,7 +141,8 @@
     <string name="service_key">%1$s key</string>
     <string name="service_help">About %1$s</string>
     <string name="role_transit">Routing and departures</string>
-    <string name="role_street_routing">Car, bike and walking routes</string>
+    <string name="role_street_routing">Car routes</string>
+    <string name="role_active_routing">Bike and walking routes</string>
     <string name="role_road_events">Roadworks and closures</string>
     <string name="navigation_start">Start</string>
     <string name="navigation_simulate">Simulate</string>
@@ -240,6 +241,10 @@
     <string name="source_transit_detail">Routing and departures by Transitous, from these data sources</string>
     <string name="source_map">Map data</string>
     <string name="source_map_detail">© OpenStreetMap contributors</string>
+    <string name="source_fix_map">Report a map error</string>
+    <string name="source_fix_map_detail">Fix or report mistakes in OpenStreetMap</string>
+    <string name="source_walking">Walking and cycling routes</string>
+    <string name="source_walking_detail">Valhalla server of FOSSGIS e.V., from OpenStreetMap data</string>
     <string name="source_tiles">Map tiles</string>
     <string name="source_tiles_detail">OpenFreeMap, built with OpenMapTiles</string>
     <string name="source_places">Place details</string>
@@ -255,7 +260,7 @@
     <string name="api_keys">API keys</string>
     <string name="api_keys_detail">Some services work through a key built into OpenMaps and shared by everyone using it. If one runs into its limits, enter your own free key.</string>
     <string name="privacy">Privacy</string>
-    <string name="privacy_detail">There is no account and no tracking. Searches and routes are sent to Transitous, place details are looked up on Nominatim, nearby places on Photon, photos and summaries of places you open on Wikimedia, fuel prices for the area you search on the price services of France, Austria, Spain or Germany, and map tiles come from OpenFreeMap. Your location only leaves the device as part of these requests.</string>
+    <string name="privacy_detail">There is no account and no tracking. Searches and routes are sent to Transitous, walking and cycling routes to the Valhalla server of FOSSGIS e.V., place details are looked up on Nominatim, nearby places on Photon, photos and summaries of places you open on Wikimedia, fuel prices for the area you search on the price services of France, Austria, Spain or Germany, and map tiles come from OpenFreeMap. Your location only leaves the device as part of these requests.</string>
 
     <string name="opening_hours">Opening hours</string>
     <string name="open_now">Open</string>
