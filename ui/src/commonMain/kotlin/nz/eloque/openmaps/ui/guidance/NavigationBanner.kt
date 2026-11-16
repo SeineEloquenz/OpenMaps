@@ -89,6 +89,7 @@ fun NavigationBanner(modifier: Modifier = Modifier) {
                 }
             }
         }
+        if (instruction.lanes.isNotEmpty()) LaneRow(instruction.lanes, Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp))
         trip.then?.takeIf { trip.metersToManeuver < THEN_METERS }?.let { then ->
             Row(
                 Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp),

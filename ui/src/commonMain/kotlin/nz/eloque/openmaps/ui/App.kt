@@ -41,6 +41,7 @@ import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -54,6 +55,7 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.offset
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
@@ -77,6 +79,7 @@ import nz.eloque.openmaps.core.model.Navigator
 import nz.eloque.openmaps.core.model.PlaceCategory
 import nz.eloque.openmaps.core.model.PlacesStore
 import nz.eloque.openmaps.core.model.RoadEvents
+import nz.eloque.openmaps.core.model.SettingsStore
 import nz.eloque.openmaps.core.model.TripGuide
 import nz.eloque.openmaps.map.MapController
 import nz.eloque.openmaps.map.OpenMap
@@ -93,6 +96,7 @@ import nz.eloque.openmaps.ui.directions.TripSheet
 import nz.eloque.openmaps.ui.guidance.ActiveTrip
 import nz.eloque.openmaps.ui.guidance.NavigationBanner
 import nz.eloque.openmaps.ui.guidance.NavigationSheet
+import nz.eloque.openmaps.ui.guidance.SpeedLimitSign
 import nz.eloque.openmaps.ui.guidance.TransitGuidanceBanner
 import nz.eloque.openmaps.ui.guidance.TransitGuidanceSheet
 import nz.eloque.openmaps.ui.home.HomeSheet
@@ -482,6 +486,7 @@ private fun MapLayer(
 
         if (banner != null) {
             banner(Modifier.statusBarsPadding().padding(ControlMargin))
+            CurrentSpeedLimit(Modifier.align(Alignment.BottomStart).padding(start = ControlMargin, bottom = peekHeight + ControlMargin))
             return@Box
         }
 
@@ -559,4 +564,13 @@ private fun GuidedTripLifecycle(backStack: MutableList<NavKey>) {
             }
         }
     }
+}
+
+@Composable
+private fun CurrentSpeedLimit(modifier: Modifier) {
+    val state by koinInject<Navigator>().state.collectAsStateWithLifecycle()
+    val unit by koinInject<SettingsStore>().distanceUnit.collectAsStateWithLifecycle()
+    val trip = state ?: return
+    val limit = trip.speedLimit ?: return
+    SpeedLimitSign(limit, trip.speeding, unit, modifier)
 }

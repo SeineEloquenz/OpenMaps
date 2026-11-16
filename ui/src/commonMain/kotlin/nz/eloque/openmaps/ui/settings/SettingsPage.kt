@@ -37,6 +37,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import nz.eloque.compose_kit.settings.SettingsSwitch
 import nz.eloque.openmaps.core.model.DistanceUnit
 import nz.eloque.openmaps.core.model.ServiceCatalog
 import nz.eloque.openmaps.core.model.ServiceRole
@@ -61,7 +62,10 @@ import nz.eloque.openmaps.ui.resources.service_help
 import nz.eloque.openmaps.ui.resources.service_key
 import nz.eloque.openmaps.ui.resources.service_server
 import nz.eloque.openmaps.ui.resources.settings
+import nz.eloque.openmaps.ui.resources.settings_navigation
 import nz.eloque.openmaps.ui.resources.settings_routes
+import nz.eloque.openmaps.ui.resources.speeding_alert
+import nz.eloque.openmaps.ui.resources.speeding_alert_detail
 import nz.eloque.openmaps.ui.resources.units
 import nz.eloque.openmaps.ui.resources.units_imperial
 import nz.eloque.openmaps.ui.resources.units_metric
@@ -77,6 +81,7 @@ fun SettingsPage(
     val settings = koinInject<SettingsStore>()
     val routeOptions by settings.routeOptions.collectAsStateWithLifecycle()
     val distanceUnit by settings.distanceUnit.collectAsStateWithLifecycle()
+    val speedingAlert by settings.speedingAlert.collectAsStateWithLifecycle()
     val services = koinInject<ServiceCatalog>().settings
 
     Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).navigationBarsPadding()) {
@@ -97,6 +102,15 @@ fun SettingsPage(
                 label = { Text(stringResource(Res.string.units_imperial)) },
             )
         }
+        HorizontalDivider(Modifier.padding(vertical = 8.dp))
+
+        SectionTitle(Res.string.settings_navigation)
+        SettingsSwitch(
+            title = stringResource(Res.string.speeding_alert),
+            subtitle = stringResource(Res.string.speeding_alert_detail),
+            checked = speedingAlert,
+            onCheckedChange = settings::setSpeedingAlert,
+        )
         HorizontalDivider(Modifier.padding(vertical = 8.dp))
 
         SectionTitle(Res.string.servers)

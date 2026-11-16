@@ -156,6 +156,9 @@
     <string name="navigation_summary">%1$s · arrive %2$s</string>
     <string name="navigation_simulated">Simulated trip</string>
     <string name="navigation_mute">Mute directions</string>
+    <string name="settings_navigation">Navigation</string>
+    <string name="speeding_alert">Warn when too fast</string>
+    <string name="speeding_alert_detail">Plays a sound when driving clearly above the speed limit</string>
     <string name="guide_announce_board">Take %1$s towards %2$s at %3$s</string>
     <string name="guide_announce_get_off">Get off at the next stop, %1$s</string>
     <string name="guide_announce_hurry">Hurry, %1$s leaves in %2$d minutes</string>

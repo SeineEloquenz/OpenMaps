@@ -21,6 +21,7 @@ import nz.eloque.openmaps.data.transit.transitModule
 import nz.eloque.openmaps.data.transit.transitServiceSettings
 import nz.eloque.openmaps.navigation.AndroidVoiceGuidance
 import nz.eloque.openmaps.navigation.NavigationService
+import nz.eloque.openmaps.navigation.SpeedingAlert
 import nz.eloque.openmaps.navigation.guidanceActive
 import nz.eloque.openmaps.navigation.guidanceAnnouncements
 import nz.eloque.openmaps.reminder.AndroidReminderScheduler
@@ -67,6 +68,7 @@ class OpenMapsApplication : Application() {
             )
         }
         get<VoiceGuidance>()
+        SpeedingAlert(get(), get(), MainScope())
         MainScope().launch {
             guidanceActive(get(), get()).filter { it }.collect { NavigationService.start(this@OpenMapsApplication) }
         }
