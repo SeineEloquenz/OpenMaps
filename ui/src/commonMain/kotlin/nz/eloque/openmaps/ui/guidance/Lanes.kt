@@ -3,10 +3,12 @@ package nz.eloque.openmaps.ui.guidance
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Straight
 import androidx.compose.material.icons.filled.TurnLeft
@@ -66,29 +68,51 @@ private val LaneDirection.icon: ImageVector
             LaneDirection.U_TURN -> Icons.Default.UTurnLeft
         }
 
-/** A round speed limit sign, filled red while [speeding]. Miles per hour when [unit] is imperial. */
+/**
+ * The current speed over the limit, as in `50/70`. With a limit it has a red ring and fills red while [speeding],
+ * without one it shows the speed alone. Miles per hour when [unit] is imperial.
+ */
 @Composable
-fun SpeedLimitSign(
-    kph: Int,
+fun SpeedSign(
+    metersPerSecond: Double?,
+    limitKph: Int?,
     speeding: Boolean,
     unit: DistanceUnit,
     modifier: Modifier = Modifier,
 ) {
-    val value = if (unit == DistanceUnit.IMPERIAL) (kph / KPH_PER_MPH / 5).roundToInt() * 5 else kph
-    Box(
+    if (metersPerSecond == null && limitKph == null) return
+    val speed = metersPerSecond?.let { (it * 3.6).inUnit(unit, step = 1) }
+    val limit = limitKph?.toDouble()?.inUnit(unit, step = 5)
+    val shape = RoundedCornerShape(50)
+    val textColor = if (speeding) Color.White else Color.Black
+    Row(
         modifier
-            .size(56.dp)
-            .background(if (speeding) SignRed else Color.White, CircleShape)
-            .border(6.dp, SignRed, CircleShape),
-        contentAlignment = Alignment.Center,
+            .heightIn(min = 56.dp)
+            .widthIn(min = 56.dp)
+            .background(if (speeding) SignRed else Color.White, shape)
+            .border(if (limit != null) 6.dp else 2.dp, if (limit != null) SignRed else Color.Gray, shape)
+            .padding(horizontal = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center,
     ) {
-        Text(
-            value.toString(),
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-            color = if (speeding) Color.White else Color.Black,
-        )
+        speed?.let { Text(it.toString(), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = textColor) }
+        limit?.let {
+            Text(
+                if (speed != null) "/$it" else it.toString(),
+                style = if (speed != null) MaterialTheme.typography.titleSmall else MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = textColor,
+            )
+        }
     }
+}
+
+private fun Double.inUnit(
+    unit: DistanceUnit,
+    step: Int,
+): Int {
+    val value = if (unit == DistanceUnit.IMPERIAL) this / KPH_PER_MPH else this
+    return (value / step).roundToInt() * step
 }
 
 private const val VALID_ALPHA = 0.6f

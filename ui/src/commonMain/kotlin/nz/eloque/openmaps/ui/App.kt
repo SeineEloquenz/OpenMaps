@@ -80,6 +80,7 @@ import nz.eloque.openmaps.core.model.PlaceCategory
 import nz.eloque.openmaps.core.model.PlacesStore
 import nz.eloque.openmaps.core.model.RoadEvents
 import nz.eloque.openmaps.core.model.SettingsStore
+import nz.eloque.openmaps.core.model.TransportMode
 import nz.eloque.openmaps.core.model.TripGuide
 import nz.eloque.openmaps.map.MapController
 import nz.eloque.openmaps.map.OpenMap
@@ -96,7 +97,7 @@ import nz.eloque.openmaps.ui.directions.TripSheet
 import nz.eloque.openmaps.ui.guidance.ActiveTrip
 import nz.eloque.openmaps.ui.guidance.NavigationBanner
 import nz.eloque.openmaps.ui.guidance.NavigationSheet
-import nz.eloque.openmaps.ui.guidance.SpeedLimitSign
+import nz.eloque.openmaps.ui.guidance.SpeedSign
 import nz.eloque.openmaps.ui.guidance.TransitGuidanceBanner
 import nz.eloque.openmaps.ui.guidance.TransitGuidanceSheet
 import nz.eloque.openmaps.ui.home.HomeSheet
@@ -570,7 +571,6 @@ private fun GuidedTripLifecycle(backStack: MutableList<NavKey>) {
 private fun CurrentSpeedLimit(modifier: Modifier) {
     val state by koinInject<Navigator>().state.collectAsStateWithLifecycle()
     val unit by koinInject<SettingsStore>().distanceUnit.collectAsStateWithLifecycle()
-    val trip = state ?: return
-    val limit = trip.speedLimit ?: return
-    SpeedLimitSign(limit, trip.speeding, unit, modifier)
+    val trip = state?.takeIf { it.mode == TransportMode.CAR } ?: return
+    SpeedSign(trip.speed, trip.speedLimit, trip.speeding, unit, modifier)
 }
