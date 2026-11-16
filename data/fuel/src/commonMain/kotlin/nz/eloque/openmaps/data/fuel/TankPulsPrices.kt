@@ -40,14 +40,10 @@ internal data class TpStationDto(
 /** German prices from the Markttransparenzstelle via TankPuls, which reads without a key within limits per IP address. */
 internal class TankPulsPrices(
     private val client: HttpClient,
-    private val enabled: () -> Boolean = { true },
 ) : FuelPriceSource {
     override val attribution = Attribution("MTS-K via Tankerkönig (CC BY 4.0) · TankPuls", "https://www.tankpuls.de")
 
     override val coverage = listOf(GeoBounds(47.27, 5.87, 55.06, 15.04))
-
-    override val available: Boolean
-        get() = enabled()
 
     override suspend fun stations(
         center: LatLng,

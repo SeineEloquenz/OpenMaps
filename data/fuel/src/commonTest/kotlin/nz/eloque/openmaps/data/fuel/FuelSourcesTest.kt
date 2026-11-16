@@ -36,10 +36,6 @@ private const val AUSTRIA_SUPER =
     """[{"id":1,"name":"TMC","location":{"address":"Rechte Wienzeile 43","postalCode":"1050","city":"Wien",
     "latitude":48.196,"longitude":16.358},"prices":[{"fuelType":"SUP","amount":1.789}]}]"""
 
-private const val TANKERKOENIG_JSON =
-    """{"ok":true,"stations":[{"id":"a","name":"Aral Tankstelle","brand":"ARAL","street":"DURLACHER ALLEE","houseNumber":"7 ",
-    "postCode":76131,"place":"KARLSRUHE","lat":49.009,"lng":8.42,"dist":0.5,"diesel":1.659,"e5":false,"e10":1.759,"isOpen":true}]}"""
-
 private fun tankPulsJson(price: Int) =
     """{"count":2,"items":[{"id":"a","name":"Aral Tankstelle","brandName":"Aral","street":"Durlacher Allee 46","postcode":"76131",
     "city":"Karlsruhe","lat":49.00763,"lng":8.42285,"priceCents":$price,"priceTs":"2026-11-16 11:06:06.202696+00"},
@@ -93,22 +89,6 @@ class FuelSourcesTest {
             val station = stations.single()
             assertEquals(mapOf(Fuel.DIESEL to 1.995, Fuel.PETROL_95 to 1.789), station.prices.associate { it.fuel to it.price })
             assertEquals("Rechte Wienzeile 43, 1050 Wien", station.address)
-        }
-
-    @Test
-    fun tankerkoenigNeedsAKeyAndSkipsFuelsMarkedFalse() =
-        runTest {
-            var key: String? = null
-            val source = TankerkoenigPrices(client { TANKERKOENIG_JSON }) { key }
-            assertEquals(false, source.available)
-
-            key = "secret"
-            val station = source.stations(LatLng(49.0, 8.4), GeoBounds(48.95, 8.35, 49.05, 8.45)).single()
-
-            assertEquals(listOf(Fuel.DIESEL, Fuel.E10), station.prices.map { it.fuel })
-            assertEquals("ARAL", station.brand)
-            assertEquals("Durlacher Allee 7, 76131 Karlsruhe", station.address)
-            assertTrue(requests.single().contains("apikey=secret"))
         }
 
     @Test
