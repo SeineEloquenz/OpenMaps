@@ -74,7 +74,7 @@ internal class OpenRoadIncidents(
                             maxZoom = metadata.maxzoom.toInt(),
                             closedProperty = "road_closed",
                             exactProperty = "geometry_exact",
-                            attribution = sources.map { it.attribution }.distinct().joinToString(", "),
+                            attribution = sources.map { it.attribution }.distinct().joinToString("<br>"),
                         ),
                     )
                     return@flow

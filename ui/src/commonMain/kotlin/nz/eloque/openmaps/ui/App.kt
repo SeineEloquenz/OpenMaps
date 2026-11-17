@@ -137,6 +137,7 @@ import nz.eloque.openmaps.ui.guidance.TransitGuidanceBanner
 import nz.eloque.openmaps.ui.guidance.TransitGuidanceSheet
 import nz.eloque.openmaps.ui.home.ActivePills
 import nz.eloque.openmaps.ui.layers.LayersSheet
+import nz.eloque.openmaps.ui.layers.MapDataSheet
 import nz.eloque.openmaps.ui.layers.RadarTimeline
 import nz.eloque.openmaps.ui.measure.MeasureSheet
 import nz.eloque.openmaps.ui.navigation.AboutKey
@@ -360,6 +361,12 @@ fun App(
             onDispose { map.layersAction = null }
         }
         if (showLayers) LayersSheet(onDismiss = { showLayers = false })
+        var attributions by remember { mutableStateOf<List<String>?>(null) }
+        attributions?.let { MapDataSheet(it, onDismiss = { attributions = null }) }
+        DisposableEffect(map) {
+            map.onAttributionClick = { attributions = it }
+            onDispose { map.onAttributionClick = null }
+        }
         DisposableEffect(map) {
             map.onRoadEventClick = { properties ->
                 val top = backStack.lastOrNull()

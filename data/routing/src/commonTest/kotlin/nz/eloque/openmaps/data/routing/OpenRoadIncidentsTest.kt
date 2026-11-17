@@ -50,7 +50,7 @@ class OpenRoadIncidentsTest {
         runTest {
             val tiles = incidents("http://localhost:8003/").tiles.filterNotNull().first()
             assertEquals("http://localhost:8003/v1/tiles/{z}/{x}/{y}.pbf", tiles.urlTemplate)
-            assertEquals("NDW, Die Autobahn GmbH des Bundes", tiles.attribution)
+            assertEquals("NDW<br>Die Autobahn GmbH des Bundes", tiles.attribution)
             assertEquals(6 to 14, tiles.minZoom to tiles.maxZoom)
             assertEquals(
                 listOf("http://localhost:8003/v1/sources.json", "http://localhost:8003/v1/tiles/metadata.json"),

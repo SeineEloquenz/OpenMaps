@@ -3,8 +3,10 @@ package nz.eloque.openmaps.map
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -32,6 +34,7 @@ import org.maplibre.compose.overlay.MaplibreLogo
 /**
  * [contentPadding] is the area covered by UI on top of the map. Controls and the camera center stay clear of it.
  * The logo and attribution keep clear of [ornamentPadding] only, so they can sit below buttons over the map.
+ * It must cover the navigation bar, since they line up with buttons placed without the bottom inset.
  */
 @Composable
 fun OpenMap(
@@ -107,11 +110,11 @@ fun OpenMap(
                 .fillMaxSize()
                 .padding(ornamentPadding)
                 .consumeWindowInsets(ornamentPadding)
-                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
                 .padding(MapOverlay.Spacing),
         ) {
             MaplibreLogo(Modifier.align(Alignment.BottomStart))
-            MapAttribution(Modifier.align(Alignment.BottomEnd))
+            MapAttribution(controller.onAttributionClick, Modifier.align(Alignment.BottomEnd))
         }
     }
 }

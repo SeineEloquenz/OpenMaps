@@ -208,6 +208,9 @@ class MapController internal constructor(
         )
     }
 
+    /** Receives the attribution of each source on the map as HTML, to show in full. */
+    var onAttributionClick: ((List<String>) -> Unit)? by mutableStateOf(null)
+
     /** Rain radar frames, drawn while the radar layer is on. */
     var radar: RadarFrames? by radarState
 

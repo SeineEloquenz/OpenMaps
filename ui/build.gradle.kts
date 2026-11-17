@@ -24,6 +24,7 @@ kotlin {
         implementation(project(":core:platform"))
         implementation(libs.compose.kit)
         implementation(libs.compose.material.icons.extended)
+        implementation(libs.htmlconverter)
         implementation(libs.compose.components.resources)
         implementation(libs.koin.compose)
         implementation(libs.koin.compose.viewmodel)

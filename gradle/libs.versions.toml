@@ -80,6 +80,7 @@ coil-network-ktor3 = { module = "io.coil-kt.coil3:coil-network-ktor3", version.r
 
 compose-kit = { module = "com.github.SeineEloquenz.compose-kit:lib", version.ref = "composeKit" }
 
+htmlconverter = { module = "be.digitalia.compose.htmlconverter:htmlconverter", version = "1.1.1" }
 maplibre-compose = { module = "org.maplibre.compose:maplibre-compose", version.ref = "maplibreCompose" }
 maplibre-navigation-core = { module = "org.maplibre.navigation:navigation-core", version.ref = "maplibreNavigation" }
 spatialk-gpx = { module = "org.maplibre.spatialk:gpx", version.ref = "spatialk" }

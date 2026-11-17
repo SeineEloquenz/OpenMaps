@@ -202,6 +202,8 @@
     <string name="layer_seamarks">Seamarks</string>
     <string name="layer_rain_radar">Rain radar</string>
     <string name="layer_clouds">Clouds</string>
+    <string name="map_data">Map data</string>
+    <string name="map_data_detail">The sources of everything on the map right now</string>
     <string name="radar_forecast">Forecast %1$s</string>
     <string name="radar_play">Play</string>
     <string name="radar_pause">Pause</string>
