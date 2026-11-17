@@ -4,37 +4,70 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.LocalShipping
+import androidx.compose.material.icons.filled.Moped
+import androidx.compose.material.icons.filled.TwoWheeler
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import nz.eloque.compose_kit.settings.SettingsSwitch
+import nz.eloque.openmaps.core.model.BikeType
 import nz.eloque.openmaps.core.model.ModeGroup
 import nz.eloque.openmaps.core.model.RouteOptions
 import nz.eloque.openmaps.core.model.TravelMode
+import nz.eloque.openmaps.core.model.Vehicle
+import nz.eloque.openmaps.core.model.VehicleSize
 import nz.eloque.openmaps.core.model.WalkingSpeed
 import nz.eloque.openmaps.ui.resources.Res
 import nz.eloque.openmaps.ui.resources.avoid_ferries
 import nz.eloque.openmaps.ui.resources.avoid_motorways
 import nz.eloque.openmaps.ui.resources.avoid_tolls
+import nz.eloque.openmaps.ui.resources.bike_cross
+import nz.eloque.openmaps.ui.resources.bike_hybrid
+import nz.eloque.openmaps.ui.resources.bike_mountain
+import nz.eloque.openmaps.ui.resources.bike_road
 import nz.eloque.openmaps.ui.resources.mode_bus
 import nz.eloque.openmaps.ui.resources.mode_ferry
 import nz.eloque.openmaps.ui.resources.mode_long_distance
 import nz.eloque.openmaps.ui.resources.mode_regional
 import nz.eloque.openmaps.ui.resources.mode_subway_tram
+import nz.eloque.openmaps.ui.resources.options_bike
 import nz.eloque.openmaps.ui.resources.options_driving
 import nz.eloque.openmaps.ui.resources.options_shared_vehicles
 import nz.eloque.openmaps.ui.resources.options_shared_vehicles_detail
 import nz.eloque.openmaps.ui.resources.options_transfers
 import nz.eloque.openmaps.ui.resources.options_transport
+import nz.eloque.openmaps.ui.resources.options_vehicle
 import nz.eloque.openmaps.ui.resources.options_walking
 import nz.eloque.openmaps.ui.resources.options_wheelchair
 import nz.eloque.openmaps.ui.resources.options_wheelchair_detail
 import nz.eloque.openmaps.ui.resources.transfers_any
 import nz.eloque.openmaps.ui.resources.transfers_direct
 import nz.eloque.openmaps.ui.resources.transfers_up_to
+import nz.eloque.openmaps.ui.resources.truck_height
+import nz.eloque.openmaps.ui.resources.truck_length
+import nz.eloque.openmaps.ui.resources.truck_weight
+import nz.eloque.openmaps.ui.resources.truck_width
+import nz.eloque.openmaps.ui.resources.vehicle_car
+import nz.eloque.openmaps.ui.resources.vehicle_moped
+import nz.eloque.openmaps.ui.resources.vehicle_motorcycle
+import nz.eloque.openmaps.ui.resources.vehicle_truck
 import nz.eloque.openmaps.ui.resources.walking_fast
 import nz.eloque.openmaps.ui.resources.walking_normal
 import nz.eloque.openmaps.ui.resources.walking_slow
@@ -53,7 +86,29 @@ fun RouteOptionsEditor(
 ) {
     Column(modifier) {
         if (mode == null || mode == TravelMode.TRANSIT) TransitOptions(options, onChange)
+        if (mode == null || mode == TravelMode.BIKE) {
+            OptionGroup(Res.string.options_bike) {
+                BikeType.entries.forEach { bike ->
+                    FilterChip(
+                        selected = options.bike == bike,
+                        onClick = { onChange(options.copy(bike = bike)) },
+                        label = { Text(stringResource(bike.label)) },
+                    )
+                }
+            }
+        }
         if (mode == null || mode == TravelMode.CAR) {
+            OptionGroup(Res.string.options_vehicle) {
+                Vehicle.entries.forEach { vehicle ->
+                    FilterChip(
+                        selected = options.vehicle == vehicle,
+                        onClick = { onChange(options.copy(vehicle = vehicle)) },
+                        label = { Text(stringResource(vehicle.label)) },
+                        leadingIcon = { Icon(vehicle.icon, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                    )
+                }
+            }
+            if (options.vehicle == Vehicle.TRUCK) TruckSizeFields(options.truck) { onChange(options.copy(truck = it)) }
             OptionGroup(Res.string.options_driving) {
                 FilterChip(
                     selected = options.avoidTolls,
@@ -162,4 +217,69 @@ private val WalkingSpeed.label: StringResource
             WalkingSpeed.SLOW -> Res.string.walking_slow
             WalkingSpeed.NORMAL -> Res.string.walking_normal
             WalkingSpeed.FAST -> Res.string.walking_fast
+        }
+
+/** The truck's size, kept as typed until it reads as a positive number. */
+@Composable
+private fun TruckSizeFields(
+    size: VehicleSize,
+    onChange: (VehicleSize) -> Unit,
+) {
+    FlowRow(
+        Modifier.padding(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        SizeField(Res.string.truck_height, size.height) { onChange(size.copy(height = it)) }
+        SizeField(Res.string.truck_width, size.width) { onChange(size.copy(width = it)) }
+        SizeField(Res.string.truck_length, size.length) { onChange(size.copy(length = it)) }
+        SizeField(Res.string.truck_weight, size.weight) { onChange(size.copy(weight = it)) }
+    }
+}
+
+@Composable
+private fun SizeField(
+    label: StringResource,
+    value: Double,
+    onChange: (Double) -> Unit,
+) {
+    var text by rememberSaveable { mutableStateOf(value.toString()) }
+    OutlinedTextField(
+        value = text,
+        onValueChange = { typed ->
+            text = typed
+            typed.replace(',', '.').toDoubleOrNull()?.takeIf { it > 0 }?.let(onChange)
+        },
+        label = { Text(stringResource(label)) },
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+        modifier = Modifier.width(150.dp),
+    )
+}
+
+private val Vehicle.label: StringResource
+    get() =
+        when (this) {
+            Vehicle.CAR -> Res.string.vehicle_car
+            Vehicle.MOTORCYCLE -> Res.string.vehicle_motorcycle
+            Vehicle.MOPED -> Res.string.vehicle_moped
+            Vehicle.TRUCK -> Res.string.vehicle_truck
+        }
+
+private val Vehicle.icon: ImageVector
+    get() =
+        when (this) {
+            Vehicle.CAR -> Icons.Default.DirectionsCar
+            Vehicle.MOTORCYCLE -> Icons.Default.TwoWheeler
+            Vehicle.MOPED -> Icons.Default.Moped
+            Vehicle.TRUCK -> Icons.Default.LocalShipping
+        }
+
+private val BikeType.label: StringResource
+    get() =
+        when (this) {
+            BikeType.ROAD -> Res.string.bike_road
+            BikeType.HYBRID -> Res.string.bike_hybrid
+            BikeType.CROSS -> Res.string.bike_cross
+            BikeType.MOUNTAIN -> Res.string.bike_mountain
         }

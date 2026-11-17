@@ -4,6 +4,7 @@ import com.russhwolf.settings.Settings
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import nz.eloque.openmaps.core.model.BikeType
 import nz.eloque.openmaps.core.model.DistanceUnit
 import nz.eloque.openmaps.core.model.Fuel
 import nz.eloque.openmaps.core.model.LatLng
@@ -13,6 +14,8 @@ import nz.eloque.openmaps.core.model.ParkedCar
 import nz.eloque.openmaps.core.model.RouteOptions
 import nz.eloque.openmaps.core.model.SettingsStore
 import nz.eloque.openmaps.core.model.TravelMode
+import nz.eloque.openmaps.core.model.Vehicle
+import nz.eloque.openmaps.core.model.VehicleSize
 import nz.eloque.openmaps.core.model.WalkingSpeed
 import kotlin.time.Instant
 
@@ -32,6 +35,9 @@ internal class PreferencesSettingsStore(
         settings.putBoolean(AVOID_TOLLS, options.avoidTolls)
         settings.putBoolean(AVOID_MOTORWAYS, options.avoidMotorways)
         settings.putBoolean(AVOID_FERRIES, options.avoidFerries)
+        settings.putString(VEHICLE, options.vehicle.name)
+        settings.putString(TRUCK_SIZE, options.truck.let { "${it.height},${it.width},${it.length},${it.weight}" })
+        settings.putString(BIKE_TYPE, options.bike.name)
         _routeOptions.value = options
     }
 
@@ -120,6 +126,12 @@ internal class PreferencesSettingsStore(
 
     private fun serviceState(id: String) = serviceValues.getOrPut(id) { MutableStateFlow(settings.getStringOrNull(id)) }
 
+    private fun readTruckSize(): VehicleSize? {
+        val parts = settings.getStringOrNull(TRUCK_SIZE)?.split(",")?.map { it.toDoubleOrNull() ?: return null } ?: return null
+        if (parts.size != 4) return null
+        return VehicleSize(height = parts[0], width = parts[1], length = parts[2], weight = parts[3])
+    }
+
     private fun readRouteOptions(): RouteOptions {
         val defaults = RouteOptions()
         val modes =
@@ -139,6 +151,9 @@ internal class PreferencesSettingsStore(
             avoidTolls = settings.getBoolean(AVOID_TOLLS, defaults.avoidTolls),
             avoidMotorways = settings.getBoolean(AVOID_MOTORWAYS, defaults.avoidMotorways),
             avoidFerries = settings.getBoolean(AVOID_FERRIES, defaults.avoidFerries),
+            vehicle = Vehicle.entries.firstOrNull { it.name == settings.getStringOrNull(VEHICLE) } ?: defaults.vehicle,
+            truck = readTruckSize() ?: defaults.truck,
+            bike = BikeType.entries.firstOrNull { it.name == settings.getStringOrNull(BIKE_TYPE) } ?: defaults.bike,
         )
     }
 
@@ -151,6 +166,9 @@ internal class PreferencesSettingsStore(
         const val AVOID_TOLLS = "route.avoidTolls"
         const val AVOID_MOTORWAYS = "route.avoidMotorways"
         const val AVOID_FERRIES = "route.avoidFerries"
+        const val VEHICLE = "route.vehicle"
+        const val TRUCK_SIZE = "route.truckSize"
+        const val BIKE_TYPE = "route.bikeType"
         const val NO_LIMIT = -1
         const val TRAVEL_MODE = "route.travelMode"
         const val DISTANCE_UNIT = "units.distance"

@@ -232,10 +232,10 @@ fun DirectionsSheet(
                 onSelect = viewModel::selectMode,
             )
         }
-        if (mode == TravelMode.CAR) {
+        if (mode == TravelMode.CAR || mode == TravelMode.BIKE) {
             item {
                 FilterChip(
-                    selected = !options.drivingIsDefault,
+                    selected = if (mode == TravelMode.CAR) !options.drivingIsDefault else !options.cyclingIsDefault,
                     onClick = { editingOptions = true },
                     label = { Text(stringResource(Res.string.route_options)) },
                     leadingIcon = { Icon(Icons.Default.Tune, contentDescription = null, modifier = Modifier.size(18.dp)) },

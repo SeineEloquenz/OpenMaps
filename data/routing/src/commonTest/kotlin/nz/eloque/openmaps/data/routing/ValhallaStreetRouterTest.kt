@@ -11,12 +11,15 @@ import io.ktor.http.headersOf
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
+import nz.eloque.openmaps.core.model.BikeType
 import nz.eloque.openmaps.core.model.LatLng
 import nz.eloque.openmaps.core.model.Leg
 import nz.eloque.openmaps.core.model.RouteFeature
 import nz.eloque.openmaps.core.model.RouteOptions
 import nz.eloque.openmaps.core.model.StreetRequest
 import nz.eloque.openmaps.core.model.TransportMode
+import nz.eloque.openmaps.core.model.Vehicle
+import nz.eloque.openmaps.core.model.VehicleSize
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -95,6 +98,19 @@ class ValhallaStreetRouterTest {
             assertTrue("\"use_ferry\":0.0" in body)
             assertTrue("use_highways" !in body)
             assertTrue("elevation_interval" !in body)
+        }
+
+    @Test
+    fun routesTrucksByTheirSizeAndBikesByTheirType() =
+        runTest {
+            val truck = RouteOptions(vehicle = Vehicle.TRUCK, truck = VehicleSize(3.2, 2.3, 7.5, 3.5))
+            router().route(request.copy(modes = setOf(TransportMode.CAR), options = truck))
+            assertTrue("\"costing\":\"truck\"" in bodies.last())
+            assertTrue("\"height\":3.2" in bodies.last() && "\"weight\":3.5" in bodies.last())
+            router().route(request.copy(modes = setOf(TransportMode.CAR), options = RouteOptions(vehicle = Vehicle.MOPED)))
+            assertTrue("\"costing\":\"motor_scooter\"" in bodies.last() && "height" !in bodies.last())
+            router().route(request.copy(modes = setOf(TransportMode.BIKE), options = RouteOptions(bike = BikeType.MOUNTAIN)))
+            assertTrue("\"bicycle_type\":\"Mountain\"" in bodies.last())
         }
 
     @Test

@@ -14,6 +14,7 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import nz.eloque.openmaps.core.model.BikeType
 import nz.eloque.openmaps.core.model.ElevationProfile
 import nz.eloque.openmaps.core.model.EventTime
 import nz.eloque.openmaps.core.model.Itinerary
@@ -24,6 +25,7 @@ import nz.eloque.openmaps.core.model.RouteOptions
 import nz.eloque.openmaps.core.model.StreetRequest
 import nz.eloque.openmaps.core.model.StreetRouter
 import nz.eloque.openmaps.core.model.TransportMode
+import nz.eloque.openmaps.core.model.Vehicle
 import nz.eloque.openmaps.core.model.WalkingSpeed
 import nz.eloque.openmaps.core.model.Waypoint
 import nz.eloque.openmaps.core.model.decodePolyline
@@ -72,6 +74,11 @@ internal data class CostingDto(
     @SerialName("use_tolls") val useTolls: Double? = null,
     @SerialName("use_highways") val useHighways: Double? = null,
     @SerialName("use_ferry") val useFerry: Double? = null,
+    val height: Double? = null,
+    val width: Double? = null,
+    val length: Double? = null,
+    val weight: Double? = null,
+    @SerialName("bicycle_type") val bicycleType: String? = null,
 )
 
 @Serializable
@@ -128,7 +135,7 @@ internal class ValhallaStreetRouter(
         coroutineScope {
             request.modes
                 .filter { servers.urls(it).isNotEmpty() }
-                .mapNotNull { mode -> costing(mode)?.let { mode to it } }
+                .mapNotNull { mode -> costing(mode, request.options)?.let { mode to it } }
                 .map { (mode, costing) ->
                     async {
                         runCatching { servers.first(mode) { url -> route(url, request, mode, costing) } }
@@ -240,9 +247,18 @@ internal class ValhallaStreetRouter(
     }
 }
 
-internal fun costing(mode: TransportMode): String? =
+internal fun costing(
+    mode: TransportMode,
+    options: RouteOptions,
+): String? =
     when (mode) {
-        TransportMode.CAR -> "auto"
+        TransportMode.CAR ->
+            when (options.vehicle) {
+                Vehicle.CAR -> "auto"
+                Vehicle.MOTORCYCLE -> "motorcycle"
+                Vehicle.MOPED -> "motor_scooter"
+                Vehicle.TRUCK -> "truck"
+            }
         TransportMode.BIKE -> "bicycle"
         TransportMode.WALK -> "pedestrian"
         else -> null
@@ -267,6 +283,20 @@ internal fun costingOptions(
             useTolls = AVOIDED.takeIf { options.avoidTolls },
             useHighways = AVOIDED.takeIf { options.avoidMotorways },
             useFerry = AVOIDED.takeIf { options.avoidFerries },
+            height = options.truck.height.takeIf { options.vehicle == Vehicle.TRUCK },
+            width = options.truck.width.takeIf { options.vehicle == Vehicle.TRUCK },
+            length = options.truck.length.takeIf { options.vehicle == Vehicle.TRUCK },
+            weight = options.truck.weight.takeIf { options.vehicle == Vehicle.TRUCK },
+        )
+    } else if (mode == TransportMode.BIKE) {
+        CostingDto(
+            bicycleType =
+                when (options.bike) {
+                    BikeType.ROAD -> "Road"
+                    BikeType.HYBRID -> "Hybrid"
+                    BikeType.CROSS -> "Cross"
+                    BikeType.MOUNTAIN -> "Mountain"
+                },
         )
     } else {
         CostingDto()

@@ -30,16 +30,45 @@ data class RouteOptions(
     val avoidTolls: Boolean = false,
     val avoidMotorways: Boolean = false,
     val avoidFerries: Boolean = false,
+    val vehicle: Vehicle = Vehicle.CAR,
+    /** Only used for [Vehicle.TRUCK]. */
+    val truck: VehicleSize = VehicleSize(),
+    val bike: BikeType = BikeType.HYBRID,
 ) {
     val isDefault: Boolean
         get() = this == RouteOptions()
 
     val transitIsDefault: Boolean
-        get() = copy(avoidTolls = false, avoidMotorways = false, avoidFerries = false).isDefault
+        get() =
+            copy(
+                avoidTolls = false,
+                avoidMotorways = false,
+                avoidFerries = false,
+                vehicle = Vehicle.CAR,
+                truck = VehicleSize(),
+                bike = BikeType.HYBRID,
+            ).isDefault
 
     val drivingIsDefault: Boolean
-        get() = !avoidTolls && !avoidMotorways && !avoidFerries
+        get() = !avoidTolls && !avoidMotorways && !avoidFerries && vehicle == Vehicle.CAR
+
+    val cyclingIsDefault: Boolean
+        get() = bike == BikeType.HYBRID
 }
+
+/** What the user drives, which decides the roads a route may use. */
+enum class Vehicle { CAR, MOTORCYCLE, MOPED, TRUCK }
+
+/** Dimensions in meters and weight in tonnes, defaulting to a large truck. */
+data class VehicleSize(
+    val height: Double = 4.11,
+    val width: Double = 2.6,
+    val length: Double = 21.64,
+    val weight: Double = 21.77,
+)
+
+/** What the user rides, from fast on smooth roads to slow on rough ground. */
+enum class BikeType { ROAD, HYBRID, CROSS, MOUNTAIN }
 
 enum class DistanceUnit { METRIC, IMPERIAL }
 

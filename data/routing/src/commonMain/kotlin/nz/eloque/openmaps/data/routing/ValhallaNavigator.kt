@@ -91,7 +91,7 @@ internal class ValhallaNavigationRoutes(
     private val language: () -> String?,
     private val units: () -> DistanceUnit,
 ) {
-    fun isConfigured(mode: TransportMode) = costing(mode) != null && servers.urls(mode).isNotEmpty()
+    fun isConfigured(mode: TransportMode) = costing(mode, RouteOptions()) != null && servers.urls(mode).isNotEmpty()
 
     /** Speed limits along [route] for driving, from the road segments it is matched to on the server it came from. */
     suspend fun speedLimits(route: DirectionsRoute): SpeedLimits {
@@ -99,7 +99,7 @@ internal class ValhallaNavigationRoutes(
         val body =
             TraceAttributesRequestDto(
                 encodedPolyline = route.geometry,
-                costing = "auto",
+                costing = route.routeOptions?.profile ?: "auto",
                 shapeMatch = "edge_walk",
                 filters =
                     TraceFiltersDto(
@@ -131,7 +131,7 @@ internal class ValhallaNavigationRoutes(
         via: List<LatLng> = emptyList(),
         through: Through? = null,
     ): DirectionsRoute? {
-        val costing = checkNotNull(costing(mode)) { "No street routing for $mode" }
+        val costing = checkNotNull(costing(mode, options)) { "No street routing for $mode" }
         val start =
             NavigationLocationDto(
                 from.latitude,
