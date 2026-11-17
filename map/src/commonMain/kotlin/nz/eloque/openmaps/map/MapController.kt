@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.Tram
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
@@ -37,6 +38,7 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonPrimitive
@@ -328,7 +330,7 @@ fun rememberMapController(
     val stopsState = remember { mutableStateOf<List<SearchResult.Stop>>(emptyList()) }
     val resultsState = remember { mutableStateOf<List<SearchResult.Place>>(emptyList()) }
     val resultIconState = remember { mutableStateOf<ImageVector?>(null) }
-    val layersState = remember { mutableStateOf(setOf(MapLayer.ROADWORKS)) }
+    val layersState = remember { mutableStateOf(setOf(MapLayer.ROADWORKS, MapLayer.BUILDINGS_3D)) }
     val sharingState = remember { mutableStateOf<List<SharingPin>>(emptyList(), referentialEqualityPolicy()) }
     val routesState = remember { mutableStateOf<List<MapRoute>>(emptyList(), referentialEqualityPolicy()) }
     val roadEventsState = remember { mutableStateOf<RoadEventTiles?>(null) }
@@ -473,6 +475,13 @@ fun rememberMapController(
                 )
             }
         }
+    LaunchedEffect(mapState) {
+        // Read again when the style reloads, as on switching to dark mode, which brings the layer back visible.
+        snapshotFlow { mapState.style.layers[BUILDINGS_3D_LAYER] to (MapLayer.BUILDINGS_3D in layersState.value) }
+            .collect { (layer, shown) ->
+                runCatching { layer?.asMutable?.setLayoutProperty("visibility", JsonPrimitive(if (shown) "visible" else "none")) }
+            }
+    }
     return remember(mapState, location) {
         MapController(
             mapState,
@@ -497,6 +506,7 @@ internal fun Position.toLatLng() = LatLng(latitude = latitude, longitude = longi
 internal fun LatLng.toPosition() = Position(longitude = longitude, latitude = latitude)
 
 private const val LIGHT_STYLE = "https://tiles.openfreemap.org/styles/liberty"
+private const val BUILDINGS_3D_LAYER = "building-3d"
 private const val DARK_STYLE = "https://tiles.openfreemap.org/styles/dark"
 private val StyleRetryFirst = 5.seconds
 private val StyleRetryMax = 2.minutes

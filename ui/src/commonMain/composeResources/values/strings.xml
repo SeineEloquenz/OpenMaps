@@ -143,6 +143,7 @@
     <string name="layer_cycling">Cycling routes</string>
     <string name="layer_hiking">Hiking routes</string>
     <string name="layer_roadworks">Roadworks</string>
+    <string name="layer_buildings">3D buildings</string>
     <string name="new_list">New list…</string>
     <string name="list_name">List name</string>
     <string name="list_icon">Icon</string>

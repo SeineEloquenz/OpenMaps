@@ -73,7 +73,7 @@ internal class PreferencesSettingsStore(
                 ?.split(',')
                 ?.mapNotNull { name -> MapLayer.entries.firstOrNull { it.name == name } }
                 ?.toSet()
-                ?: setOf(MapLayer.ROADWORKS),
+                ?: setOf(MapLayer.ROADWORKS, MapLayer.BUILDINGS_3D),
         )
     override val mapLayers: StateFlow<Set<MapLayer>> = _mapLayers.asStateFlow()
 

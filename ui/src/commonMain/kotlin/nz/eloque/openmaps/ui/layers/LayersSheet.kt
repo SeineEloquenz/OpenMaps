@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.DirectionsBike
 import androidx.compose.material.icons.filled.Construction
 import androidx.compose.material.icons.filled.Hiking
+import androidx.compose.material.icons.filled.LocationCity
 import androidx.compose.material.icons.filled.Terrain
 import androidx.compose.material.icons.filled.Train
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -25,6 +26,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import nz.eloque.openmaps.core.model.MapLayer
 import nz.eloque.openmaps.core.model.SettingsStore
 import nz.eloque.openmaps.ui.resources.Res
+import nz.eloque.openmaps.ui.resources.layer_buildings
 import nz.eloque.openmaps.ui.resources.layer_cycling
 import nz.eloque.openmaps.ui.resources.layer_hiking
 import nz.eloque.openmaps.ui.resources.layer_roadworks
@@ -72,6 +74,7 @@ private val MapLayer.label: StringResource
             MapLayer.CYCLING -> Res.string.layer_cycling
             MapLayer.HIKING -> Res.string.layer_hiking
             MapLayer.ROADWORKS -> Res.string.layer_roadworks
+            MapLayer.BUILDINGS_3D -> Res.string.layer_buildings
         }
 
 private val MapLayer.icon: ImageVector
@@ -82,4 +85,5 @@ private val MapLayer.icon: ImageVector
             MapLayer.CYCLING -> Icons.AutoMirrored.Filled.DirectionsBike
             MapLayer.HIKING -> Icons.Default.Hiking
             MapLayer.ROADWORKS -> Icons.Default.Construction
+            MapLayer.BUILDINGS_3D -> Icons.Default.LocationCity
         }
