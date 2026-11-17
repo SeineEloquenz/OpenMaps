@@ -82,3 +82,12 @@ interface TransitRepository {
         count: Int = 30,
     ): DeparturesResult
 }
+
+/** Problems with the map, reported publicly where mappers fix them. */
+interface MapNotes {
+    /** Returns a link to the new note. */
+    suspend fun report(
+        location: LatLng,
+        text: String,
+    ): String
+}

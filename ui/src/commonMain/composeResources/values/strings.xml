@@ -36,6 +36,14 @@
     <string name="arrive">Arrive</string>
     <string name="ok">OK</string>
     <string name="cancel">Cancel</string>
+    <string name="report">Report</string>
+    <string name="report_title">Report a map problem</string>
+    <string name="report_explanation">Your note is published on OpenStreetMap, where volunteers fix the map. Leave out personal details.</string>
+    <string name="report_hint">What is wrong or missing here?</string>
+    <string name="report_send">Send</string>
+    <string name="report_sent">Thanks. Your note is on OpenStreetMap now.</string>
+    <string name="report_failed">The note could not be sent. Try again later.</string>
+    <string name="report_view">View note</string>
     <string name="route_options">Options</string>
     <string name="options_transport">Transport</string>
     <string name="mode_long_distance">Long-distance trains</string>
@@ -267,7 +275,7 @@
     <string name="api_keys">API keys</string>
     <string name="api_keys_detail">Some services work through a key built into OpenMaps and shared by everyone using it. If one runs into its limits, enter your own free key.</string>
     <string name="privacy">Privacy</string>
-    <string name="privacy_detail">There is no account and no tracking. Searches and transit routes are sent to Transitous, car routes to ori.eloque.nz, walking and cycling routes and car routes outside its map to the Valhalla server of FOSSGIS e.V., place details are looked up on Nominatim, nearby places on Photon, photos and summaries of places you open on Wikimedia, fuel prices for the area you search on the price services of Austria or Germany and on ori.eloque.nz, roadworks for the map you look at also on ori.eloque.nz, and map tiles come from OpenFreeMap. Your location only leaves the device as part of these requests.</string>
+    <string name="privacy_detail">There is no account and no tracking. Searches and transit routes are sent to Transitous, car routes to ori.eloque.nz, walking and cycling routes and car routes outside its map to the Valhalla server of FOSSGIS e.V., place details are looked up on Nominatim, nearby places on Photon, photos and summaries of places you open on Wikimedia, fuel prices for the area you search on the price services of Austria or Germany and on ori.eloque.nz, roadworks for the map you look at also on ori.eloque.nz, map problems you report become public notes on OpenStreetMap, and map tiles come from OpenFreeMap. Your location only leaves the device as part of these requests.</string>
 
     <string name="opening_hours">Opening hours</string>
     <string name="open_now">Open</string>

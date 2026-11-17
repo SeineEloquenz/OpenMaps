@@ -40,6 +40,7 @@ import androidx.compose.material.icons.filled.TakeoutDining
 import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material.icons.filled.Wc
 import androidx.compose.material.icons.filled.Wifi
+import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
@@ -53,6 +54,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -116,6 +120,7 @@ import nz.eloque.openmaps.ui.resources.photos_nearby
 import nz.eloque.openmaps.ui.resources.prices_from
 import nz.eloque.openmaps.ui.resources.prices_updated
 import nz.eloque.openmaps.ui.resources.read_on_wikipedia
+import nz.eloque.openmaps.ui.resources.report
 import nz.eloque.openmaps.ui.resources.share
 import nz.eloque.openmaps.ui.resources.website
 import nz.eloque.openmaps.ui.resources.wheelchair
@@ -217,6 +222,8 @@ private fun ActionRow(
 ) {
     val uriHandler = LocalUriHandler.current
     val sharer = koinInject<Sharer>()
+    var reporting by remember { mutableStateOf(false) }
+    if (reporting) ReportDialog(place.location, place.name.takeUnless { place.pinned }, onDismiss = { reporting = false })
     LazyRow(
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -230,6 +237,7 @@ private fun ActionRow(
             item { ActionButton(Icons.Default.Language, Res.string.website) { uriHandler.openUri(url) } }
         }
         item { ActionButton(Icons.Default.Share, Res.string.share) { sharer.share("${place.name}\n$shareUrl") } }
+        item { ActionButton(Icons.Outlined.Flag, Res.string.report) { reporting = true } }
     }
 }
 

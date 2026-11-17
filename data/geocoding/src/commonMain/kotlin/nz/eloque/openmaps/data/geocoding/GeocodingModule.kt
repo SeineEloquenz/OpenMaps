@@ -1,5 +1,6 @@
 package nz.eloque.openmaps.data.geocoding
 
+import nz.eloque.openmaps.core.model.MapNotes
 import nz.eloque.openmaps.core.model.NearbyPlaces
 import nz.eloque.openmaps.core.model.PlaceDetailsSource
 import nz.eloque.openmaps.core.model.PlaceMediaSource
@@ -70,4 +71,5 @@ fun geocodingModule(language: () -> String? = { null }) =
             )
         }
         single<PlaceMediaSource> { WikimediaMedia(get(), language) }
+        single<MapNotes> { OsmNotes(get()) }
     }
