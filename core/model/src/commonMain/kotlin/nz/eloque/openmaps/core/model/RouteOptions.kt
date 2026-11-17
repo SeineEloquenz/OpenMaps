@@ -26,9 +26,18 @@ data class RouteOptions(
     val wheelchair: Boolean = false,
     /** Whether shared bikes and scooters may take the user to and from public transport. */
     val sharedVehicles: Boolean = false,
+    val avoidTolls: Boolean = false,
+    val avoidMotorways: Boolean = false,
+    val avoidFerries: Boolean = false,
 ) {
     val isDefault: Boolean
         get() = this == RouteOptions()
+
+    val transitIsDefault: Boolean
+        get() = copy(avoidTolls = false, avoidMotorways = false, avoidFerries = false).isDefault
+
+    val drivingIsDefault: Boolean
+        get() = !avoidTolls && !avoidMotorways && !avoidFerries
 }
 
 enum class DistanceUnit { METRIC, IMPERIAL }

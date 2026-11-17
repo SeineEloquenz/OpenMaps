@@ -88,6 +88,16 @@ class ValhallaStreetRouterTest {
         }
 
     @Test
+    fun avoidsOnlyWhatTheDriverChose() =
+        runTest {
+            router().route(request.copy(modes = setOf(TransportMode.CAR), options = RouteOptions(avoidTolls = true, avoidFerries = true)))
+            val body = bodies.single()
+            assertTrue("\"use_tolls\":0.0" in body)
+            assertTrue("\"use_ferry\":0.0" in body)
+            assertTrue("use_highways" !in body)
+        }
+
+    @Test
     fun arrivesByTheRequestedTime() =
         runTest {
             val arrival = Now + 30.minutes

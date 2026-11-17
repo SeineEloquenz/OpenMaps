@@ -13,13 +13,18 @@ import androidx.compose.ui.unit.dp
 import nz.eloque.compose_kit.settings.SettingsSwitch
 import nz.eloque.openmaps.core.model.ModeGroup
 import nz.eloque.openmaps.core.model.RouteOptions
+import nz.eloque.openmaps.core.model.TravelMode
 import nz.eloque.openmaps.core.model.WalkingSpeed
 import nz.eloque.openmaps.ui.resources.Res
+import nz.eloque.openmaps.ui.resources.avoid_ferries
+import nz.eloque.openmaps.ui.resources.avoid_motorways
+import nz.eloque.openmaps.ui.resources.avoid_tolls
 import nz.eloque.openmaps.ui.resources.mode_bus
 import nz.eloque.openmaps.ui.resources.mode_ferry
 import nz.eloque.openmaps.ui.resources.mode_long_distance
 import nz.eloque.openmaps.ui.resources.mode_regional
 import nz.eloque.openmaps.ui.resources.mode_subway_tram
+import nz.eloque.openmaps.ui.resources.options_driving
 import nz.eloque.openmaps.ui.resources.options_shared_vehicles
 import nz.eloque.openmaps.ui.resources.options_shared_vehicles_detail
 import nz.eloque.openmaps.ui.resources.options_transfers
@@ -38,14 +43,44 @@ import org.jetbrains.compose.resources.stringResource
 
 private val TransferChoices = listOf(null, 0, 1, 2)
 
-/** Edits how routes are planned. The last selected kind of transport cannot be switched off. */
+/** Edits how routes are planned, only for [mode] when set. The last selected kind of transport cannot be switched off. */
 @Composable
 fun RouteOptionsEditor(
     options: RouteOptions,
     onChange: (RouteOptions) -> Unit,
     modifier: Modifier = Modifier,
+    mode: TravelMode? = null,
 ) {
     Column(modifier) {
+        if (mode == null || mode == TravelMode.TRANSIT) TransitOptions(options, onChange)
+        if (mode == null || mode == TravelMode.CAR) {
+            OptionGroup(Res.string.options_driving) {
+                FilterChip(
+                    selected = options.avoidTolls,
+                    onClick = { onChange(options.copy(avoidTolls = !options.avoidTolls)) },
+                    label = { Text(stringResource(Res.string.avoid_tolls)) },
+                )
+                FilterChip(
+                    selected = options.avoidMotorways,
+                    onClick = { onChange(options.copy(avoidMotorways = !options.avoidMotorways)) },
+                    label = { Text(stringResource(Res.string.avoid_motorways)) },
+                )
+                FilterChip(
+                    selected = options.avoidFerries,
+                    onClick = { onChange(options.copy(avoidFerries = !options.avoidFerries)) },
+                    label = { Text(stringResource(Res.string.avoid_ferries)) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun TransitOptions(
+    options: RouteOptions,
+    onChange: (RouteOptions) -> Unit,
+) {
+    Column {
         OptionGroup(Res.string.options_transport) {
             ModeGroup.entries.forEach { group ->
                 val selected = group in options.modes

@@ -62,6 +62,9 @@ internal data class SearchFilterDto(
 internal data class CostingDto(
     @SerialName("walking_speed") val walkingSpeed: Double? = null,
     val type: String? = null,
+    @SerialName("use_tolls") val useTolls: Double? = null,
+    @SerialName("use_highways") val useHighways: Double? = null,
+    @SerialName("use_ferry") val useFerry: Double? = null,
 )
 
 @Serializable
@@ -204,9 +207,18 @@ internal fun costingOptions(
                 },
             type = if (options.wheelchair) "wheelchair" else null,
         )
+    } else if (mode == TransportMode.CAR) {
+        CostingDto(
+            useTolls = AVOIDED.takeIf { options.avoidTolls },
+            useHighways = AVOIDED.takeIf { options.avoidMotorways },
+            useFerry = AVOIDED.takeIf { options.avoidFerries },
+        )
     } else {
         CostingDto()
     }
+
+// Unlike Valhalla's exclude options, 0 still allows these roads when there is no way around them.
+private const val AVOIDED = 0.0
 
 private fun waypoint(
     location: LatLng,

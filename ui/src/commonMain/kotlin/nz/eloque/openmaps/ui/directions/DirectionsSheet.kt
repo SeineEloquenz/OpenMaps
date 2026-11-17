@@ -187,7 +187,7 @@ fun DirectionsSheet(
     var editingOptions by rememberSaveable { mutableStateOf(false) }
     if (editingOptions) {
         ModalBottomSheet(onDismissRequest = { editingOptions = false }) {
-            RouteOptionsEditor(options, settings::setRouteOptions, Modifier.padding(bottom = 24.dp))
+            RouteOptionsEditor(options, settings::setRouteOptions, Modifier.padding(bottom = 24.dp), mode)
         }
     }
 
@@ -213,12 +213,22 @@ fun DirectionsSheet(
                 onSelect = viewModel::selectMode,
             )
         }
+        if (mode == TravelMode.CAR) {
+            item {
+                FilterChip(
+                    selected = !options.drivingIsDefault,
+                    onClick = { editingOptions = true },
+                    label = { Text(stringResource(Res.string.route_options)) },
+                    leadingIcon = { Icon(Icons.Default.Tune, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                )
+            }
+        }
         if (mode == TravelMode.TRANSIT) {
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
                     TimeChoiceRow(time, viewModel::setTime)
                     FilterChip(
-                        selected = !options.isDefault,
+                        selected = !options.transitIsDefault,
                         onClick = { editingOptions = true },
                         label = { Text(stringResource(Res.string.route_options)) },
                         leadingIcon = { Icon(Icons.Default.Tune, contentDescription = null, modifier = Modifier.size(18.dp)) },

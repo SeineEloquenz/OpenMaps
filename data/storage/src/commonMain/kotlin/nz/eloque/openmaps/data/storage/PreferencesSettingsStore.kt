@@ -25,6 +25,9 @@ internal class PreferencesSettingsStore(
         settings.putString(WALKING_SPEED, options.walkingSpeed.name)
         settings.putBoolean(WHEELCHAIR, options.wheelchair)
         settings.putBoolean(SHARED_VEHICLES, options.sharedVehicles)
+        settings.putBoolean(AVOID_TOLLS, options.avoidTolls)
+        settings.putBoolean(AVOID_MOTORWAYS, options.avoidMotorways)
+        settings.putBoolean(AVOID_FERRIES, options.avoidFerries)
         _routeOptions.value = options
     }
 
@@ -93,6 +96,9 @@ internal class PreferencesSettingsStore(
                 WalkingSpeed.entries.firstOrNull { it.name == settings.getStringOrNull(WALKING_SPEED) } ?: defaults.walkingSpeed,
             wheelchair = settings.getBoolean(WHEELCHAIR, defaults.wheelchair),
             sharedVehicles = settings.getBoolean(SHARED_VEHICLES, defaults.sharedVehicles),
+            avoidTolls = settings.getBoolean(AVOID_TOLLS, defaults.avoidTolls),
+            avoidMotorways = settings.getBoolean(AVOID_MOTORWAYS, defaults.avoidMotorways),
+            avoidFerries = settings.getBoolean(AVOID_FERRIES, defaults.avoidFerries),
         )
     }
 
@@ -102,6 +108,9 @@ internal class PreferencesSettingsStore(
         const val WALKING_SPEED = "route.walkingSpeed"
         const val WHEELCHAIR = "route.wheelchair"
         const val SHARED_VEHICLES = "route.sharedVehicles"
+        const val AVOID_TOLLS = "route.avoidTolls"
+        const val AVOID_MOTORWAYS = "route.avoidMotorways"
+        const val AVOID_FERRIES = "route.avoidFerries"
         const val NO_LIMIT = -1
         const val TRAVEL_MODE = "route.travelMode"
         const val DISTANCE_UNIT = "units.distance"
