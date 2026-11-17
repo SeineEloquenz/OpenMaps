@@ -689,11 +689,17 @@ private fun MapLayer(
                         else -> 0.dp
                     },
             end = safe.calculateEndPadding(direction),
-            bottom = peekHeight + FabSize + ControlMargin,
+            bottom = peekHeight + OrnamentHeight + FabSize + ControlMargin,
         )
 
     Box(Modifier.fillMaxSize()) {
-        OpenMap(map, Modifier.fillMaxSize(), contentPadding = mapPadding)
+        val ornamentPadding =
+            PaddingValues(
+                start = mapPadding.calculateStartPadding(direction),
+                end = mapPadding.calculateEndPadding(direction),
+                bottom = peekHeight,
+            )
+        OpenMap(map, Modifier.fillMaxSize(), contentPadding = mapPadding, ornamentPadding = ornamentPadding)
 
         if (showSearchBar) {
             Column(Modifier.statusBarsPadding().padding(top = ControlMargin)) {
@@ -715,18 +721,18 @@ private fun MapLayer(
 
         if (banner != null) {
             banner(Modifier.statusBarsPadding().padding(ControlMargin))
-            CurrentSpeedLimit(Modifier.align(Alignment.BottomStart).padding(start = ControlMargin, bottom = peekHeight + ControlMargin))
+            CurrentSpeedLimit(Modifier.align(Alignment.BottomStart).padding(start = ControlMargin, bottom = peekHeight + OrnamentHeight))
             return@Box
         }
 
         pills?.invoke(
             Modifier
                 .align(Alignment.BottomStart)
-                .padding(start = ControlMargin, end = ControlMargin * 2 + FabSize, bottom = peekHeight + ControlMargin),
+                .padding(start = ControlMargin, end = ControlMargin * 2 + FabSize, bottom = peekHeight + OrnamentHeight),
         )
 
         FloatingActionButton(
-            modifier = Modifier.align(Alignment.BottomEnd).padding(end = ControlMargin, bottom = peekHeight + ControlMargin),
+            modifier = Modifier.align(Alignment.BottomEnd).padding(end = ControlMargin, bottom = peekHeight + OrnamentHeight),
             onClick = {
                 if (!map.isLocationPermissionGranted) {
                     map.requestLocationPermission()
@@ -746,6 +752,9 @@ private val SearchBarHeight = 56.dp
 private val NavigationBannerHeight = 140.dp
 private val NavigationPeekHeight = 150.dp
 private val FabSize = 56.dp
+
+/** Room for the MapLibre logo and attribution, which sit below the buttons over the map. */
+private val OrnamentHeight = 40.dp
 
 @Composable
 private fun SearchPill(

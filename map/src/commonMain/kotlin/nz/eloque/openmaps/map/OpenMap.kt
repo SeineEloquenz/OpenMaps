@@ -29,12 +29,16 @@ import org.maplibre.compose.overlay.DisappearingScaleBar
 import org.maplibre.compose.overlay.MapOverlay
 import org.maplibre.compose.overlay.MaplibreLogo
 
-/** [contentPadding] is the area covered by UI on top of the map. Controls and the camera center stay clear of it. */
+/**
+ * [contentPadding] is the area covered by UI on top of the map. Controls and the camera center stay clear of it.
+ * The logo and attribution keep clear of [ornamentPadding] only, so they can sit below buttons over the map.
+ */
 @Composable
 fun OpenMap(
     controller: MapController,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(),
+    ornamentPadding: PaddingValues = contentPadding,
 ) {
     var centeredOnFirstFix by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(controller) {
@@ -97,6 +101,15 @@ fun OpenMap(
             )
             DisappearingCompassButton(Modifier.align(Alignment.TopEnd))
             (controller.floatingAction ?: controller.layersAction)?.let { MapActionButton(it, Modifier.align(Alignment.TopEnd)) }
+        }
+        Box(
+            Modifier
+                .fillMaxSize()
+                .padding(ornamentPadding)
+                .consumeWindowInsets(ornamentPadding)
+                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .padding(MapOverlay.Spacing),
+        ) {
             MaplibreLogo(Modifier.align(Alignment.BottomStart))
             MapAttribution(Modifier.align(Alignment.BottomEnd))
         }
