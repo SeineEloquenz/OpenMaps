@@ -9,6 +9,8 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import nz.eloque.openmaps.core.model.Attribution
@@ -53,11 +55,12 @@ private const val OFP_ROME_CELL =
 
 class FuelSourcesTest {
     private val requests = mutableListOf<String>()
+    private val requestsLock = Mutex()
 
     private fun client(answer: (String) -> String) =
         HttpClient(
             MockEngine { request ->
-                requests += request.url.toString()
+                requestsLock.withLock { requests += request.url.toString() }
                 respond(answer(request.url.toString()), headers = headersOf(HttpHeaders.ContentType, "application/json"))
             },
         ) { install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) } }
@@ -70,7 +73,7 @@ class FuelSourcesTest {
                 HttpClient(
                     MockEngine { request ->
                         val url = request.url.toString()
-                        requests += url
+                        requestsLock.withLock { requests += url }
                         when {
                             url.endsWith(
                                 "/sources.json",
