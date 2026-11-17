@@ -110,6 +110,7 @@ import nz.eloque.openmaps.ui.navigation.DirectionsField
 import nz.eloque.openmaps.ui.navigation.DirectionsKey
 import nz.eloque.openmaps.ui.navigation.Endpoint
 import nz.eloque.openmaps.ui.navigation.HomeKey
+import nz.eloque.openmaps.ui.navigation.ListKey
 import nz.eloque.openmaps.ui.navigation.MapLink
 import nz.eloque.openmaps.ui.navigation.NavigationKey
 import nz.eloque.openmaps.ui.navigation.PlaceKey
@@ -133,6 +134,7 @@ import nz.eloque.openmaps.ui.resources.search_hint
 import nz.eloque.openmaps.ui.resources.settings
 import nz.eloque.openmaps.ui.resources.waiting_for_location
 import nz.eloque.openmaps.ui.roads.RoadEventSheet
+import nz.eloque.openmaps.ui.saved.ListSheet
 import nz.eloque.openmaps.ui.saved.SavedSheet
 import nz.eloque.openmaps.ui.search.SearchScreen
 import nz.eloque.openmaps.ui.settings.SettingsPage
@@ -152,6 +154,7 @@ private val navConfiguration =
                     subclass(HomeKey::class)
                     subclass(AboutKey::class)
                     subclass(SavedKey::class)
+                    subclass(ListKey::class)
                     subclass(SettingsKey::class)
                     subclass(SearchKey::class)
                     subclass(PlaceKey::class)
@@ -267,7 +270,7 @@ fun App(
             onDispose { map.onRoadEventClick = null }
         }
         LaunchedEffect(map) {
-            snapshotFlow { backStack.any { it is CategoryKey } }.collect { if (!it) map.results = emptyList() }
+            snapshotFlow { backStack.any { it is CategoryKey || it is ListKey } }.collect { if (!it) map.results = emptyList() }
         }
 
         val top = backStack.lastOrNull()
@@ -320,7 +323,11 @@ fun App(
                                     SavedSheet(
                                         onOpenPlace = { backStack.add(it.toKey()) },
                                         onOpenRoute = { backStack.add(DirectionsKey(it.from?.toEndpoint(), it.to?.toEndpoint())) },
+                                        onOpenList = { backStack.add(ListKey(it)) },
                                     )
+                                }
+                                entry<ListKey> { key ->
+                                    ListSheet(key.listId, map, onOpenPlace = { backStack.add(it.toKey()) })
                                 }
                                 entry<SearchKey> { search ->
                                     SearchScreen(

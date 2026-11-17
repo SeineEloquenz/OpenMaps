@@ -134,6 +134,15 @@
     <string name="save_as_favourite">Save as favourite</string>
     <string name="favourites">Favourites</string>
     <string name="saved_routes">Routes</string>
+    <string name="lists">Lists</string>
+    <string name="new_list">New list…</string>
+    <string name="list_name">List name</string>
+    <string name="list_empty">No places in this list yet. Add them with Save on a place.</string>
+    <string name="remove_from_list">Remove from list</string>
+    <plurals name="list_places">
+        <item quantity="one">%1$d place</item>
+        <item quantity="other">%1$d places</item>
+    </plurals>
     <string name="nothing_saved">Nothing saved yet. Use Save on a place, or the bookmark when planning a route.</string>
     <string name="rename">Rename</string>
     <string name="delete">Delete</string>

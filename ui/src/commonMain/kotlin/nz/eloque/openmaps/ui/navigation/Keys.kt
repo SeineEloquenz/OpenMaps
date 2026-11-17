@@ -151,3 +151,9 @@ data class RoadEventKey(
 fun Endpoint.toRouteEnd(): RouteEnd = RouteEnd(name, location, stopId)
 
 fun RouteEnd.toEndpoint(): Endpoint = Endpoint(name, location.latitude, location.longitude, stopId)
+
+/** One of the user's lists of places. */
+@Serializable
+data class ListKey(
+    val listId: Long,
+) : NavKey

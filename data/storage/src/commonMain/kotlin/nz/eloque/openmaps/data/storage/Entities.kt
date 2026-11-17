@@ -2,6 +2,7 @@ package nz.eloque.openmaps.data.storage
 
 import androidx.room3.Embedded
 import androidx.room3.Entity
+import androidx.room3.Index
 import androidx.room3.PrimaryKey
 import nz.eloque.openmaps.core.model.LatLng
 import nz.eloque.openmaps.core.model.PlaceId
@@ -96,3 +97,18 @@ data class SavedRouteEntity(
 internal fun RouteEnd.toColumns() = RouteEndColumns(name, location.latitude, location.longitude, stopId)
 
 internal fun RouteEndColumns.toRouteEnd() = RouteEnd(name, LatLng(latitude, longitude), stopId)
+
+@Entity(tableName = "place_list")
+data class PlaceListEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val name: String,
+)
+
+/** [placeKey] is the place's storage key, so a place is in a list at most once. */
+@Entity(tableName = "list_entry", indices = [Index(value = ["listId", "placeKey"], unique = true)])
+data class ListEntryEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val listId: Long,
+    val placeKey: String,
+    @Embedded val place: PlaceColumns,
+)

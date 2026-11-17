@@ -75,4 +75,37 @@ interface PlacesStore {
     )
 
     suspend fun removeRoute(id: Long)
+
+    /** By name. */
+    val lists: Flow<List<PlaceList>>
+
+    /** Returns the new list's id. */
+    suspend fun createList(name: String): Long
+
+    suspend fun renameList(
+        id: Long,
+        name: String,
+    )
+
+    suspend fun deleteList(id: Long)
+
+    /** Does nothing when [place] is in the list already. */
+    suspend fun addToList(
+        listId: Long,
+        place: SearchResult,
+    )
+
+    suspend fun removeFromList(
+        listId: Long,
+        place: SearchResult,
+    )
+}
+
+/** Places the user collected under a name of their own, in the order they were added. */
+data class PlaceList(
+    val id: Long,
+    val name: String,
+    val places: List<SearchResult>,
+) {
+    operator fun contains(place: SearchResult) = places.any { it.storageKey == place.storageKey }
 }

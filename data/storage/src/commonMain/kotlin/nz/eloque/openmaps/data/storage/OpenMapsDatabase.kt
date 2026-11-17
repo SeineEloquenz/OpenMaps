@@ -5,6 +5,7 @@ import androidx.room3.ConstructedBy
 import androidx.room3.Dao
 import androidx.room3.Database
 import androidx.room3.Insert
+import androidx.room3.OnConflictStrategy
 import androidx.room3.Query
 import androidx.room3.RoomDatabase
 import androidx.room3.RoomDatabaseConstructor
@@ -60,13 +61,49 @@ abstract class PlacesDao {
 
     @Query("DELETE FROM recent WHERE `key` NOT IN (SELECT `key` FROM recent ORDER BY usedAt DESC LIMIT :keep)")
     abstract suspend fun trimRecents(keep: Int)
+
+    @Query("SELECT * FROM place_list ORDER BY name COLLATE NOCASE")
+    abstract fun lists(): Flow<List<PlaceListEntity>>
+
+    @Query("SELECT * FROM list_entry ORDER BY id")
+    abstract fun listEntries(): Flow<List<ListEntryEntity>>
+
+    @Insert
+    abstract suspend fun insertList(list: PlaceListEntity): Long
+
+    @Query("UPDATE place_list SET name = :name WHERE id = :id")
+    abstract suspend fun renameList(
+        id: Long,
+        name: String,
+    )
+
+    @Query("DELETE FROM place_list WHERE id = :id")
+    abstract suspend fun deleteListRow(id: Long)
+
+    @Query("DELETE FROM list_entry WHERE listId = :listId")
+    abstract suspend fun deleteListEntries(listId: Long)
+
+    @Transaction
+    open suspend fun deleteList(id: Long) {
+        deleteListEntries(id)
+        deleteListRow(id)
+    }
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    abstract suspend fun insertListEntry(entry: ListEntryEntity)
+
+    @Query("DELETE FROM list_entry WHERE listId = :listId AND placeKey = :placeKey")
+    abstract suspend fun deleteListEntry(
+        listId: Long,
+        placeKey: String,
+    )
 }
 
 @Database(
-    entities = [FavouriteEntity::class, RecentEntity::class, SavedRouteEntity::class],
-    version = 3,
+    entities = [FavouriteEntity::class, RecentEntity::class, SavedRouteEntity::class, PlaceListEntity::class, ListEntryEntity::class],
+    version = 4,
     exportSchema = true,
-    autoMigrations = [AutoMigration(from = 1, to = 2)],
+    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 3, to = 4)],
 )
 @ConstructedBy(OpenMapsDatabaseConstructor::class)
 abstract class OpenMapsDatabase : RoomDatabase() {

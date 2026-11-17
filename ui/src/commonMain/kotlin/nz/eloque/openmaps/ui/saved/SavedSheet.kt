@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Directions
 import androidx.compose.material.icons.filled.Edit
@@ -31,14 +32,18 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 import nz.eloque.openmaps.core.model.Favourite
+import nz.eloque.openmaps.core.model.PlaceList
 import nz.eloque.openmaps.core.model.PlacesStore
 import nz.eloque.openmaps.core.model.SavedRoute
 import nz.eloque.openmaps.core.model.SearchResult
+import nz.eloque.openmaps.ui.components.ListNameDialog
 import nz.eloque.openmaps.ui.components.icon
 import nz.eloque.openmaps.ui.resources.Res
 import nz.eloque.openmaps.ui.resources.cancel
 import nz.eloque.openmaps.ui.resources.delete
 import nz.eloque.openmaps.ui.resources.favourites
+import nz.eloque.openmaps.ui.resources.list_places
+import nz.eloque.openmaps.ui.resources.lists
 import nz.eloque.openmaps.ui.resources.name
 import nz.eloque.openmaps.ui.resources.nothing_saved
 import nz.eloque.openmaps.ui.resources.ok
@@ -48,6 +53,7 @@ import nz.eloque.openmaps.ui.resources.saved_routes
 import nz.eloque.openmaps.ui.resources.your_location
 import nz.eloque.openmaps.ui.search.titleRes
 import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 
@@ -56,12 +62,15 @@ import org.koin.compose.koinInject
 fun SavedSheet(
     onOpenPlace: (SearchResult) -> Unit,
     onOpenRoute: (SavedRoute) -> Unit,
+    onOpenList: (Long) -> Unit,
 ) {
     val store = koinInject<PlacesStore>()
     val favourites by store.favourites.collectAsStateWithLifecycle(emptyList())
     val routes by store.savedRoutes.collectAsStateWithLifecycle(emptyList())
+    val lists by store.lists.collectAsStateWithLifecycle(emptyList())
     val scope = rememberCoroutineScope()
     var renaming by remember { mutableStateOf<Favourite?>(null) }
+    var renamingList by remember { mutableStateOf<PlaceList?>(null) }
     val transparent = ListItemDefaults.colors(containerColor = Color.Transparent)
 
     LazyColumn(Modifier.fillMaxWidth()) {
@@ -72,7 +81,7 @@ fun SavedSheet(
                 modifier = Modifier.padding(horizontal = 16.dp),
             )
         }
-        if (favourites.isEmpty() && routes.isEmpty()) {
+        if (favourites.isEmpty() && routes.isEmpty() && lists.isEmpty()) {
             item {
                 Text(
                     stringResource(Res.string.nothing_saved),
@@ -102,6 +111,26 @@ fun SavedSheet(
                 modifier = Modifier.clickable { onOpenPlace(favourite.place) },
             )
         }
+        if (lists.isNotEmpty()) item { SectionTitle(Res.string.lists) }
+        items(lists, key = { "list-${it.id}" }) { list ->
+            ListItem(
+                headlineContent = { Text(list.name) },
+                supportingContent = { Text(pluralStringResource(Res.plurals.list_places, list.places.size, list.places.size)) },
+                leadingContent = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = null) },
+                trailingContent = {
+                    Row {
+                        IconButton(onClick = { renamingList = list }) {
+                            Icon(Icons.Default.Edit, contentDescription = stringResource(Res.string.rename))
+                        }
+                        IconButton(onClick = { scope.launch { store.deleteList(list.id) } }) {
+                            Icon(Icons.Default.Delete, contentDescription = stringResource(Res.string.delete))
+                        }
+                    }
+                },
+                colors = transparent,
+                modifier = Modifier.clickable { onOpenList(list.id) },
+            )
+        }
         if (routes.isNotEmpty()) item { SectionTitle(Res.string.saved_routes) }
         items(routes, key = { "route-${it.id}" }) { route ->
             val here = stringResource(Res.string.your_location)
@@ -118,6 +147,17 @@ fun SavedSheet(
                 modifier = Modifier.clickable { onOpenRoute(route) },
             )
         }
+    }
+
+    renamingList?.let { list ->
+        ListNameDialog(
+            initial = list.name,
+            onDismiss = { renamingList = null },
+            onConfirm = { name ->
+                renamingList = null
+                scope.launch { store.renameList(list.id, name) }
+            },
+        )
     }
 
     renaming?.let { favourite ->

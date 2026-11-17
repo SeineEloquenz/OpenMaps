@@ -1,9 +1,11 @@
 package nz.eloque.openmaps.data.storage
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import nz.eloque.openmaps.core.model.Favourite
 import nz.eloque.openmaps.core.model.FavouriteLabel
+import nz.eloque.openmaps.core.model.PlaceList
 import nz.eloque.openmaps.core.model.PlacesStore
 import nz.eloque.openmaps.core.model.RouteEnd
 import nz.eloque.openmaps.core.model.SavedRoute
@@ -56,6 +58,31 @@ internal class RoomPlacesStore(
     }
 
     override suspend fun removeRoute(id: Long) = dao.deleteRoute(id)
+
+    override val lists: Flow<List<PlaceList>> =
+        combine(dao.lists(), dao.listEntries()) { lists, entries ->
+            val byList = entries.groupBy { it.listId }
+            lists.map { list -> PlaceList(list.id, list.name, byList[list.id].orEmpty().map { it.place.toSearchResult() }) }
+        }
+
+    override suspend fun createList(name: String): Long = dao.insertList(PlaceListEntity(name = name.trim()))
+
+    override suspend fun renameList(
+        id: Long,
+        name: String,
+    ) = dao.renameList(id, name.trim())
+
+    override suspend fun deleteList(id: Long) = dao.deleteList(id)
+
+    override suspend fun addToList(
+        listId: Long,
+        place: SearchResult,
+    ) = dao.insertListEntry(ListEntryEntity(listId = listId, placeKey = place.storageKey, place = place.toColumns()))
+
+    override suspend fun removeFromList(
+        listId: Long,
+        place: SearchResult,
+    ) = dao.deleteListEntry(listId, place.storageKey)
 
     private companion object {
         const val SHOWN_RECENTS = 15
