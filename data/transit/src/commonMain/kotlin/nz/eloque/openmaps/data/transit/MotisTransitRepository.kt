@@ -131,6 +131,7 @@ private fun HttpRequestBuilder.routeOptions(
         WalkingSpeed.NORMAL -> Unit
     }
     if (options.wheelchair) parameter("pedestrianProfile", "WHEELCHAIR")
+    if (options.bikeOnBoard && withTransit) parameter("requireBikeTransport", true)
     if (options.sharedVehicles && withTransit) {
         val factors = SharedAccessKinds.flatMap(::formFactors).joinToString(",")
         parameter("preTransitModes", "WALK,RENTAL")

@@ -105,6 +105,9 @@
     <string name="options_wheelchair_detail">Avoid stairs on walks and transfers</string>
     <string name="options_shared_vehicles">Shared bikes and scooters</string>
     <string name="options_shared_vehicles_detail">Ride to and from public transport</string>
+    <string name="options_bike_on_board">Bring a bike</string>
+    <string name="options_bike_on_board_detail">Only connections known to carry bikes</string>
+    <string name="no_routes_bike_on_board">No connections are known to carry bikes here. Many operators do not publish this, so try without "Bring a bike".</string>
     <string name="options_driving">Driving</string>
     <string name="avoid_tolls">Avoid tolls</string>
     <string name="avoid_motorways">Avoid motorways</string>

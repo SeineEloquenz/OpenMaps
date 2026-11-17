@@ -109,6 +109,7 @@ import nz.eloque.openmaps.ui.resources.navigation_simulate
 import nz.eloque.openmaps.ui.resources.navigation_start
 import nz.eloque.openmaps.ui.resources.needs_location_for_route
 import nz.eloque.openmaps.ui.resources.no_routes
+import nz.eloque.openmaps.ui.resources.no_routes_bike_on_board
 import nz.eloque.openmaps.ui.resources.no_shared_routes
 import nz.eloque.openmaps.ui.resources.no_transfers
 import nz.eloque.openmaps.ui.resources.one_transfer
@@ -276,7 +277,8 @@ fun DirectionsSheet(
             state == LoadState.Failed -> item { LoadStateContent(LoadState.Failed, onRetry = viewModel::retry) {} }
             mode == TravelMode.TRANSIT && loaded != null -> {
                 if (loaded.itineraries.isEmpty()) {
-                    item { Text(stringResource(Res.string.no_routes), color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                    val text = if (options.bikeOnBoard) Res.string.no_routes_bike_on_board else Res.string.no_routes
+                    item { Text(stringResource(text), color = MaterialTheme.colorScheme.onSurfaceVariant) }
                 }
                 if (loaded.earlierCursor != null && loaded.itineraries.isNotEmpty()) {
                     item { TextButton(onClick = viewModel::loadEarlier) { Text(stringResource(Res.string.earlier)) } }

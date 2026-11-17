@@ -27,6 +27,8 @@ data class RouteOptions(
     val wheelchair: Boolean = false,
     /** Whether shared bikes and scooters may take the user to and from public transport. */
     val sharedVehicles: Boolean = false,
+    /** Only connections whose vehicles are known to carry bikes. */
+    val bikeOnBoard: Boolean = false,
     val avoidTolls: Boolean = false,
     val avoidMotorways: Boolean = false,
     val avoidFerries: Boolean = false,

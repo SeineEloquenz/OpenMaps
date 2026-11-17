@@ -48,6 +48,8 @@ import nz.eloque.openmaps.ui.resources.mode_long_distance
 import nz.eloque.openmaps.ui.resources.mode_regional
 import nz.eloque.openmaps.ui.resources.mode_subway_tram
 import nz.eloque.openmaps.ui.resources.options_bike
+import nz.eloque.openmaps.ui.resources.options_bike_on_board
+import nz.eloque.openmaps.ui.resources.options_bike_on_board_detail
 import nz.eloque.openmaps.ui.resources.options_driving
 import nz.eloque.openmaps.ui.resources.options_shared_vehicles
 import nz.eloque.openmaps.ui.resources.options_shared_vehicles_detail
@@ -186,6 +188,12 @@ private fun TransitOptions(
             subtitle = stringResource(Res.string.options_shared_vehicles_detail),
             checked = options.sharedVehicles,
             onCheckedChange = { onChange(options.copy(sharedVehicles = it)) },
+        )
+        SettingsSwitch(
+            title = stringResource(Res.string.options_bike_on_board),
+            subtitle = stringResource(Res.string.options_bike_on_board_detail),
+            checked = options.bikeOnBoard,
+            onCheckedChange = { onChange(options.copy(bikeOnBoard = it)) },
         )
     }
 }
