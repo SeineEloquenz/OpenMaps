@@ -154,6 +154,18 @@ internal val PlaceCategory.profile: CategoryProfile
                     },
                     filters = listOf(ResultFilter.Choice("bank", Res.string.filter_bank, values = { listOfNotNull(it.bank) })),
                 )
+            PlaceCategory.PARKING ->
+                CategoryProfile(
+                    kind = { place, _ -> place.category?.toCategoryLabel() },
+                    facts = { details ->
+                        when (details.free) {
+                            true -> listOf(Res.string.fact_free)
+                            false -> listOf(Res.string.fact_paid)
+                            null -> emptyList()
+                        }
+                    },
+                    filters = listOf(Free, OpenNow),
+                )
             PlaceCategory.TOILETS ->
                 CategoryProfile(
                     kind = { place, _ -> place.category?.toCategoryLabel() },

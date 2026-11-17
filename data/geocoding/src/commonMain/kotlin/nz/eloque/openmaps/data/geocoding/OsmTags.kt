@@ -16,6 +16,7 @@ internal val PlaceCategory.osmTags: List<String>
             PlaceCategory.SUPERMARKETS -> listOf("shop.supermarket", "shop.convenience")
             PlaceCategory.GAS_STATIONS -> listOf("amenity.fuel")
             PlaceCategory.CHARGING -> listOf("amenity.charging_station")
+            PlaceCategory.PARKING -> listOf("amenity.parking")
             PlaceCategory.BARS -> listOf("amenity.bar", "amenity.pub", "amenity.biergarten")
             PlaceCategory.ATTRACTIONS ->
                 listOf(

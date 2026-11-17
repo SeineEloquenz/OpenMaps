@@ -224,6 +224,7 @@
     <string name="category_supermarkets">Supermarkets</string>
     <string name="category_gas_stations">Gas stations</string>
     <string name="category_charging">Charging</string>
+    <string name="category_parking">Parking</string>
     <string name="category_bars">Bars</string>
     <string name="category_attractions">Attractions</string>
     <string name="category_hotels">Hotels</string>

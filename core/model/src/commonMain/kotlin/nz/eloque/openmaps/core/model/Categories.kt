@@ -9,6 +9,7 @@ enum class PlaceCategory {
     SUPERMARKETS,
     GAS_STATIONS,
     CHARGING,
+    PARKING,
     BARS,
     ATTRACTIONS,
     HOTELS,

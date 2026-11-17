@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.LocalBar
 import androidx.compose.material.icons.filled.LocalCafe
 import androidx.compose.material.icons.filled.LocalGasStation
 import androidx.compose.material.icons.filled.LocalGroceryStore
+import androidx.compose.material.icons.filled.LocalParking
 import androidx.compose.material.icons.filled.LocalPharmacy
 import androidx.compose.material.icons.filled.PedalBike
 import androidx.compose.material.icons.filled.PhotoCamera
@@ -44,6 +45,7 @@ import nz.eloque.openmaps.ui.resources.category_charging
 import nz.eloque.openmaps.ui.resources.category_drinking_water
 import nz.eloque.openmaps.ui.resources.category_gas_stations
 import nz.eloque.openmaps.ui.resources.category_hotels
+import nz.eloque.openmaps.ui.resources.category_parking
 import nz.eloque.openmaps.ui.resources.category_pharmacies
 import nz.eloque.openmaps.ui.resources.category_restaurants
 import nz.eloque.openmaps.ui.resources.category_shared_vehicles
@@ -61,6 +63,7 @@ val PlaceCategory.label: StringResource
             PlaceCategory.SUPERMARKETS -> Res.string.category_supermarkets
             PlaceCategory.GAS_STATIONS -> Res.string.category_gas_stations
             PlaceCategory.CHARGING -> Res.string.category_charging
+            PlaceCategory.PARKING -> Res.string.category_parking
             PlaceCategory.BARS -> Res.string.category_bars
             PlaceCategory.ATTRACTIONS -> Res.string.category_attractions
             PlaceCategory.HOTELS -> Res.string.category_hotels
@@ -80,6 +83,7 @@ val PlaceCategory.icon: ImageVector
             PlaceCategory.SUPERMARKETS -> Icons.Default.LocalGroceryStore
             PlaceCategory.GAS_STATIONS -> Icons.Default.LocalGasStation
             PlaceCategory.CHARGING -> Icons.Default.EvStation
+            PlaceCategory.PARKING -> Icons.Default.LocalParking
             PlaceCategory.BARS -> Icons.Default.LocalBar
             PlaceCategory.ATTRACTIONS -> Icons.Default.PhotoCamera
             PlaceCategory.HOTELS -> Icons.Default.Hotel
@@ -100,6 +104,7 @@ private val PlaceCategory.keywords: List<String>
             PlaceCategory.SUPERMARKETS -> listOf("supermarket", "supermarkets", "grocery", "groceries", "supermarkt", "lebensmittel")
             PlaceCategory.GAS_STATIONS -> listOf("gas station", "gas stations", "petrol", "fuel", "tankstelle")
             PlaceCategory.CHARGING -> listOf("charging", "charging station", "ev charger", "charger", "ladestation", "ladesaule", "laden")
+            PlaceCategory.PARKING -> listOf("parking", "car park", "parking lot", "parkplatz", "parkhaus", "tiefgarage")
             PlaceCategory.BARS -> listOf("bar", "bars", "pub", "pubs", "kneipe", "biergarten")
             PlaceCategory.ATTRACTIONS -> listOf("attraction", "attractions", "sights", "sightseeing", "museum", "sehenswurdigkeit")
             PlaceCategory.HOTELS -> listOf("hotel", "hotels", "hostel", "motel", "unterkunft")

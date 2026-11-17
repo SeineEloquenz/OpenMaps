@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.LocalGroceryStore
 import androidx.compose.material.icons.filled.LocalHospital
 import androidx.compose.material.icons.filled.LocalLaundryService
 import androidx.compose.material.icons.filled.LocalLibrary
+import androidx.compose.material.icons.filled.LocalParking
 import androidx.compose.material.icons.filled.LocalPharmacy
 import androidx.compose.material.icons.filled.LocalPolice
 import androidx.compose.material.icons.filled.LocalPostOffice
@@ -143,6 +144,7 @@ private enum class PlaceIcon(
     SPORTS(Icons.Default.FitnessCenter, PlaceGroup.NATURE, listOf("sports_centre", "stadium")),
     FUEL(Icons.Default.LocalGasStation, PlaceGroup.SERVICES, listOf("fuel")),
     CHARGING(Icons.Default.EvStation, PlaceGroup.SERVICES, listOf("charging_station")),
+    PARKING(Icons.Default.LocalParking, PlaceGroup.SERVICES, listOf("parking")),
     ATM(Icons.Default.LocalAtm, PlaceGroup.SERVICES, listOf("atm")),
     BANK(Icons.Default.AccountBalance, PlaceGroup.SERVICES, listOf("bank", "town_hall")),
     POST(Icons.Default.LocalPostOffice, PlaceGroup.SERVICES, listOf("post")),
@@ -279,6 +281,7 @@ internal val PlaceCategory.tileValues: Set<String>
             PlaceCategory.SUPERMARKETS -> setOf("supermarket", "convenience")
             PlaceCategory.GAS_STATIONS -> setOf("fuel")
             PlaceCategory.CHARGING -> setOf("charging_station")
+            PlaceCategory.PARKING -> setOf("parking")
             PlaceCategory.BARS -> setOf("bar", "pub", "biergarten")
             PlaceCategory.ATTRACTIONS -> setOf("attraction", "museum", "gallery", "viewpoint", "zoo", "theme_park", "castle", "monument")
             PlaceCategory.HOTELS -> setOf("hotel", "hostel", "guest_house", "motel")
