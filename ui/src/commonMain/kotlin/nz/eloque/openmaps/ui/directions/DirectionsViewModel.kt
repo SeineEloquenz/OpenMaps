@@ -75,7 +75,14 @@ class DirectionsViewModel(
     private val _shared = MutableStateFlow<LoadState<List<Itinerary>>?>(null)
     val shared: StateFlow<LoadState<List<Itinerary>>?> = _shared.asStateFlow()
 
+    /** Where routes from or to the user are planned from, which stays put until [reload]. */
     private var userLocation: LatLng? = null
+    private var latestLocation: LatLng? = null
+
+    /** True once the user is far enough from [userLocation] that the routes start somewhere else. */
+    private val _moved = MutableStateFlow(false)
+    val moved: StateFlow<Boolean> = _moved.asStateFlow()
+
     private var planJob: Job? = null
     private var streetJob: Job? = null
     private var sharedJob: Job? = null
@@ -89,9 +96,14 @@ class DirectionsViewModel(
     }
 
     fun setUserLocation(location: LatLng) {
-        val first = userLocation == null
-        userLocation = location
-        if (first && needsUserLocation) loadForMode()
+        latestLocation = location
+        val planned = userLocation
+        if (planned == null) {
+            userLocation = location
+            if (needsUserLocation) loadForMode()
+        } else {
+            _moved.value = needsUserLocation && planned.distanceTo(location) > MOVED_METERS
+        }
     }
 
     fun setTime(choice: TimeChoice) {
@@ -109,6 +121,8 @@ class DirectionsViewModel(
         planJob?.cancel()
         streetJob?.cancel()
         sharedJob?.cancel()
+        latestLocation?.let { userLocation = it }
+        _moved.value = false
         _result.value = null
         _street.value = null
         _shared.value = null
@@ -273,3 +287,4 @@ private fun Endpoint.toTarget(): PlanTarget = stopId?.let { PlanTarget.Stop(it) 
 
 private val SharedKinds = setOf(VehicleKind.BICYCLE, VehicleKind.SCOOTER)
 private const val MAX_SHARED_ROUTES = 3
+private const val MOVED_METERS = 200.0

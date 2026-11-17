@@ -112,6 +112,7 @@ import nz.eloque.openmaps.ui.resources.save_route
 import nz.eloque.openmaps.ui.resources.shared_routes
 import nz.eloque.openmaps.ui.resources.swap
 import nz.eloque.openmaps.ui.resources.transfers
+import nz.eloque.openmaps.ui.resources.update_from_here
 import nz.eloque.openmaps.ui.resources.via_street
 import nz.eloque.openmaps.ui.resources.via_streets
 import nz.eloque.openmaps.ui.resources.walk_only
@@ -145,6 +146,7 @@ fun DirectionsSheet(
     val shared by viewModel.shared.collectAsStateWithLifecycle()
     val mode by viewModel.mode.collectAsStateWithLifecycle()
     val time by viewModel.time.collectAsStateWithLifecycle()
+    val moved by viewModel.moved.collectAsStateWithLifecycle()
     val userLocation = map.userLocation
     LaunchedEffect(userLocation) { userLocation?.let(viewModel::setUserLocation) }
 
@@ -192,7 +194,15 @@ fun DirectionsSheet(
     LazyColumn(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         item {
             EndpointsCard(directions.from, directions.to, onEditField, onSwap)
-            SaveRouteButton(directions)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
+                SaveRouteButton(directions)
+                if (moved) {
+                    TextButton(onClick = viewModel::reload) {
+                        Icon(Icons.Default.MyLocation, contentDescription = null)
+                        Text(stringResource(Res.string.update_from_here), modifier = Modifier.padding(start = 8.dp))
+                    }
+                }
+            }
         }
         item {
             ModeTabs(
