@@ -11,6 +11,7 @@ enum class ServiceRole {
     CHARGING_STATIONS,
     FUEL_PRICES,
     RAIN_RADAR,
+    WEATHER_WARNINGS,
 }
 
 enum class ServiceSettingKind {

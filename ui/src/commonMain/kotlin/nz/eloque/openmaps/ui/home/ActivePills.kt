@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.FiberManualRecord
 import androidx.compose.material.icons.filled.TrackChanges
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -45,6 +46,9 @@ import nz.eloque.openmaps.ui.resources.show_on_map
 import nz.eloque.openmaps.ui.resources.stop_and_save
 import nz.eloque.openmaps.ui.resources.walk_there
 import nz.eloque.openmaps.ui.tracks.TrackRecorder
+import nz.eloque.openmaps.ui.weather.WarningsDialog
+import nz.eloque.openmaps.ui.weather.color
+import nz.eloque.openmaps.ui.weather.rememberWarnings
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 
@@ -67,7 +71,15 @@ fun ActivePills(
     val recording by recorder.recording.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
 
+    val warnings = rememberWarnings(userLocation)
+    var showWarnings by remember { mutableStateOf(false) }
+    if (showWarnings && warnings.isNotEmpty()) WarningsDialog(warnings, onDismiss = { showWarnings = false })
+
     FlowRow(modifier, horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        warnings.firstOrNull()?.let { worst ->
+            val more = if (warnings.size > 1) " +${warnings.size - 1}" else ""
+            Pill(Icons.Default.Warning, worst.title + more, alert = false, onClick = { showWarnings = true }, tint = worst.severity.color)
+        }
         watched.filter { it.arrival > now }.forEach { trip ->
             val leg = trip.legs.firstOrNull { it.to.expected > now } ?: trip.legs.last()
             val delay = leg.from.delay.inWholeMinutes
@@ -144,6 +156,7 @@ private fun Pill(
     text: String,
     alert: Boolean,
     onClick: () -> Unit,
+    tint: Color = Color.Unspecified,
 ) {
     Surface(
         onClick = onClick,
@@ -155,7 +168,7 @@ private fun Pill(
             Icon(
                 icon,
                 contentDescription = null,
-                tint = if (alert) MaterialTheme.colorScheme.error else Color.Unspecified,
+                tint = if (alert) MaterialTheme.colorScheme.error else tint,
                 modifier = Modifier.size(18.dp),
             )
             Text(

@@ -209,6 +209,10 @@
     <string name="radar_lightning">Lightning</string>
     <string name="radar_lightning_detail">Strikes in the ten minutes of each frame, where satellites see them</string>
     <string name="layer_options_hint">Long press a detail for its options</string>
+    <string name="weather_warnings">Weather warnings</string>
+    <string name="warning_until">Until %1$s</string>
+    <string name="warning_source">Source: %1$s</string>
+    <string name="warning_at_destination">At the destination</string>
     <string name="layer_roadworks">Roadworks</string>
     <string name="layer_buildings">3D buildings</string>
     <string name="new_list">New list…</string>
@@ -321,6 +325,7 @@
     <string name="role_charging_stations">Charging stations</string>
     <string name="role_fuel_prices">Fuel prices</string>
     <string name="role_rain_radar">Rain radar</string>
+    <string name="role_weather_warnings">Weather warnings</string>
     <string name="category_restaurants">Restaurants</string>
     <string name="category_cafes">Cafés</string>
     <string name="category_supermarkets">Supermarkets</string>

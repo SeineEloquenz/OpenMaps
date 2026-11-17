@@ -131,6 +131,7 @@ import nz.eloque.openmaps.ui.resources.update_from_here
 import nz.eloque.openmaps.ui.resources.via_street
 import nz.eloque.openmaps.ui.resources.via_streets
 import nz.eloque.openmaps.ui.resources.walk_only
+import nz.eloque.openmaps.ui.resources.warning_at_destination
 import nz.eloque.openmaps.ui.resources.without_traffic
 import nz.eloque.openmaps.ui.resources.your_location
 import nz.eloque.openmaps.ui.roads.color
@@ -138,6 +139,8 @@ import nz.eloque.openmaps.ui.roads.icon
 import nz.eloque.openmaps.ui.settings.RouteOptionsEditor
 import nz.eloque.openmaps.ui.settings.icon
 import nz.eloque.openmaps.ui.settings.label
+import nz.eloque.openmaps.ui.weather.WarningCard
+import nz.eloque.openmaps.ui.weather.rememberWarnings
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
@@ -217,6 +220,8 @@ fun DirectionsSheet(
     LazyColumn(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         item {
             EndpointsCard(directions, canAddStop = mode != TravelMode.TRANSIT, onEditField, onSwap, onRemoveStop)
+            val atDestination = stringResource(Res.string.warning_at_destination)
+            rememberWarnings(directions.to?.location).forEach { WarningCard(it, Modifier.padding(top = 8.dp), prefix = atDestination) }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
                 SaveRouteButton(directions)
                 if (moved) {
