@@ -1,0 +1,573 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 7,
+    "identityHash": "d237732fdc525069411f8021eeb63862",
+    "entities": [
+      {
+        "tableName": "favourite",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `label` TEXT NOT NULL, `customName` TEXT, `kind` TEXT NOT NULL, `name` TEXT NOT NULL, `latitude` REAL NOT NULL, `longitude` REAL NOT NULL, `area` TEXT, `stopId` TEXT, `placeId` TEXT, `category` TEXT, `street` TEXT, `houseNumber` TEXT, `postcode` TEXT, `modes` TEXT NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "label",
+            "columnName": "label",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "customName",
+            "columnName": "customName",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "place.kind",
+            "columnName": "kind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "place.name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "place.latitude",
+            "columnName": "latitude",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "place.longitude",
+            "columnName": "longitude",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "place.area",
+            "columnName": "area",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "place.stopId",
+            "columnName": "stopId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "place.placeId",
+            "columnName": "placeId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "place.category",
+            "columnName": "category",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "place.street",
+            "columnName": "street",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "place.houseNumber",
+            "columnName": "houseNumber",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "place.postcode",
+            "columnName": "postcode",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "place.modes",
+            "columnName": "modes",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "recent",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`key` TEXT NOT NULL, `usedAt` INTEGER NOT NULL, `kind` TEXT NOT NULL, `name` TEXT NOT NULL, `latitude` REAL NOT NULL, `longitude` REAL NOT NULL, `area` TEXT, `stopId` TEXT, `placeId` TEXT, `category` TEXT, `street` TEXT, `houseNumber` TEXT, `postcode` TEXT, `modes` TEXT NOT NULL, PRIMARY KEY(`key`))",
+        "fields": [
+          {
+            "fieldPath": "key",
+            "columnName": "key",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "usedAt",
+            "columnName": "usedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "place.kind",
+            "columnName": "kind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "place.name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "place.latitude",
+            "columnName": "latitude",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "place.longitude",
+            "columnName": "longitude",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "place.area",
+            "columnName": "area",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "place.stopId",
+            "columnName": "stopId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "place.placeId",
+            "columnName": "placeId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "place.category",
+            "columnName": "category",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "place.street",
+            "columnName": "street",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "place.houseNumber",
+            "columnName": "houseNumber",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "place.postcode",
+            "columnName": "postcode",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "place.modes",
+            "columnName": "modes",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "key"
+          ]
+        }
+      },
+      {
+        "tableName": "saved_route",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `from_name` TEXT, `from_latitude` REAL, `from_longitude` REAL, `from_stopId` TEXT, `to_name` TEXT, `to_latitude` REAL, `to_longitude` REAL, `to_stopId` TEXT)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "from.name",
+            "columnName": "from_name",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "from.latitude",
+            "columnName": "from_latitude",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "from.longitude",
+            "columnName": "from_longitude",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "from.stopId",
+            "columnName": "from_stopId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "to.name",
+            "columnName": "to_name",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "to.latitude",
+            "columnName": "to_latitude",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "to.longitude",
+            "columnName": "to_longitude",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "to.stopId",
+            "columnName": "to_stopId",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "place_list",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `icon` TEXT)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "icon",
+            "columnName": "icon",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "list_entry",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `listId` INTEGER NOT NULL, `placeKey` TEXT NOT NULL, `kind` TEXT NOT NULL, `name` TEXT NOT NULL, `latitude` REAL NOT NULL, `longitude` REAL NOT NULL, `area` TEXT, `stopId` TEXT, `placeId` TEXT, `category` TEXT, `street` TEXT, `houseNumber` TEXT, `postcode` TEXT, `modes` TEXT NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "listId",
+            "columnName": "listId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "placeKey",
+            "columnName": "placeKey",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "place.kind",
+            "columnName": "kind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "place.name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "place.latitude",
+            "columnName": "latitude",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "place.longitude",
+            "columnName": "longitude",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "place.area",
+            "columnName": "area",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "place.stopId",
+            "columnName": "stopId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "place.placeId",
+            "columnName": "placeId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "place.category",
+            "columnName": "category",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "place.street",
+            "columnName": "street",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "place.houseNumber",
+            "columnName": "houseNumber",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "place.postcode",
+            "columnName": "postcode",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "place.modes",
+            "columnName": "modes",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_list_entry_listId_placeKey",
+            "unique": true,
+            "columnNames": [
+              "listId",
+              "placeKey"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_list_entry_listId_placeKey` ON `${TABLE_NAME}` (`listId`, `placeKey`)"
+          }
+        ]
+      },
+      {
+        "tableName": "track",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `distanceMeters` REAL NOT NULL, `points` TEXT NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "distanceMeters",
+            "columnName": "distanceMeters",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "points",
+            "columnName": "points",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "watched_trip",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `destination` TEXT NOT NULL, `checkedAt` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "destination",
+            "columnName": "destination",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "checkedAt",
+            "columnName": "checkedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "watched_leg",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`watchId` TEXT NOT NULL, `position` INTEGER NOT NULL, `tripId` TEXT NOT NULL, `line` TEXT NOT NULL, `cancelled` INTEGER NOT NULL, `fromName` TEXT NOT NULL, `fromStopId` TEXT, `fromScheduled` INTEGER NOT NULL, `fromExpected` INTEGER NOT NULL, `fromPlatform` TEXT, `fromCancelled` INTEGER NOT NULL, `toName` TEXT NOT NULL, `toStopId` TEXT, `toScheduled` INTEGER NOT NULL, `toExpected` INTEGER NOT NULL, `toPlatform` TEXT, `toCancelled` INTEGER NOT NULL, PRIMARY KEY(`watchId`, `position`))",
+        "fields": [
+          {
+            "fieldPath": "watchId",
+            "columnName": "watchId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "position",
+            "columnName": "position",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tripId",
+            "columnName": "tripId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "line",
+            "columnName": "line",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cancelled",
+            "columnName": "cancelled",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fromName",
+            "columnName": "fromName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fromStopId",
+            "columnName": "fromStopId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "fromScheduled",
+            "columnName": "fromScheduled",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fromExpected",
+            "columnName": "fromExpected",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fromPlatform",
+            "columnName": "fromPlatform",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "fromCancelled",
+            "columnName": "fromCancelled",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "toName",
+            "columnName": "toName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "toStopId",
+            "columnName": "toStopId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "toScheduled",
+            "columnName": "toScheduled",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "toExpected",
+            "columnName": "toExpected",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "toPlatform",
+            "columnName": "toPlatform",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "toCancelled",
+            "columnName": "toCancelled",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "watchId",
+            "position"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'd237732fdc525069411f8021eeb63862')"
+    ]
+  }
+}

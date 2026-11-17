@@ -84,6 +84,7 @@ dependencies {
     implementation(project(":data:storage"))
     implementation(project(":data:fuel"))
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.work.runtime)
     implementation(libs.compose.runtime)
     implementation(libs.koin.android)
 }

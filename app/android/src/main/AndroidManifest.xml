@@ -87,6 +87,10 @@
             android:foregroundServiceType="location" />
 
         <receiver
+            android:name=".watch.StopWatchingReceiver"
+            android:exported="false" />
+
+        <receiver
             android:name=".reminder.ReminderReceiver"
             android:exported="false" />
 

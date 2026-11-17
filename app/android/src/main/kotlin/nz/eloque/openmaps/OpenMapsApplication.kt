@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import nz.eloque.openmaps.core.model.LocationUpdates
 import nz.eloque.openmaps.core.model.ServiceCatalog
+import nz.eloque.openmaps.core.model.TripWatcher
 import nz.eloque.openmaps.core.model.VoiceGuidance
 import nz.eloque.openmaps.core.platform.Contacts
 import nz.eloque.openmaps.core.platform.Files
@@ -33,6 +34,7 @@ import nz.eloque.openmaps.reminder.AndroidReminderScheduler
 import nz.eloque.openmaps.tracks.RecordingService
 import nz.eloque.openmaps.ui.tracks.TrackRecorder
 import nz.eloque.openmaps.ui.uiModule
+import nz.eloque.openmaps.watch.WorkManagerTripWatcher
 import org.koin.android.ext.android.get
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
@@ -66,6 +68,7 @@ class OpenMapsApplication : Application() {
                     single<Files> { get<AndroidFiles>() }
                     single { AndroidContacts(this@OpenMapsApplication) }
                     single<Contacts> { get<AndroidContacts>() }
+                    single<TripWatcher> { WorkManagerTripWatcher(this@OpenMapsApplication, get(), MainScope()) }
                     single<Sharer> {
                         Sharer { text ->
                             val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text)

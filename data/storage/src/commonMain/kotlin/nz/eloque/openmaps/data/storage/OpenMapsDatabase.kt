@@ -121,6 +121,49 @@ abstract class TracksDao {
     abstract suspend fun delete(id: Long)
 }
 
+@Dao
+abstract class TripWatchDao {
+    @Query("SELECT * FROM watched_trip")
+    abstract fun trips(): Flow<List<WatchedTripEntity>>
+
+    @Query("SELECT * FROM watched_leg ORDER BY watchId, position")
+    abstract fun legs(): Flow<List<WatchedLegEntity>>
+
+    @Query("SELECT * FROM watched_trip WHERE id = :id")
+    abstract suspend fun trip(id: String): WatchedTripEntity?
+
+    @Query("SELECT * FROM watched_leg WHERE watchId = :id ORDER BY position")
+    abstract suspend fun legs(id: String): List<WatchedLegEntity>
+
+    @Upsert
+    abstract suspend fun upsertTrip(trip: WatchedTripEntity)
+
+    @Upsert
+    abstract suspend fun upsertLegs(legs: List<WatchedLegEntity>)
+
+    @Query("DELETE FROM watched_trip WHERE id = :id")
+    abstract suspend fun deleteTrip(id: String)
+
+    @Query("DELETE FROM watched_leg WHERE watchId = :id")
+    abstract suspend fun deleteLegs(id: String)
+
+    @Transaction
+    open suspend fun save(
+        trip: WatchedTripEntity,
+        legs: List<WatchedLegEntity>,
+    ) {
+        deleteLegs(trip.id)
+        upsertTrip(trip)
+        upsertLegs(legs)
+    }
+
+    @Transaction
+    open suspend fun delete(id: String) {
+        deleteLegs(id)
+        deleteTrip(id)
+    }
+}
+
 @Database(
     entities = [
         FavouriteEntity::class,
@@ -129,14 +172,17 @@ abstract class TracksDao {
         PlaceListEntity::class,
         ListEntryEntity::class,
         TrackEntity::class,
+        WatchedTripEntity::class,
+        WatchedLegEntity::class,
     ],
-    version = 6,
+    version = 7,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(
             from = 1,
             to = 2,
         ), AutoMigration(from = 3, to = 4), AutoMigration(from = 4, to = 5), AutoMigration(from = 5, to = 6),
+        AutoMigration(from = 6, to = 7),
     ],
 )
 @ConstructedBy(OpenMapsDatabaseConstructor::class)
@@ -144,6 +190,8 @@ abstract class OpenMapsDatabase : RoomDatabase() {
     abstract fun placesDao(): PlacesDao
 
     abstract fun tracksDao(): TracksDao
+
+    abstract fun tripWatchDao(): TripWatchDao
 }
 
 @Suppress("KotlinNoActualForExpect")

@@ -157,6 +157,9 @@
     <string name="reminder_set">Reminder set for %1$s</string>
     <string name="reminder_too_late">That time has already passed</string>
     <string name="reminder_needs_notifications">Allow notifications to get reminders</string>
+    <string name="watch_trip">Watch for delays</string>
+    <string name="watching_trip">Watching</string>
+    <string name="watch_started">You will be notified of delays, cancellations and platform changes until you arrive</string>
     <string name="reminder_may_be_late">Reminder set, but it may arrive a few minutes late</string>
     <string name="exact_timing_title">Allow exact timing?</string>
     <string name="exact_timing_text">Without this permission Android may deliver reminders a few minutes late. You can allow it in the system settings.</string>

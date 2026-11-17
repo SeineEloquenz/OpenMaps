@@ -2,6 +2,21 @@
 <resources>
     <string name="app_name">OpenMaps</string>
     <string name="reminders_channel">Reminders</string>
+    <string name="trip_updates_channel">Trip updates</string>
+    <string name="trip_updates_stop">Stop watching</string>
+    <string name="trip_updates_cancelled">%1$s cancelled</string>
+    <string name="trip_updates_restored">%1$s runs again</string>
+    <string name="trip_updates_changes">Changes on %1$s</string>
+    <string name="trip_updates_delays">Delays on %1$s</string>
+    <string name="trip_updates_delayed_departure">Delayed departure on %1$s</string>
+    <string name="trip_updates_earlier_departure">Earlier departure on %1$s</string>
+    <string name="trip_updates_delayed_arrival">Delayed arrival on %1$s</string>
+    <string name="trip_updates_platform">Platform change on %1$s</string>
+    <string name="trip_updates_leaves">Leaves %1$s at %2$s (%3$s)</string>
+    <string name="trip_updates_arrives">Arrives at %1$s at %2$s (%3$s)</string>
+    <string name="trip_updates_departure_platform">Leaves %1$s from platform %2$s</string>
+    <string name="trip_updates_arrival_platform">Arrives at %1$s on platform %2$s</string>
+    <string name="trip_updates_on_time">on time</string>
     <string name="navigation_channel">Navigation</string>
     <string name="recording_channel">Track recording</string>
     <string name="recording_title">Recording a track</string>

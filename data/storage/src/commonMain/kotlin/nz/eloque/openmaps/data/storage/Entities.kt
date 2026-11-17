@@ -131,3 +131,32 @@ data class TrackRow(
     val createdAt: Long,
     val distanceMeters: Double,
 )
+
+@Entity(tableName = "watched_trip")
+data class WatchedTripEntity(
+    @PrimaryKey val id: String,
+    val destination: String,
+    val checkedAt: Long,
+)
+
+/** One ride of a watched trip, in travel order by [position]. Times are epoch milliseconds. */
+@Entity(tableName = "watched_leg", primaryKeys = ["watchId", "position"])
+data class WatchedLegEntity(
+    val watchId: String,
+    val position: Int,
+    val tripId: String,
+    val line: String,
+    val cancelled: Boolean,
+    val fromName: String,
+    val fromStopId: String?,
+    val fromScheduled: Long,
+    val fromExpected: Long,
+    val fromPlatform: String?,
+    val fromCancelled: Boolean,
+    val toName: String,
+    val toStopId: String?,
+    val toScheduled: Long,
+    val toExpected: Long,
+    val toPlatform: String?,
+    val toCancelled: Boolean,
+)
