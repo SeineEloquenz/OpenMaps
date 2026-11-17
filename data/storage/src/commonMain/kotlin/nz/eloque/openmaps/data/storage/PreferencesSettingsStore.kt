@@ -98,6 +98,8 @@ internal class PreferencesSettingsStore(
             RadarOptions(
                 arrows = settings.getBoolean(RADAR_ARROWS, true),
                 lightning = settings.getBoolean(RADAR_LIGHTNING, true),
+                stormCells = settings.getBoolean(RADAR_STORM_CELLS, false),
+                colourScheme = settings.getInt(RADAR_COLOURS, RadarOptions.DEFAULT_COLOUR_SCHEME),
             ),
         )
     override val radarOptions: StateFlow<RadarOptions> = _radarOptions.asStateFlow()
@@ -105,6 +107,8 @@ internal class PreferencesSettingsStore(
     override fun setRadarOptions(options: RadarOptions) {
         settings.putBoolean(RADAR_ARROWS, options.arrows)
         settings.putBoolean(RADAR_LIGHTNING, options.lightning)
+        settings.putBoolean(RADAR_STORM_CELLS, options.stormCells)
+        settings.putInt(RADAR_COLOURS, options.colourScheme)
         _radarOptions.value = options
     }
 
@@ -196,6 +200,8 @@ internal class PreferencesSettingsStore(
         const val MAP_LAYERS = "map.layers"
         const val RADAR_ARROWS = "map.radar.arrows"
         const val RADAR_LIGHTNING = "map.radar.lightning"
+        const val RADAR_STORM_CELLS = "map.radar.cells"
+        const val RADAR_COLOURS = "map.radar.colours"
         const val PARKED_CAR = "parking.car"
     }
 }

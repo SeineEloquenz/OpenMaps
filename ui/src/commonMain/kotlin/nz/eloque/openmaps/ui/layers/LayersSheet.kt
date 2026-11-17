@@ -60,6 +60,7 @@ import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import kotlinx.coroutines.launch
 import nz.eloque.openmaps.core.model.MapLayer
+import nz.eloque.openmaps.core.model.RadarColourScheme
 import nz.eloque.openmaps.core.model.SettingsStore
 import nz.eloque.openmaps.ui.resources.Res
 import nz.eloque.openmaps.ui.resources.close
@@ -92,10 +93,13 @@ private val Details =
         MapLayer.CLOUDS,
     )
 
-/** Chooses the map type and switches the optional map details on and off. */
+/** Chooses the map type and switches the optional map details on and off. [colourSchemes] are empty until the radar has loaded. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LayersSheet(onDismiss: () -> Unit) {
+fun LayersSheet(
+    colourSchemes: List<RadarColourScheme>,
+    onDismiss: () -> Unit,
+) {
     val settings = koinInject<SettingsStore>()
     val layers by settings.mapLayers.collectAsStateWithLifecycle()
     var optionsOf by rememberSaveable { mutableStateOf<MapLayer?>(null) }
@@ -113,7 +117,7 @@ fun LayersSheet(onDismiss: () -> Unit) {
             onBackCompleted = { if (optionsOf != null) optionsOf = null else close() },
         )
         optionsOf?.let { layer ->
-            LayerOptions(layer, onBack = { optionsOf = null }, onDismiss = close)
+            LayerOptions(layer, colourSchemes, onBack = { optionsOf = null }, onDismiss = close)
             return@ModalBottomSheet
         }
         Column(Modifier.padding(horizontal = 12.dp).padding(bottom = 32.dp)) {

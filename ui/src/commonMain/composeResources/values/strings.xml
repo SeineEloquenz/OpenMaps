@@ -211,6 +211,9 @@
     <string name="radar_arrows_detail">Where the rain is heading and how fast</string>
     <string name="radar_lightning">Lightning</string>
     <string name="radar_lightning_detail">Strikes in the ten minutes of each frame, where satellites see them</string>
+    <string name="radar_cells">Storm cells</string>
+    <string name="radar_cells_detail">Thunderstorm cells the radar picks out, with where they are heading</string>
+    <string name="radar_colours">Colours</string>
     <string name="layer_options_hint">Long press a detail for its options</string>
     <string name="weather_warnings">Weather warnings</string>
     <string name="warning_until">Until %1$s</string>

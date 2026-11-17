@@ -17,6 +17,7 @@ import nz.eloque.openmaps.core.model.RadarOptions
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlin.time.Instant
 
 // Trimmed from a real answer of api.librewxr.net.
@@ -45,15 +46,15 @@ class RainViewerRadarTest {
             assertEquals(Instant.fromEpochSeconds(1794951600), frames.frames.first().time)
             assertEquals(Instant.fromEpochSeconds(1794954600), frames.frames[frames.latestObserved].time)
             assertEquals(
-                "https://api.librewxr.net/v2/radar/1794955200/256/{z}/{x}/{y}/2/1_1.png?arrows=dark&lightning=dots",
+                "https://api.librewxr.net/v2/radar/1794955200/512/{z}/{x}/{y}/2/1_1.webp?arrows=dark&lightning=dots",
                 frames.frames.last().urlTemplate,
             )
             assertEquals(
-                "https://api.librewxr.net/v2/radar/1794955200/256/{z}/{x}/{y}/2/1_1.png?arrows=light&lightning=dots",
+                "https://api.librewxr.net/v2/radar/1794955200/512/{z}/{x}/{y}/2/1_1.webp?arrows=light&lightning=dots",
                 frames.frames.last().darkUrlTemplate,
             )
-            assertEquals(Instant.fromEpochSeconds(1794952800), frames.clouds?.time)
-            assertEquals("https://api.librewxr.net/v2/satellite/1794952800/256/{z}/{x}/{y}/0/0_0.png", frames.clouds?.urlTemplate)
+            assertEquals(Instant.fromEpochSeconds(1794952800), frames.clouds.last().time)
+            assertEquals("https://api.librewxr.net/v2/satellite/1794952800/512/{z}/{x}/{y}/0/0_0.webp", frames.clouds.last().urlTemplate)
         }
 
     @Test
@@ -62,7 +63,7 @@ class RainViewerRadarTest {
             val options = RadarOptions(arrows = false, lightning = true)
             val frames = RainViewerRadar(client(), flowOf("https://wxr.example"), flowOf(options)).frames.filterNotNull().first()
             assertEquals(
-                "https://api.librewxr.net/v2/radar/1794955200/256/{z}/{x}/{y}/2/1_1.png?lightning=dots",
+                "https://api.librewxr.net/v2/radar/1794955200/512/{z}/{x}/{y}/2/1_1.webp?lightning=dots",
                 frames.frames.last().darkUrlTemplate,
             )
             val plain =
@@ -71,7 +72,27 @@ class RainViewerRadarTest {
                     flowOf("https://wxr.example"),
                     flowOf(RadarOptions(false, false)),
                 ).frames.filterNotNull().first()
-            assertEquals("https://api.librewxr.net/v2/radar/1794955200/256/{z}/{x}/{y}/2/1_1.png", plain.frames.last().urlTemplate)
+            assertEquals("https://api.librewxr.net/v2/radar/1794955200/512/{z}/{x}/{y}/2/1_1.webp", plain.frames.last().urlTemplate)
+        }
+
+    @Test
+    fun stormCellsAndTheChosenColoursGoIntoTheTiles() =
+        runTest {
+            val options = RadarOptions(arrows = false, lightning = false, stormCells = true, colourScheme = 0)
+            val frames = RainViewerRadar(client(), flowOf("https://wxr.example"), flowOf(options)).frames.filterNotNull().first()
+            assertEquals(
+                "https://api.librewxr.net/v2/radar/1794955200/512/{z}/{x}/{y}/0/1_1.webp?cells=light",
+                frames.frames.last().darkUrlTemplate,
+            )
+            assertEquals(listOf("Black and White"), frames.colourSchemes.map { it.name })
+        }
+
+    @Test
+    fun aSchemeTheServerDoesNotOfferFallsBackToTheDefault() =
+        runTest {
+            val options = RadarOptions(colourScheme = 9)
+            val frames = RainViewerRadar(client(), flowOf("https://wxr.example"), flowOf(options)).frames.filterNotNull().first()
+            assertTrue(frames.frames.last().urlTemplate.contains("/2/1_1.webp"))
         }
 
     @Test

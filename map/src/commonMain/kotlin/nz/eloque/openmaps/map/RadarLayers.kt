@@ -22,7 +22,7 @@ internal fun RadarLayers(
             val url = if (dark) frame.darkUrlTemplate else frame.urlTemplate
             key(url) {
                 val tiles =
-                    rememberRasterTileSource(listOf(url), tileSize = 256) {
+                    rememberRasterTileSource(listOf(url), tileSize = radar.tileSize) {
                         maxZoom = radar.maxZoom
                         attributionHtml = radar.attribution
                     }
@@ -37,20 +37,48 @@ internal fun RadarLayers(
     }
 }
 
-/** The satellite picture of the clouds, under the radar and the base map's labels. */
+/** Satellite pictures of the clouds under the radar and the base map's labels, all loading but only [selected] visible. */
 @Composable
-internal fun CloudLayer(clouds: SatelliteImage?) {
-    if (clouds == null) return
+internal fun CloudLayers(
+    clouds: List<SatelliteImage>,
+    selected: Int,
+) {
     Anchor.Below(FIRST_LABEL_LAYER) {
-        key(clouds.urlTemplate) {
-            val tiles =
-                rememberRasterTileSource(listOf(clouds.urlTemplate), tileSize = 256) {
-                    maxZoom = clouds.maxZoom
-                    attributionHtml = CLOUD_ATTRIBUTION
-                }
-            RasterLayer(id = "clouds", source = tiles, opacity = const(CLOUD_OPACITY))
+        clouds.forEachIndexed { index, image ->
+            key(image.urlTemplate) {
+                val tiles =
+                    rememberRasterTileSource(listOf(image.urlTemplate), tileSize = image.tileSize) {
+                        maxZoom = image.maxZoom
+                        attributionHtml = CLOUD_ATTRIBUTION
+                    }
+                RasterLayer(
+                    id = "clouds-${image.time.epochSeconds}",
+                    source = tiles,
+                    opacity = const(if (index == selected) CLOUD_OPACITY else 0f),
+                    fadeDuration = const(kotlin.time.Duration.ZERO),
+                )
+            }
         }
     }
+}
+
+/**
+ * The cloud pictures to load and which of them to show. Alongside the radar that is the newest one taken before the radar
+ * frame shown, so the two match in time, and only pictures from the radar's hour load. On their own all of them load.
+ */
+internal fun cloudsToShow(
+    clouds: List<SatelliteImage>,
+    radar: RadarFrames?,
+    radarFrame: Int,
+    cloudFrame: Int,
+): Pair<List<SatelliteImage>, Int> {
+    if (clouds.isEmpty()) return emptyList<SatelliteImage>() to 0
+    val radarTimes = radar?.frames?.map { it.time }
+    if (radarTimes.isNullOrEmpty()) return clouds to cloudFrame.coerceIn(clouds.indices)
+    val first = clouds.indexOfLast { it.time <= radarTimes.first() }.coerceAtLeast(0)
+    val relevant = clouds.subList(first, clouds.size)
+    val shown = radarTimes.getOrNull(radarFrame) ?: radarTimes.last()
+    return relevant to relevant.indexOfLast { it.time <= shown }.coerceAtLeast(0)
 }
 
 private const val RADAR_OPACITY = 0.75f

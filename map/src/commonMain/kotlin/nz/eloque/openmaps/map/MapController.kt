@@ -128,6 +128,7 @@ class MapController internal constructor(
     private val recordingState: MutableState<List<LatLng>>,
     private val radarState: MutableState<RadarFrames?>,
     private val radarFrameState: MutableState<Int>,
+    private val cloudFrameState: MutableState<Int>,
 ) {
     val isLocationPermissionGranted: Boolean
         get() = location.permission is LocationPermission.Granted
@@ -216,6 +217,9 @@ class MapController internal constructor(
 
     /** Index of the radar frame shown. */
     var radarFrame: Int by radarFrameState
+
+    /** Index of the cloud picture shown while the radar is off. */
+    var cloudFrame: Int by cloudFrameState
 
     /** Road events drawn on the map, or null for none. */
     var roadEvents: RoadEventTiles? by roadEventsState
@@ -372,6 +376,7 @@ fun rememberMapController(
     val recordingState = remember { mutableStateOf<List<LatLng>>(emptyList(), referentialEqualityPolicy()) }
     val radarState = remember { mutableStateOf<RadarFrames?>(null) }
     val radarFrameState = remember { mutableStateOf(0) }
+    val cloudFrameState = remember { mutableStateOf(0) }
     val puckIcon =
         rememberVectorPainter(Icons.Default.Navigation).let { painter ->
             image(remember(painter, markerColor) { BadgePainter(painter, markerColor, Color.White) }, size = DpSize(30.dp, 30.dp))
@@ -396,7 +401,17 @@ fun rememberMapController(
             initialCameraPosition = CameraPosition(center = EUROPE, zoom = 3.5),
         ) {
             OverlayLayers(layersState.value, dark)
-            CloudLayer(radarState.value?.clouds?.takeIf { MapLayer.CLOUDS in layersState.value })
+            if (MapLayer.CLOUDS in layersState.value) {
+                val radarShown = radarState.value?.takeIf { MapLayer.RAIN_RADAR in layersState.value }
+                val (clouds, shown) =
+                    cloudsToShow(
+                        radarState.value?.clouds.orEmpty(),
+                        radarShown,
+                        radarFrameState.value,
+                        cloudFrameState.value,
+                    )
+                CloudLayers(clouds, shown)
+            }
             RadarLayers(radarState.value?.takeIf { MapLayer.RAIN_RADAR in layersState.value }, radarFrameState.value, dark)
             RoadLayers(roadEventsState.value, dark, MapLayer.ROADWORKS in layersState.value) { properties ->
                 controllerRef[0]?.onRoadEventClick?.invoke(properties)
@@ -545,6 +560,7 @@ fun rememberMapController(
             recordingState,
             radarState,
             radarFrameState,
+            cloudFrameState,
         )
     }
         .also { controllerRef[0] = it }

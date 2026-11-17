@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.transformLatest
 import kotlinx.serialization.Serializable
+import nz.eloque.openmaps.core.model.RadarColourScheme
 import nz.eloque.openmaps.core.model.RadarFrame
 import nz.eloque.openmaps.core.model.RadarFrames
 import nz.eloque.openmaps.core.model.RadarOptions
@@ -39,6 +40,13 @@ internal data class SatelliteDto(
 internal data class RadarDto(
     val past: List<FrameDto> = emptyList(),
     val nowcast: List<FrameDto> = emptyList(),
+    val colorSchemes: List<ColourSchemeDto> = emptyList(),
+)
+
+@Serializable
+internal data class ColourSchemeDto(
+    val id: Int,
+    val name: String,
 )
 
 @Serializable
@@ -89,11 +97,16 @@ internal class RainViewerRadar(
 
 /** The last hour of measured frames and the forecast. Older frames would only add tile requests. */
 internal fun WeatherMapsDto.toFrames(options: RadarOptions = RadarOptions()): RadarFrames {
+    val root = host.trimEnd('/')
+    val schemes = radar.colorSchemes.map { RadarColourScheme(it.id, it.name) }
+    val scheme =
+        options.colourScheme.takeIf { id -> schemes.isEmpty() || schemes.any { it.id == id } } ?: RadarOptions.DEFAULT_COLOUR_SCHEME
+
     fun frame(
         dto: FrameDto,
         forecast: Boolean,
     ): RadarFrame {
-        val template = "${host.trimEnd('/')}${dto.path}/$TILE_SIZE/{z}/{x}/{y}/$COLOUR_SCHEME/$SMOOTH_SNOW.png"
+        val template = "$root${dto.path}/$TILE_SIZE/{z}/{x}/{y}/$scheme/$SMOOTH_SNOW.$FORMAT"
         return RadarFrame(
             Instant.fromEpochSeconds(dto.time),
             forecast,
@@ -106,35 +119,38 @@ internal fun WeatherMapsDto.toFrames(options: RadarOptions = RadarOptions()): Ra
     return RadarFrames(
         frames = past.map { frame(it, forecast = false) } + radar.nowcast.sortedBy { it.time }.map { frame(it, forecast = true) },
         maxZoom = MAX_ZOOM,
+        tileSize = TILE_SIZE,
         attribution = ATTRIBUTION,
         clouds =
-            satellite?.infrared?.maxByOrNull { it.time }?.let {
+            satellite?.infrared.orEmpty().sortedBy { it.time }.map {
                 SatelliteImage(
                     Instant.fromEpochSeconds(it.time),
-                    "${host.trimEnd('/')}${it.path}/$TILE_SIZE/{z}/{x}/{y}/0/0_0.png",
+                    "$root${it.path}/$TILE_SIZE/{z}/{x}/{y}/0/0_0.$FORMAT",
                     SATELLITE_MAX_ZOOM,
+                    TILE_SIZE,
                 )
             },
+        colourSchemes = schemes,
     )
 }
 
-/** Tile options, with [arrowStyle] picked to stand out on the map below. */
+/** Tile options, with [style] picked to stand out on the map below. */
 private fun query(
     options: RadarOptions,
-    arrowStyle: String,
+    style: String,
 ): String {
     val parameters =
         listOfNotNull(
-            "arrows=$arrowStyle".takeIf { options.arrows },
+            "arrows=$style".takeIf { options.arrows },
             "lightning=$LIGHTNING".takeIf { options.lightning },
+            "cells=$style".takeIf { options.stormCells },
         )
     return if (parameters.isEmpty()) "" else parameters.joinToString("&", prefix = "?")
 }
 
-private const val TILE_SIZE = 256
-
-// Universal Blue, the Rain Viewer default.
-private const val COLOUR_SCHEME = 2
+// Twice the usual size at one zoom level less looks the same, with a quarter of the requests and fewer bytes.
+private const val TILE_SIZE = 512
+private const val FORMAT = "webp"
 
 // Smoothed, with snow drawn in its own colours.
 private const val SMOOTH_SNOW = "1_1"
@@ -142,10 +158,12 @@ private const val SMOOTH_SNOW = "1_1"
 private const val LIGHTNING = "dots"
 
 private const val PAST_SECONDS = 3600
-private const val MAX_ZOOM = 8
+
+// About 400 m per pixel, already finer than the 1 km radar.
+private const val MAX_ZOOM = 7
 
 // The global composite is a few kilometres per pixel, so higher zooms only enlarge it.
-private const val SATELLITE_MAX_ZOOM = 6
+private const val SATELLITE_MAX_ZOOM = 5
 private const val ATTRIBUTION =
     "<a href=\"https://github.com/JoshuaKimsey/LibreWXR\">LibreWXR</a>, radar © EUMETNET OPERA, DPC, NOAA and others"
 

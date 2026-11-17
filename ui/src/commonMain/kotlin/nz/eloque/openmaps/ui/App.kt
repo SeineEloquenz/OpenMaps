@@ -350,7 +350,10 @@ fun App(
             lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 rainRadar.frames.collect { frames ->
                     map.radar = frames
-                    if (frames != null) map.radarFrame = frames.latestObserved
+                    if (frames != null) {
+                        map.radarFrame = frames.latestObserved
+                        map.cloudFrame = frames.clouds.lastIndex.coerceAtLeast(0)
+                    }
                 }
             }
         }
@@ -360,7 +363,7 @@ fun App(
             map.layersAction = MapAction(Icons.Default.Layers, layersLabel) { showLayers = true }
             onDispose { map.layersAction = null }
         }
-        if (showLayers) LayersSheet(onDismiss = { showLayers = false })
+        if (showLayers) LayersSheet(colourSchemes = map.radar?.colourSchemes.orEmpty(), onDismiss = { showLayers = false })
         var attributions by remember { mutableStateOf<List<String>?>(null) }
         attributions?.let { MapDataSheet(it, onDismiss = { attributions = null }) }
         DisposableEffect(map) {
@@ -637,8 +640,21 @@ fun App(
                                 if (top == HomeKey) {
                                     { modifier ->
                                         Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            map.radar?.takeIf { radarOn }?.let { frames ->
-                                                RadarTimeline(frames, map.radarFrame, onSelect = { map.radarFrame = it })
+                                            val radar = map.radar
+                                            if (radar != null && radarOn) {
+                                                RadarTimeline(
+                                                    radar.frames.map { it.time },
+                                                    forecast = { radar.frames[it].forecast },
+                                                    selected = map.radarFrame,
+                                                    onSelect = { map.radarFrame = it },
+                                                )
+                                            } else if (radar != null && radar.clouds.size > 1) {
+                                                RadarTimeline(
+                                                    radar.clouds.map { it.time },
+                                                    forecast = { false },
+                                                    selected = map.cloudFrame,
+                                                    onSelect = { map.cloudFrame = it },
+                                                )
                                             }
                                             ActivePills(
                                                 userLocation = map.userLocation,
