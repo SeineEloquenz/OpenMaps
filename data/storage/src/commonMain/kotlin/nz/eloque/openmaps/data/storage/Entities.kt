@@ -102,6 +102,8 @@ internal fun RouteEndColumns.toRouteEnd() = RouteEnd(name, LatLng(latitude, long
 data class PlaceListEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val name: String,
+    /** A [nz.eloque.openmaps.core.model.PlaceList.icon] key, null for the default icon. */
+    val icon: String? = null,
 )
 
 /** [placeKey] is the place's storage key, so a place is in a list at most once. */

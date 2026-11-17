@@ -36,6 +36,7 @@ import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Park
 import androidx.compose.material.icons.filled.Pets
 import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Pool
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.School
@@ -301,6 +302,7 @@ private val RankTiers = listOf(15f to 7, 16f to 20, 17f to RANK_ALL.toInt())
 @Composable
 internal fun ResultLayers(
     results: List<SearchResult.Place>,
+    icon: ImageVector?,
     dark: Boolean,
     onClick: (SearchResult.Place) -> Unit,
 ) {
@@ -312,6 +314,10 @@ internal fun ResultLayers(
             val color = if (dark) icon.group.dark else icon.group.light
             image(remember(painter, color, outline) { BadgePainter(painter, color, outline) }, size = DpSize(22.dp, 22.dp))
         }
+    val ownColor = if (dark) OwnPinDark else OwnPinLight
+    val ownPainter = rememberVectorPainter(icon ?: Icons.Default.Place)
+    val ownBadge =
+        image(remember(ownPainter, ownColor, outline) { BadgePainter(ownPainter, ownColor, outline) }, size = DpSize(22.dp, 22.dp))
     val features =
         results.mapIndexed { index, result ->
             Feature(
@@ -338,21 +344,29 @@ internal fun ResultLayers(
         id = "results",
         source = source,
         iconImage =
-            switch(
-                feature[RESULT_ICON].asString(),
-                cases = PlaceIcon.entries.map { case(it.name, badges.getValue(it)) },
-                fallback = badges.getValue(PlaceIcon.SHOP),
-            ),
+            if (icon != null) {
+                ownBadge
+            } else {
+                switch(
+                    feature[RESULT_ICON].asString(),
+                    cases = PlaceIcon.entries.map { case(it.name, badges.getValue(it)) },
+                    fallback = badges.getValue(PlaceIcon.SHOP),
+                )
+            },
         iconAllowOverlap = const(true),
         textField = coalesce(feature[RESULT_NAME].asString(), const("")).cast(),
         textFont = const(listOf("Noto Sans Regular")),
         textSize = const(0.8f.em),
         textColor =
-            switch(
-                feature[RESULT_ICON].asString(),
-                cases = PlaceIcon.entries.map { case(it.name, const(if (dark) it.group.dark else it.group.light)) },
-                fallback = const(if (dark) PlaceGroup.SHOPPING.dark else PlaceGroup.SHOPPING.light),
-            ),
+            if (icon != null) {
+                const(ownColor)
+            } else {
+                switch(
+                    feature[RESULT_ICON].asString(),
+                    cases = PlaceIcon.entries.map { case(it.name, const(if (dark) it.group.dark else it.group.light)) },
+                    fallback = const(if (dark) PlaceGroup.SHOPPING.dark else PlaceGroup.SHOPPING.light),
+                )
+            },
         textHaloColor = const(if (dark) Color(0xFF121212) else Color.White),
         textHaloWidth = const(1.5.dp),
         textAnchor = const(SymbolAnchor.Left),
@@ -371,3 +385,6 @@ private const val RING_FRACTION = 12f
 
 /** Light enough to set pins apart from the dark map without the glare of white. */
 internal val PinRingDark = Color(0xFFE6E1E5)
+
+private val OwnPinLight = Color(0xFF8E24AA)
+private val OwnPinDark = Color(0xFFCE93D8)

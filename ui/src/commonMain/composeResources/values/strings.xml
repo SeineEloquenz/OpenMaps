@@ -137,6 +137,7 @@
     <string name="lists">Lists</string>
     <string name="new_list">New list…</string>
     <string name="list_name">List name</string>
+    <string name="list_icon">Icon</string>
     <string name="list_empty">No places in this list yet. Add them with Save on a place.</string>
     <string name="remove_from_list">Remove from list</string>
     <plurals name="list_places">

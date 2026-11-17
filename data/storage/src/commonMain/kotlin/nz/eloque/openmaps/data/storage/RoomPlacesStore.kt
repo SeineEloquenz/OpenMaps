@@ -62,15 +62,19 @@ internal class RoomPlacesStore(
     override val lists: Flow<List<PlaceList>> =
         combine(dao.lists(), dao.listEntries()) { lists, entries ->
             val byList = entries.groupBy { it.listId }
-            lists.map { list -> PlaceList(list.id, list.name, byList[list.id].orEmpty().map { it.place.toSearchResult() }) }
+            lists.map { list -> PlaceList(list.id, list.name, byList[list.id].orEmpty().map { it.place.toSearchResult() }, list.icon) }
         }
 
-    override suspend fun createList(name: String): Long = dao.insertList(PlaceListEntity(name = name.trim()))
+    override suspend fun createList(
+        name: String,
+        icon: String?,
+    ): Long = dao.insertList(PlaceListEntity(name = name.trim(), icon = icon))
 
-    override suspend fun renameList(
+    override suspend fun updateList(
         id: Long,
         name: String,
-    ) = dao.renameList(id, name.trim())
+        icon: String?,
+    ) = dao.updateList(id, name.trim(), icon)
 
     override suspend fun deleteList(id: Long) = dao.deleteList(id)
 

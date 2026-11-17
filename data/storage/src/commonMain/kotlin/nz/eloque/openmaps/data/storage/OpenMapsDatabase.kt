@@ -71,10 +71,11 @@ abstract class PlacesDao {
     @Insert
     abstract suspend fun insertList(list: PlaceListEntity): Long
 
-    @Query("UPDATE place_list SET name = :name WHERE id = :id")
-    abstract suspend fun renameList(
+    @Query("UPDATE place_list SET name = :name, icon = :icon WHERE id = :id")
+    abstract suspend fun updateList(
         id: Long,
         name: String,
+        icon: String?,
     )
 
     @Query("DELETE FROM place_list WHERE id = :id")
@@ -101,9 +102,9 @@ abstract class PlacesDao {
 
 @Database(
     entities = [FavouriteEntity::class, RecentEntity::class, SavedRouteEntity::class, PlaceListEntity::class, ListEntryEntity::class],
-    version = 4,
+    version = 5,
     exportSchema = true,
-    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 3, to = 4)],
+    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 3, to = 4), AutoMigration(from = 4, to = 5)],
 )
 @ConstructedBy(OpenMapsDatabaseConstructor::class)
 abstract class OpenMapsDatabase : RoomDatabase() {

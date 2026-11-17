@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Directions
 import androidx.compose.material.icons.filled.Edit
@@ -36,7 +35,6 @@ import nz.eloque.openmaps.core.model.PlaceList
 import nz.eloque.openmaps.core.model.PlacesStore
 import nz.eloque.openmaps.core.model.SavedRoute
 import nz.eloque.openmaps.core.model.SearchResult
-import nz.eloque.openmaps.ui.components.ListNameDialog
 import nz.eloque.openmaps.ui.components.icon
 import nz.eloque.openmaps.ui.resources.Res
 import nz.eloque.openmaps.ui.resources.cancel
@@ -116,7 +114,7 @@ fun SavedSheet(
             ListItem(
                 headlineContent = { Text(list.name) },
                 supportingContent = { Text(pluralStringResource(Res.plurals.list_places, list.places.size, list.places.size)) },
-                leadingContent = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = null) },
+                leadingContent = { Icon(ListIcon.of(list.icon).vector, contentDescription = null) },
                 trailingContent = {
                     Row {
                         IconButton(onClick = { renamingList = list }) {
@@ -150,12 +148,13 @@ fun SavedSheet(
     }
 
     renamingList?.let { list ->
-        ListNameDialog(
-            initial = list.name,
+        ListDialog(
+            initialName = list.name,
+            initialIcon = ListIcon.of(list.icon),
             onDismiss = { renamingList = null },
-            onConfirm = { name ->
+            onConfirm = { name, icon ->
                 renamingList = null
-                scope.launch { store.renameList(list.id, name) }
+                scope.launch { store.updateList(list.id, name, icon.name) }
             },
         )
     }

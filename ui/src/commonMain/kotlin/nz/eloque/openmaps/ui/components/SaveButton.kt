@@ -3,20 +3,16 @@ package nz.eloque.openmaps.ui.components
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.outlined.BookmarkBorder
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -32,15 +28,14 @@ import nz.eloque.openmaps.core.model.PlacesStore
 import nz.eloque.openmaps.core.model.SearchResult
 import nz.eloque.openmaps.core.model.storageKey
 import nz.eloque.openmaps.ui.resources.Res
-import nz.eloque.openmaps.ui.resources.cancel
-import nz.eloque.openmaps.ui.resources.list_name
 import nz.eloque.openmaps.ui.resources.new_list
-import nz.eloque.openmaps.ui.resources.ok
 import nz.eloque.openmaps.ui.resources.save
 import nz.eloque.openmaps.ui.resources.save_as_favourite
 import nz.eloque.openmaps.ui.resources.save_as_home
 import nz.eloque.openmaps.ui.resources.save_as_work
 import nz.eloque.openmaps.ui.resources.saved
+import nz.eloque.openmaps.ui.saved.ListDialog
+import nz.eloque.openmaps.ui.saved.ListIcon
 import nz.eloque.openmaps.ui.search.titleRes
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
@@ -63,7 +58,7 @@ fun SaveButton(
     Box(modifier) {
         if (favourite != null || inLists.isNotEmpty()) {
             FilledTonalButton(onClick = { menuOpen = true }) {
-                Icon(favourite?.label?.icon ?: Icons.AutoMirrored.Filled.List, contentDescription = null)
+                Icon(favourite?.label?.icon ?: ListIcon.of(inLists.firstOrNull()?.icon).vector, contentDescription = null)
                 Text(
                     favourite?.label?.titleRes?.let { stringResource(it) } ?: inLists.singleOrNull()?.name
                         ?: stringResource(Res.string.saved),
@@ -101,7 +96,7 @@ fun SaveButton(
                 val ticked = place in list
                 DropdownMenuItem(
                     text = { Text(list.name) },
-                    leadingIcon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = null) },
+                    leadingIcon = { Icon(ListIcon.of(list.icon).vector, contentDescription = null) },
                     trailingIcon = if (ticked) ({ Icon(Icons.Default.Check, contentDescription = null) }) else null,
                     onClick = {
                         menuOpen = false
@@ -121,32 +116,14 @@ fun SaveButton(
     }
 
     if (naming) {
-        ListNameDialog(
-            initial = "",
+        ListDialog(
+            initialName = "",
+            initialIcon = ListIcon.LIST,
             onDismiss = { naming = false },
-            onConfirm = { name ->
+            onConfirm = { name, icon ->
                 naming = false
-                scope.launch { store.addToList(store.createList(name), place) }
+                scope.launch { store.addToList(store.createList(name, icon.name), place) }
             },
         )
     }
-}
-
-/** Asks for a list name. */
-@Composable
-fun ListNameDialog(
-    initial: String,
-    onDismiss: () -> Unit,
-    onConfirm: (String) -> Unit,
-) {
-    var text by remember { mutableStateOf(initial) }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(Res.string.list_name)) },
-        text = { OutlinedTextField(value = text, onValueChange = { text = it }, singleLine = true) },
-        confirmButton = {
-            TextButton(enabled = text.isNotBlank(), onClick = { onConfirm(text.trim()) }) { Text(stringResource(Res.string.ok)) }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(Res.string.cancel)) } },
-    )
 }

@@ -270,7 +270,12 @@ fun App(
             onDispose { map.onRoadEventClick = null }
         }
         LaunchedEffect(map) {
-            snapshotFlow { backStack.any { it is CategoryKey || it is ListKey } }.collect { if (!it) map.results = emptyList() }
+            snapshotFlow { backStack.any { it is CategoryKey || it is ListKey } }.collect {
+                if (!it) {
+                    map.results = emptyList()
+                    map.resultIcon = null
+                }
+            }
         }
 
         val top = backStack.lastOrNull()

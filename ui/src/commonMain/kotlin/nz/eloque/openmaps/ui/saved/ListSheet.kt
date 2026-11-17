@@ -1,6 +1,7 @@
 package nz.eloque.openmaps.ui.saved
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -18,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -43,7 +45,9 @@ fun ListSheet(
     val lists by store.lists.collectAsStateWithLifecycle(null)
     val list = lists?.firstOrNull { it.id == listId } ?: return
     val scope = rememberCoroutineScope()
-    LaunchedEffect(list.places) {
+    val icon = ListIcon.of(list.icon)
+    LaunchedEffect(list.places, icon) {
+        map.resultIcon = icon.vector
         map.results = list.places.map { it.asPlace() }
     }
     LaunchedEffect(listId) {
@@ -52,7 +56,10 @@ fun ListSheet(
 
     LazyColumn(Modifier.fillMaxWidth()) {
         item {
-            Text(list.name, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(horizontal = 16.dp))
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 16.dp)) {
+                Icon(icon.vector, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Text(list.name, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(start = 12.dp))
+            }
         }
         if (list.places.isEmpty()) {
             item {

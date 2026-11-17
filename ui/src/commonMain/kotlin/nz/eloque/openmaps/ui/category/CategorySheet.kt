@@ -128,7 +128,10 @@ fun CategorySheet(
         val bounds = snapshotFlow { map.visibleBounds }.filterNotNull().first()
         viewModel.search(map.center, bounds, map.loadedPlaces)
     }
-    LaunchedEffect(shown) { map.results = shown.map { it.place } }
+    LaunchedEffect(shown) {
+        map.resultIcon = null
+        map.results = shown.map { it.place }
+    }
     val untouched =
         viewModel.fittedCount == 0 || map.visibleBounds?.let { visible -> searchedArea?.let { !visible.differsFrom(it) } } == true
     LaunchedEffect(all.size) {

@@ -80,11 +80,15 @@ interface PlacesStore {
     val lists: Flow<List<PlaceList>>
 
     /** Returns the new list's id. */
-    suspend fun createList(name: String): Long
+    suspend fun createList(
+        name: String,
+        icon: String? = null,
+    ): Long
 
-    suspend fun renameList(
+    suspend fun updateList(
         id: Long,
         name: String,
+        icon: String?,
     )
 
     suspend fun deleteList(id: Long)
@@ -106,6 +110,8 @@ data class PlaceList(
     val id: Long,
     val name: String,
     val places: List<SearchResult>,
+    /** Names one of the icons the app offers. Null, or a name this version does not know, shows the default icon. */
+    val icon: String? = null,
 ) {
     operator fun contains(place: SearchResult) = places.any { it.storageKey == place.storageKey }
 }
