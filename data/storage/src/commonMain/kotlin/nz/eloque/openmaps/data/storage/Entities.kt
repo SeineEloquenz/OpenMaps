@@ -114,3 +114,20 @@ data class ListEntryEntity(
     val placeKey: String,
     @Embedded val place: PlaceColumns,
 )
+
+/** [points] holds `latitude,longitude,elevation,epochMillis` per point, joined by `;`, with empty fields for unknowns. */
+@Entity(tableName = "track")
+data class TrackEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val name: String,
+    val createdAt: Long,
+    val distanceMeters: Double,
+    val points: String,
+)
+
+data class TrackRow(
+    val id: Long,
+    val name: String,
+    val createdAt: Long,
+    val distanceMeters: Double,
+)

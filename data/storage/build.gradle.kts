@@ -15,6 +15,7 @@ kotlin {
             implementation(libs.room.runtime)
             implementation(libs.multiplatform.settings)
             implementation(libs.koin.core)
+            implementation(libs.spatialk.gpx)
         }
         commonTest.dependencies {
             implementation(libs.multiplatform.settings.test)

@@ -100,15 +100,50 @@ abstract class PlacesDao {
     )
 }
 
+@Dao
+abstract class TracksDao {
+    @Query("SELECT id, name, createdAt, distanceMeters FROM track ORDER BY createdAt DESC")
+    abstract fun tracks(): Flow<List<TrackRow>>
+
+    @Query("SELECT * FROM track WHERE id = :id")
+    abstract suspend fun track(id: Long): TrackEntity?
+
+    @Insert
+    abstract suspend fun insert(track: TrackEntity): Long
+
+    @Query("UPDATE track SET name = :name WHERE id = :id")
+    abstract suspend fun rename(
+        id: Long,
+        name: String,
+    )
+
+    @Query("DELETE FROM track WHERE id = :id")
+    abstract suspend fun delete(id: Long)
+}
+
 @Database(
-    entities = [FavouriteEntity::class, RecentEntity::class, SavedRouteEntity::class, PlaceListEntity::class, ListEntryEntity::class],
-    version = 5,
+    entities = [
+        FavouriteEntity::class,
+        RecentEntity::class,
+        SavedRouteEntity::class,
+        PlaceListEntity::class,
+        ListEntryEntity::class,
+        TrackEntity::class,
+    ],
+    version = 6,
     exportSchema = true,
-    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 3, to = 4), AutoMigration(from = 4, to = 5)],
+    autoMigrations = [
+        AutoMigration(
+            from = 1,
+            to = 2,
+        ), AutoMigration(from = 3, to = 4), AutoMigration(from = 4, to = 5), AutoMigration(from = 5, to = 6),
+    ],
 )
 @ConstructedBy(OpenMapsDatabaseConstructor::class)
 abstract class OpenMapsDatabase : RoomDatabase() {
     abstract fun placesDao(): PlacesDao
+
+    abstract fun tracksDao(): TracksDao
 }
 
 @Suppress("KotlinNoActualForExpect")

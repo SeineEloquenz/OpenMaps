@@ -6,6 +6,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import nz.eloque.openmaps.core.model.PlacesStore
 import nz.eloque.openmaps.core.model.SettingsStore
+import nz.eloque.openmaps.core.model.TrackStore
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
@@ -24,4 +25,5 @@ val storageModule =
         }
         single<PlacesStore> { RoomPlacesStore(get<OpenMapsDatabase>().placesDao()) }
         single<SettingsStore> { PreferencesSettingsStore(get()) }
+        single<TrackStore> { RoomTrackStore(get<OpenMapsDatabase>().tracksDao()) }
     }
