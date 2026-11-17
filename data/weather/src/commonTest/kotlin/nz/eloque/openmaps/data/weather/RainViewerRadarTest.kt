@@ -25,7 +25,8 @@ private const val WEATHER_MAPS =
     {"time":1794948000,"path":"/v2/radar/1794948000"},{"time":1794951000,"path":"/v2/radar/1794951000"},
     {"time":1794951600,"path":"/v2/radar/1794951600"},{"time":1794954600,"path":"/v2/radar/1794954600"}],
     "nowcast":[{"time":1794955200,"path":"/v2/radar/1794955200"}],
-    "colorSchemes":[{"id":0,"name":"Black and White"}]},"satellite":{"infrared":[]}}"""
+    "colorSchemes":[{"id":0,"name":"Black and White"}]},"satellite":{"infrared":[
+    {"time":1794949200,"path":"/v2/satellite/1794949200"},{"time":1794952800,"path":"/v2/satellite/1794952800"}]}}"""
 
 class RainViewerRadarTest {
     private fun client() =
@@ -51,6 +52,8 @@ class RainViewerRadarTest {
                 "https://api.librewxr.net/v2/radar/1794955200/256/{z}/{x}/{y}/2/1_1.png?arrows=light&lightning=dots",
                 frames.frames.last().darkUrlTemplate,
             )
+            assertEquals(Instant.fromEpochSeconds(1794952800), frames.clouds?.time)
+            assertEquals("https://api.librewxr.net/v2/satellite/1794952800/256/{z}/{x}/{y}/0/0_0.png", frames.clouds?.urlTemplate)
         }
 
     @Test

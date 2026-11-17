@@ -20,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.DirectionsBike
 import androidx.compose.material.icons.filled.Anchor
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.Construction
 import androidx.compose.material.icons.filled.DirectionsTransit
 import androidx.compose.material.icons.filled.Hiking
@@ -63,6 +64,7 @@ import nz.eloque.openmaps.core.model.SettingsStore
 import nz.eloque.openmaps.ui.resources.Res
 import nz.eloque.openmaps.ui.resources.close
 import nz.eloque.openmaps.ui.resources.layer_buildings
+import nz.eloque.openmaps.ui.resources.layer_clouds
 import nz.eloque.openmaps.ui.resources.layer_cycling
 import nz.eloque.openmaps.ui.resources.layer_default
 import nz.eloque.openmaps.ui.resources.layer_hiking
@@ -87,6 +89,7 @@ private val Details =
         MapLayer.BUILDINGS_3D,
         MapLayer.SEAMARKS,
         MapLayer.RAIN_RADAR,
+        MapLayer.CLOUDS,
     )
 
 /** Chooses the map type and switches the optional map details on and off. */
@@ -241,6 +244,7 @@ internal val MapLayer.label: StringResource
             MapLayer.BUILDINGS_3D -> Res.string.layer_buildings
             MapLayer.SEAMARKS -> Res.string.layer_seamarks
             MapLayer.RAIN_RADAR -> Res.string.layer_rain_radar
+            MapLayer.CLOUDS -> Res.string.layer_clouds
         }
 
 private val MapLayer.badge: ImageVector?
@@ -252,6 +256,7 @@ private val MapLayer.badge: ImageVector?
             MapLayer.ROADWORKS -> Icons.Default.Construction
             MapLayer.SEAMARKS -> Icons.Default.Anchor
             MapLayer.RAIN_RADAR -> Icons.Default.Umbrella
+            MapLayer.CLOUDS -> Icons.Default.Cloud
             else -> null
         }
 
@@ -281,6 +286,9 @@ private val MapLayer.drawing: DrawScope.() -> Unit
             }
             MapLayer.RAIN_RADAR -> {
                 { drawRadar() }
+            }
+            MapLayer.CLOUDS -> {
+                { drawClouds() }
             }
         }
 
@@ -387,6 +395,14 @@ private fun DrawScope.drawRoadworks() {
     )
 }
 
+private fun DrawScope.drawClouds() {
+    land()
+    listOf(Triple(0.3f, 0.35f, 0.26f), Triple(0.62f, 0.3f, 0.3f), Triple(0.75f, 0.7f, 0.22f)).forEach { (x, y, r) ->
+        drawCircle(CloudGrey, radius = size.minDimension * r, center = Offset(size.width * x, size.height * y + 2.dp.toPx()))
+        drawCircle(CloudWhite, radius = size.minDimension * r, center = Offset(size.width * x, size.height * y))
+    }
+}
+
 private fun DrawScope.drawRadar() {
     land()
     drawCircle(RainLight, radius = size.minDimension * 0.34f, center = Offset(size.width * 0.42f, size.height * 0.45f))
@@ -483,3 +499,5 @@ private val BuoyGreen = Color(0xFF188038)
 private val Fairway = Color(0xFF7A3E9D)
 private val RainLight = Color(0xFF8AB4F8)
 private val RainHeavy = Color(0xFF1A73E8)
+private val CloudWhite = Color(0xFFF8F9FA)
+private val CloudGrey = Color(0xFFDADCE0)

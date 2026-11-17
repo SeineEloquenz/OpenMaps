@@ -18,10 +18,19 @@ data class RadarFrames(
     val frames: List<RadarFrame>,
     val maxZoom: Int,
     val attribution: String,
+    /** The newest satellite picture of the clouds, null when the source has none. */
+    val clouds: SatelliteImage? = null,
 ) {
     /** The newest measured frame, or the first one if all are forecasts. */
     val latestObserved: Int get() = frames.indexOfLast { !it.forecast }.coerceAtLeast(0)
 }
+
+data class SatelliteImage(
+    val time: Instant,
+    /** With `{z}`, `{x}` and `{y}` placeholders. */
+    val urlTemplate: String,
+    val maxZoom: Int,
+)
 
 /** What the radar layer draws besides the rain. */
 data class RadarOptions(

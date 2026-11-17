@@ -3,6 +3,7 @@ package nz.eloque.openmaps.map
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
 import nz.eloque.openmaps.core.model.RadarFrames
+import nz.eloque.openmaps.core.model.SatelliteImage
 import org.maplibre.compose.expressions.dsl.const
 import org.maplibre.compose.layers.Anchor
 import org.maplibre.compose.layers.RasterLayer
@@ -36,4 +37,22 @@ internal fun RadarLayers(
     }
 }
 
+/** The satellite picture of the clouds, under the radar and the base map's labels. */
+@Composable
+internal fun CloudLayer(clouds: SatelliteImage?) {
+    if (clouds == null) return
+    Anchor.Below(FIRST_LABEL_LAYER) {
+        key(clouds.urlTemplate) {
+            val tiles =
+                rememberRasterTileSource(listOf(clouds.urlTemplate), tileSize = 256) {
+                    maxZoom = clouds.maxZoom
+                    attributionHtml = CLOUD_ATTRIBUTION
+                }
+            RasterLayer(id = "clouds", source = tiles, opacity = const(CLOUD_OPACITY))
+        }
+    }
+}
+
 private const val RADAR_OPACITY = 0.75f
+private const val CLOUD_OPACITY = 0.85f
+private const val CLOUD_ATTRIBUTION = "Satellite: NOAA GMGSI via LibreWXR"

@@ -339,9 +339,10 @@ fun App(
         val rainRadar = koinInject<RainRadar>()
         val mapLayers by settings.mapLayers.collectAsStateWithLifecycle()
         val radarOn = MapLayer.RAIN_RADAR in mapLayers
+        val weatherOn = radarOn || MapLayer.CLOUDS in mapLayers
         val lifecycle = LocalLifecycleOwner.current.lifecycle
-        LaunchedEffect(map, radarOn) {
-            if (!radarOn) {
+        LaunchedEffect(map, weatherOn) {
+            if (!weatherOn) {
                 map.radar = null
                 return@LaunchedEffect
             }
@@ -629,7 +630,7 @@ fun App(
                                 if (top == HomeKey) {
                                     { modifier ->
                                         Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            map.radar?.let { frames ->
+                                            map.radar?.takeIf { radarOn }?.let { frames ->
                                                 RadarTimeline(frames, map.radarFrame, onSelect = { map.radarFrame = it })
                                             }
                                             ActivePills(

@@ -17,6 +17,7 @@ import nz.eloque.openmaps.core.model.RadarFrame
 import nz.eloque.openmaps.core.model.RadarFrames
 import nz.eloque.openmaps.core.model.RadarOptions
 import nz.eloque.openmaps.core.model.RainRadar
+import nz.eloque.openmaps.core.model.SatelliteImage
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
@@ -26,6 +27,12 @@ import kotlin.time.Instant
 internal data class WeatherMapsDto(
     val host: String,
     val radar: RadarDto,
+    val satellite: SatelliteDto? = null,
+)
+
+@Serializable
+internal data class SatelliteDto(
+    val infrared: List<FrameDto> = emptyList(),
 )
 
 @Serializable
@@ -77,7 +84,7 @@ internal class RainViewerRadar(
                     pause = minOf(pause * 2, refresh)
                 }
             }
-        }.distinctUntilChanged { old, new -> old.radar == new.radar && old.host == new.host }
+        }.distinctUntilChanged()
 }
 
 /** The last hour of measured frames and the forecast. Older frames would only add tile requests. */
@@ -100,6 +107,14 @@ internal fun WeatherMapsDto.toFrames(options: RadarOptions = RadarOptions()): Ra
         frames = past.map { frame(it, forecast = false) } + radar.nowcast.sortedBy { it.time }.map { frame(it, forecast = true) },
         maxZoom = MAX_ZOOM,
         attribution = ATTRIBUTION,
+        clouds =
+            satellite?.infrared?.maxByOrNull { it.time }?.let {
+                SatelliteImage(
+                    Instant.fromEpochSeconds(it.time),
+                    "${host.trimEnd('/')}${it.path}/$TILE_SIZE/{z}/{x}/{y}/0/0_0.png",
+                    SATELLITE_MAX_ZOOM,
+                )
+            },
     )
 }
 
@@ -128,6 +143,9 @@ private const val LIGHTNING = "dots"
 
 private const val PAST_SECONDS = 3600
 private const val MAX_ZOOM = 8
+
+// The global composite is a few kilometres per pixel, so higher zooms only enlarge it.
+private const val SATELLITE_MAX_ZOOM = 6
 private const val ATTRIBUTION =
     "<a href=\"https://github.com/JoshuaKimsey/LibreWXR\">LibreWXR</a>, radar © EUMETNET OPERA, DPC, NOAA and others"
 
