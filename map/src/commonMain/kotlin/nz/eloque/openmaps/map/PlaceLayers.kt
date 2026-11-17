@@ -9,6 +9,7 @@ import androidx.compose.material.icons.filled.Castle
 import androidx.compose.material.icons.filled.Checkroom
 import androidx.compose.material.icons.filled.Church
 import androidx.compose.material.icons.filled.ContentCut
+import androidx.compose.material.icons.filled.DirectionsBoat
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.EvStation
 import androidx.compose.material.icons.filled.Fastfood
@@ -39,6 +40,7 @@ import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Pool
 import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.filled.Sailing
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material.icons.filled.SportsBar
@@ -102,6 +104,7 @@ private enum class PlaceGroup(
     LODGING(Color(0xFFC2185B), Color(0xFFF48FB1)),
     SIGHTS(Color(0xFF00897B), Color(0xFF4DD0C1)),
     NATURE(Color(0xFF188038), Color(0xFF81C995)),
+    WATER(Color(0xFF0277BD), Color(0xFF4FC3F7)),
     SERVICES(Color(0xFF5F6B7A), Color(0xFFAEB8C4)),
 }
 
@@ -143,6 +146,8 @@ private enum class PlaceIcon(
     PARK(Icons.Default.Park, PlaceGroup.NATURE, listOf("park", "garden", "picnic_site")),
     SWIMMING(Icons.Default.Pool, PlaceGroup.NATURE, listOf("swimming_pool", "swimming", "water_park")),
     SPORTS(Icons.Default.FitnessCenter, PlaceGroup.NATURE, listOf("sports_centre", "stadium")),
+    MARINA(Icons.Default.Sailing, PlaceGroup.WATER, listOf("harbor")),
+    FERRY(Icons.Default.DirectionsBoat, PlaceGroup.WATER, listOf("ferry_terminal")),
     FUEL(Icons.Default.LocalGasStation, PlaceGroup.SERVICES, listOf("fuel")),
     CHARGING(Icons.Default.EvStation, PlaceGroup.SERVICES, listOf("charging_station")),
     PARKING(Icons.Default.LocalParking, PlaceGroup.SERVICES, listOf("parking")),
