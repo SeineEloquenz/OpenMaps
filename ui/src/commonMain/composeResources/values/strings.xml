@@ -139,6 +139,9 @@
     <string name="delete">Delete</string>
     <string name="name">Name</string>
     <string name="save_route">Save this route</string>
+    <string name="add_stop">Add stop</string>
+    <string name="remove_stop">Remove stop</string>
+    <string name="stops_not_in_transit">Public transport routes leave out the stops along the way.</string>
     <string name="update_from_here">Update from where you are</string>
     <string name="remove_saved_route">Remove saved route</string>
     <string name="recent">Recent</string>

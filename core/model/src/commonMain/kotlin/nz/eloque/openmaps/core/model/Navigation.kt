@@ -115,13 +115,17 @@ interface Navigator {
     /** False while trips in [mode] cannot start, such as when no routing server is set for it. */
     fun isAvailable(mode: TransportMode): Boolean
 
-    /** Starts a trip, replacing any running one. Throws when no route can be found. [simulate] drives the route by itself. */
+    /**
+     * Starts a trip through the stops in [via], replacing any running one. Throws when no route can be found.
+     * [simulate] drives the route by itself.
+     */
     suspend fun start(
         from: LatLng,
         to: LatLng,
         mode: TransportMode,
         options: RouteOptions,
         simulate: Boolean = false,
+        via: List<LatLng> = emptyList(),
     )
 
     fun stop()

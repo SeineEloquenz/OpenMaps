@@ -18,7 +18,6 @@ import nz.eloque.openmaps.data.geocoding.geocodingServiceSettings
 import nz.eloque.openmaps.data.routing.routingModule
 import nz.eloque.openmaps.data.routing.routingServiceSettings
 import nz.eloque.openmaps.data.storage.storageModule
-import nz.eloque.openmaps.data.transit.TransitStreetRouter
 import nz.eloque.openmaps.data.transit.transitModule
 import nz.eloque.openmaps.data.transit.transitServiceSettings
 import nz.eloque.openmaps.navigation.AndroidVoiceGuidance
@@ -65,7 +64,7 @@ class OpenMapsApplication : Application() {
                     }
                 },
                 transitModule(language = { Locale.getDefault().language }),
-                routingModule(fallback = { get<TransitStreetRouter>() }, language = { Locale.getDefault().toLanguageTag() }),
+                routingModule(language = { Locale.getDefault().toLanguageTag() }),
                 geocodingModule(language = { Locale.getDefault().language }),
                 fuelModule,
                 storageModule,

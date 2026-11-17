@@ -1,8 +1,6 @@
 package nz.eloque.openmaps.data.routing
 
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.map
-import nz.eloque.openmaps.core.model.Itinerary
 import nz.eloque.openmaps.core.model.LocationUpdates
 import nz.eloque.openmaps.core.model.Navigator
 import nz.eloque.openmaps.core.model.RoadEvents
@@ -10,9 +8,7 @@ import nz.eloque.openmaps.core.model.ServiceRole
 import nz.eloque.openmaps.core.model.ServiceSetting
 import nz.eloque.openmaps.core.model.ServiceSettingKind
 import nz.eloque.openmaps.core.model.SettingsStore
-import nz.eloque.openmaps.core.model.StreetRequest
 import nz.eloque.openmaps.core.model.StreetRouter
-import org.koin.core.scope.Scope
 import org.koin.dsl.module
 
 /** A Valhalla server for car routes, which knows current closures when it runs open-road-incidents. */
@@ -54,53 +50,31 @@ val RoadEventsServer =
 /** The settings this module's sources read. */
 val routingServiceSettings = listOf(RoutingServer, ActiveRoutingServer, RoadEventsServer)
 
-/** Asks [primary] and [fallback] for the modes [primary] has no route for, such as outside its map or when it is not set up. */
-internal class FallbackStreetRouter(
-    private val primary: StreetRouter,
-    private val fallback: StreetRouter,
-) : StreetRouter {
-    override suspend fun route(request: StreetRequest): List<Itinerary> {
-        val routes =
-            try {
-                primary.route(request)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (_: Exception) {
-                emptyList()
-            }
-        val missing = request.modes - routes.mapNotNull { it.legs.firstOrNull()?.mode }.toSet()
-        return if (missing.isEmpty()) routes else routes + fallback.route(request.copy(modes = missing))
-    }
-}
-
 /**
- * Routes cars through [RoutingServer] and then [ActiveRoutingServer], walking and cycling through [ActiveRoutingServer],
- * and each mode through [fallback] when its servers have no route or fail.
+ * Routes cars through [RoutingServer] and then [ActiveRoutingServer], walking and cycling through [ActiveRoutingServer].
  * Navigation needs the server and a [LocationUpdates] from the app. [language] is a BCP 47 tag for spoken directions.
  */
-fun routingModule(
-    fallback: Scope.() -> StreetRouter,
-    language: () -> String? = { null },
-) = module {
-    single {
-        val settings = get<SettingsStore>()
-        ValhallaServers(
-            car = { settings.serviceValue(RoutingServer.id).value ?: ORI_SERVER },
-            active = { settings.serviceValue(ActiveRoutingServer.id).value ?: FOSSGIS_VALHALLA },
-        )
-    }
-    single<StreetRouter> { FallbackStreetRouter(ValhallaStreetRouter(get(), get()), fallback()) }
-    single<Navigator> {
-        val settings = get<SettingsStore>()
-        ValhallaNavigator(
-            ValhallaNavigationRoutes(
+fun routingModule(language: () -> String? = { null }) =
+    module {
+        single {
+            val settings = get<SettingsStore>()
+            ValhallaServers(
+                car = { settings.serviceValue(RoutingServer.id).value ?: ORI_SERVER },
+                active = { settings.serviceValue(ActiveRoutingServer.id).value ?: FOSSGIS_VALHALLA },
+            )
+        }
+        single<StreetRouter> { ValhallaStreetRouter(get(), get()) }
+        single<Navigator> {
+            val settings = get<SettingsStore>()
+            ValhallaNavigator(
+                ValhallaNavigationRoutes(
+                    get(),
+                    get(),
+                    language = language,
+                    units = { settings.distanceUnit.value },
+                ),
                 get(),
-                get(),
-                language = language,
-                units = { settings.distanceUnit.value },
-            ),
-            get(),
-        )
+            )
+        }
+        single<RoadEvents> { OpenRoadIncidents(get(), get<SettingsStore>().serviceValue(RoadEventsServer.id).map { it ?: ORI_SERVER }) }
     }
-    single<RoadEvents> { OpenRoadIncidents(get(), get<SettingsStore>().serviceValue(RoadEventsServer.id).map { it ?: ORI_SERVER }) }
-}

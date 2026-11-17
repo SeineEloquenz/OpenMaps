@@ -16,11 +16,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DirectionsTransit
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material.icons.filled.TripOrigin
 import androidx.compose.material.icons.filled.Tune
@@ -87,6 +90,7 @@ import nz.eloque.openmaps.ui.navigation.DirectionsKey
 import nz.eloque.openmaps.ui.navigation.Endpoint
 import nz.eloque.openmaps.ui.navigation.toRouteEnd
 import nz.eloque.openmaps.ui.resources.Res
+import nz.eloque.openmaps.ui.resources.add_stop
 import nz.eloque.openmaps.ui.resources.allow_location
 import nz.eloque.openmaps.ui.resources.arrive_at
 import nz.eloque.openmaps.ui.resources.departs_from
@@ -104,12 +108,14 @@ import nz.eloque.openmaps.ui.resources.no_transfers
 import nz.eloque.openmaps.ui.resources.one_transfer
 import nz.eloque.openmaps.ui.resources.platform
 import nz.eloque.openmaps.ui.resources.remove_saved_route
+import nz.eloque.openmaps.ui.resources.remove_stop
 import nz.eloque.openmaps.ui.resources.rental_leg
 import nz.eloque.openmaps.ui.resources.route_closures
 import nz.eloque.openmaps.ui.resources.route_options
 import nz.eloque.openmaps.ui.resources.route_roadworks
 import nz.eloque.openmaps.ui.resources.save_route
 import nz.eloque.openmaps.ui.resources.shared_routes
+import nz.eloque.openmaps.ui.resources.stops_not_in_transit
 import nz.eloque.openmaps.ui.resources.swap
 import nz.eloque.openmaps.ui.resources.transfers
 import nz.eloque.openmaps.ui.resources.update_from_here
@@ -136,6 +142,7 @@ fun DirectionsSheet(
     map: MapController,
     onEditField: (DirectionsField) -> Unit,
     onSwap: () -> Unit,
+    onRemoveStop: (Endpoint) -> Unit,
     onOpenRoute: (Itinerary) -> Unit,
     onNavigate: (TravelMode, simulate: Boolean) -> Unit,
     canSimulate: Boolean = false,
@@ -152,7 +159,7 @@ fun DirectionsSheet(
 
     val loaded = (result as? LoadState.Loaded)?.value
     val direct = (street as? LoadState.Loaded)?.value.orEmpty()
-    val walk = loaded?.direct ?: direct[TransportMode.WALK]
+    val walk = loaded?.direct?.takeUnless { viewModel.hasStops } ?: direct[TransportMode.WALK]
     val routes =
         mapOf(
             TravelMode.CAR to direct[TransportMode.CAR],
@@ -193,7 +200,7 @@ fun DirectionsSheet(
 
     LazyColumn(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         item {
-            EndpointsCard(directions.from, directions.to, onEditField, onSwap)
+            EndpointsCard(directions, canAddStop = mode != TravelMode.TRANSIT, onEditField, onSwap, onRemoveStop)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
                 SaveRouteButton(directions)
                 if (moved) {
@@ -234,6 +241,9 @@ fun DirectionsSheet(
                         leadingIcon = { Icon(Icons.Default.Tune, contentDescription = null, modifier = Modifier.size(18.dp)) },
                     )
                 }
+            }
+            if (viewModel.hasStops) {
+                item { Text(stringResource(Res.string.stops_not_in_transit), color = MaterialTheme.colorScheme.onSurfaceVariant) }
             }
         }
         val state = if (mode == TravelMode.TRANSIT || (mode == TravelMode.WALK && walk != null && street == null)) result else street
@@ -280,7 +290,7 @@ fun DirectionsSheet(
                     }
                 }
         }
-        if (mode == TravelMode.BIKE && state is LoadState.Loaded) {
+        if (mode == TravelMode.BIKE && state is LoadState.Loaded && !viewModel.hasStops) {
             item {
                 Text(
                     stringResource(Res.string.shared_routes),
@@ -437,17 +447,29 @@ private val TravelMode.label: StringResource
 
 @Composable
 private fun EndpointsCard(
-    from: Endpoint?,
-    to: Endpoint?,
+    directions: DirectionsKey,
+    canAddStop: Boolean,
     onEditField: (DirectionsField) -> Unit,
     onSwap: () -> Unit,
+    onRemoveStop: (Endpoint) -> Unit,
 ) {
     OutlinedCard(Modifier.fillMaxWidth()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                EndpointRow(from, Icons.Default.TripOrigin) { onEditField(DirectionsField.FROM) }
+                EndpointRow(directions.from, Icons.Default.TripOrigin, onClick = { onEditField(DirectionsField.FROM) })
+                directions.via.forEach { stop ->
+                    HorizontalDivider(Modifier.padding(start = 48.dp))
+                    EndpointRow(stop, Icons.Default.RadioButtonUnchecked, onRemove = { onRemoveStop(stop) })
+                }
                 HorizontalDivider(Modifier.padding(start = 48.dp))
-                EndpointRow(to, Icons.Default.Place) { onEditField(DirectionsField.TO) }
+                EndpointRow(directions.to, Icons.Default.Place, onClick = { onEditField(DirectionsField.TO) })
+                if (canAddStop) {
+                    HorizontalDivider(Modifier.padding(start = 48.dp))
+                    TextButton(onClick = { onEditField(DirectionsField.STOP) }, modifier = Modifier.padding(start = 2.dp)) {
+                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(20.dp))
+                        Text(stringResource(Res.string.add_stop), modifier = Modifier.padding(start = 14.dp))
+                    }
+                }
             }
             IconButton(onClick = onSwap) {
                 Icon(Icons.Default.SwapVert, contentDescription = stringResource(Res.string.swap))
@@ -460,10 +482,14 @@ private fun EndpointsCard(
 private fun EndpointRow(
     endpoint: Endpoint?,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
-    onClick: () -> Unit,
+    onClick: (() -> Unit)? = null,
+    onRemove: (() -> Unit)? = null,
 ) {
     Row(
-        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 12.dp, vertical = 14.dp),
+        Modifier
+            .fillMaxWidth()
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .padding(horizontal = 12.dp, vertical = if (onRemove != null) 2.dp else 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
@@ -476,8 +502,13 @@ private fun EndpointRow(
             endpoint?.name ?: stringResource(Res.string.your_location),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(start = 16.dp),
+            modifier = Modifier.padding(start = 16.dp).weight(1f),
         )
+        if (onRemove != null) {
+            IconButton(onClick = onRemove) {
+                Icon(Icons.Default.Close, contentDescription = stringResource(Res.string.remove_stop), modifier = Modifier.size(20.dp))
+            }
+        }
     }
 }
 

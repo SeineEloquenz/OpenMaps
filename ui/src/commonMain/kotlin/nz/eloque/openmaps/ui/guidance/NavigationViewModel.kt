@@ -39,7 +39,14 @@ class NavigationViewModel(
         viewModelScope.launch {
             _start.value =
                 loadOnce {
-                    navigator.start(from, key.to.location, key.mode.transportMode, settings.routeOptions.value, key.simulate)
+                    navigator.start(
+                        from,
+                        key.to.location,
+                        key.mode.transportMode,
+                        settings.routeOptions.value,
+                        key.simulate,
+                        key.via.map { it.location },
+                    )
                 }
         }
     }

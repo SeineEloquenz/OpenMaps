@@ -67,6 +67,16 @@ class ValhallaNavigatorTest {
         }
 
     @Test
+    fun routesThroughTheStops() =
+        runTest {
+            val stop = LatLng(49.61, 6.13)
+            val route = routes.route(LatLng(49.6116, 6.1319), null, LatLng(49.608, 6.125), TransportMode.CAR, RouteOptions(), listOf(stop))
+            val lats = Regex("\"lat\":([0-9.]+)").findAll(bodies.single()).map { it.groupValues[1] }.toList()
+            assertEquals(listOf("49.6116", "49.61", "49.608"), lats)
+            assertEquals(3, route!!.routeOptions!!.coordinates.size)
+        }
+
+    @Test
     fun showsTheTurnAtTheEndOfTheStep() {
         val instruction = steps[0].upcoming(steps[0].distance, steps[1])!!
         assertEquals(ManeuverType.LEFT, instruction.maneuver)

@@ -26,7 +26,7 @@ data class CategoryKey(
     val category: PlaceCategory,
 ) : NavKey
 
-enum class DirectionsField { FROM, TO }
+enum class DirectionsField { FROM, TO, STOP }
 
 /** Search for the main map, for one end of the directions when [field] is set, or to save a favourite when [saveAs] is set. */
 @Serializable
@@ -47,11 +47,12 @@ data class Endpoint(
     val location: LatLng get() = LatLng(latitude, longitude)
 }
 
-/** A null end means the user's location. */
+/** A null end means the user's location. Routes by car, bike and on foot go through the stops in [via]. */
 @Serializable
 data class DirectionsKey(
     val from: Endpoint?,
     val to: Endpoint?,
+    val via: List<Endpoint> = emptyList(),
 ) : NavKey
 
 @Serializable
@@ -130,6 +131,7 @@ data class NavigationKey(
     val to: Endpoint,
     val mode: TravelMode,
     val simulate: Boolean = false,
+    val via: List<Endpoint> = emptyList(),
 ) : NavKey
 
 /** Guidance along a cached public transport itinerary. [simulate] follows it on the timetable by itself. */

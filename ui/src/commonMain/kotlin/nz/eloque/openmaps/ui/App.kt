@@ -354,6 +354,7 @@ fun App(
                                                     when (field) {
                                                         DirectionsField.FROM -> directions.copy(from = result.toEndpoint())
                                                         DirectionsField.TO -> directions.copy(to = result.toEndpoint())
+                                                        DirectionsField.STOP -> directions.copy(via = directions.via + result.toEndpoint())
                                                     }
                                             }
                                         },
@@ -383,11 +384,19 @@ fun App(
                                         onEditField = { backStack.add(SearchKey(it)) },
                                         onSwap = {
                                             val index = backStack.indexOf(directions)
-                                            if (index >= 0) backStack[index] = DirectionsKey(from = directions.to, to = directions.from)
+                                            if (index >= 0) {
+                                                backStack[index] = DirectionsKey(directions.to, directions.from, directions.via.reversed())
+                                            }
+                                        },
+                                        onRemoveStop = { stop ->
+                                            val index = backStack.indexOf(directions)
+                                            if (index >= 0) backStack[index] = directions.copy(via = directions.via - stop)
                                         },
                                         onOpenRoute = { backStack.add(RouteKey(it.id, directions.to?.name)) },
                                         onNavigate = { mode, simulate ->
-                                            directions.to?.let { backStack.add(NavigationKey(directions.from, it, mode, simulate)) }
+                                            directions.to?.let {
+                                                backStack.add(NavigationKey(directions.from, it, mode, simulate, directions.via))
+                                            }
                                         },
                                         canSimulate = debug,
                                     )

@@ -57,6 +57,7 @@ class DirectionsViewModel(
 ) : ViewModel() {
     private val from: Endpoint? = directions.from
     private val to: Endpoint? = directions.to
+    private val via: List<Endpoint> = directions.via
 
     private val _time = MutableStateFlow<TimeChoice>(TimeChoice.Now)
     val time: StateFlow<TimeChoice> = _time.asStateFlow()
@@ -136,6 +137,9 @@ class DirectionsViewModel(
         loadForMode()
     }
 
+    /** True while the routes go through stops, which only the street router can follow. */
+    val hasStops: Boolean get() = via.isNotEmpty()
+
     /** Asks only for what the open tab shows, to keep the load on the routing service low. */
     private fun loadForMode() {
         when (mode.value) {
@@ -143,13 +147,13 @@ class DirectionsViewModel(
             TravelMode.WALK ->
                 when (val transitState = _result.value) {
                     null, LoadState.Failed -> planStreet()
-                    is LoadState.Loaded -> if (transitState.value.direct == null) planStreet()
-                    LoadState.Loading -> Unit
+                    is LoadState.Loaded -> if (hasStops || transitState.value.direct == null) planStreet()
+                    LoadState.Loading -> if (hasStops) planStreet()
                 }
             TravelMode.CAR -> planStreet()
             TravelMode.BIKE -> {
                 planStreet()
-                planShared()
+                if (!hasStops) planShared()
             }
         }
     }
@@ -192,7 +196,7 @@ class DirectionsViewModel(
 
     private fun planStreet() {
         if (_street.value != null) return
-        val walkKnown = (_result.value as? LoadState.Loaded)?.value?.direct != null
+        val walkKnown = !hasStops && (_result.value as? LoadState.Loaded)?.value?.direct != null
         val modes = setOf(TransportMode.CAR, TransportMode.BIKE) + if (walkKnown) emptySet() else setOf(TransportMode.WALK)
         val request = streetRequest(modes) ?: return
         _street.value = LoadState.Loading
@@ -212,6 +216,7 @@ class DirectionsViewModel(
         return StreetRequest(
             from = from?.location ?: userLocation ?: return null,
             to = to?.location ?: userLocation ?: return null,
+            via = via.map { it.location },
             modes = modes,
             time =
                 when (time) {

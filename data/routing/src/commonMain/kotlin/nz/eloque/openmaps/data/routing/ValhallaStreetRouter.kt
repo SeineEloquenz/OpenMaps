@@ -131,7 +131,7 @@ internal class ValhallaStreetRouter(
         val body =
             RouteRequestDto(
                 locations =
-                    listOf(request.from, request.to).map {
+                    (listOf(request.from) + request.via + request.to).map {
                         LocationDto(it.latitude, it.longitude, SearchFilterDto(excludeClosures = false), SEARCH_CUTOFF_METERS)
                     },
                 costing = costing,
@@ -176,7 +176,7 @@ internal class ValhallaStreetRouter(
                 streets = mainStreets(legs.flatMap { it.maneuvers }),
             )
         return Itinerary(
-            id = "valhalla:${mode.name}:${start.epochSeconds}:${request.from}:${request.to}",
+            id = "valhalla:${mode.name}:${start.epochSeconds}:${request.from}:${request.via.joinToString(":")}:${request.to}",
             start = start,
             end = end,
             transfers = 0,

@@ -25,7 +25,6 @@ fun transitModule(language: () -> String? = { null }) =
             val settings = get<SettingsStore>()
             MotisTransitRepository(get()) { settings.serviceValue(TransitServer.id).value ?: TRANSITOUS_API }
         }
-        single { TransitStreetRouter(get()) }
         single<SharedMobility> {
             val settings = get<SettingsStore>()
             MotisSharedMobility(get()) { settings.serviceValue(TransitServer.id).value ?: TRANSITOUS_API }

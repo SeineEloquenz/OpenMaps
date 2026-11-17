@@ -11,6 +11,8 @@ data class StreetRequest(
     val time: Instant?,
     val arriveBy: Boolean = false,
     val options: RouteOptions = RouteOptions(),
+    /** Stops between [from] and [to], visited in order. */
+    val via: List<LatLng> = emptyList(),
 )
 
 /** Routes by car, bike or on foot alone, without public transport. */
