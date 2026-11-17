@@ -224,13 +224,29 @@ internal class ValhallaNavigator(
     ) {
         val stopsAhead: List<LatLng> get() = stops.drop(legIndex)
 
-        /** Takes [route], which starts here and goes through [stopsAhead]. */
-        fun follow(route: DirectionsRoute) {
-            stops = stopsAhead
+        /** Takes [route], which starts here and goes through [through]. */
+        fun follow(
+            route: DirectionsRoute,
+            through: List<LatLng> = stopsAhead,
+        ) {
+            stops = through
             legIndex = 0
             geometry = route.points()
+            replay?.assign(route)
             navigation.startNavigation(route)
         }
+    }
+
+    override suspend fun addStop(location: LatLng) {
+        val trip = checkNotNull(trip) { "No trip is running" }
+        val here = trip.lastLocation
+        val from = here?.let { LatLng(it.latitude, it.longitude) } ?: _state.value?.position ?: error("Position unknown")
+        val through = listOf(location) + trip.stopsAhead
+        val route = routes.route(from, here?.bearing, trip.to, trip.mode, trip.options, through) ?: error("No route to the stop")
+        if (this.trip !== trip) return
+        trip.voiceLanguage = route.voiceLanguage ?: trip.voiceLanguage
+        trip.follow(route, through)
+        loadLimits(trip, route)
     }
 
     override suspend fun start(

@@ -2,6 +2,7 @@ package nz.eloque.openmaps.ui.guidance
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -50,6 +51,17 @@ class NavigationViewModel(
                 }
         }
     }
+
+    /** False when no route leads to [location]. */
+    suspend fun addStop(location: LatLng): Boolean =
+        try {
+            navigator.addStop(location)
+            true
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            false
+        }
 
     private fun resumed() = active.key == key && navigator.state.value != null
 }

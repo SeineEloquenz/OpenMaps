@@ -128,6 +128,9 @@ interface Navigator {
         via: List<LatLng> = emptyList(),
     )
 
+    /** Makes [location] the running trip's next stop, before the stops already planned. Throws when no route goes there. */
+    suspend fun addStop(location: LatLng)
+
     fun stop()
 }
 

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.filled.AddLocationAlt
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.Button
@@ -53,6 +54,7 @@ import nz.eloque.openmaps.ui.components.formatDistance
 import nz.eloque.openmaps.ui.components.formatDuration
 import nz.eloque.openmaps.ui.navigation.NavigationKey
 import nz.eloque.openmaps.ui.resources.Res
+import nz.eloque.openmaps.ui.resources.add_stop
 import nz.eloque.openmaps.ui.resources.navigation_arrived
 import nz.eloque.openmaps.ui.resources.navigation_end
 import nz.eloque.openmaps.ui.resources.navigation_finding_route
@@ -156,6 +158,18 @@ fun NavigationSheet(
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
+                        }
+                    }
+                    var pickingStop by rememberSaveable { mutableStateOf(false) }
+                    if (pickingStop) {
+                        StopPicker(trip, unit, onAdd = { viewModel.addStop(it.place.location) }, onDismiss = {
+                            pickingStop =
+                                false
+                        })
+                    }
+                    if (trip.status != NavigationStatus.ARRIVED) {
+                        IconButton(onClick = { pickingStop = true }) {
+                            Icon(Icons.Default.AddLocationAlt, contentDescription = stringResource(Res.string.add_stop))
                         }
                     }
                     if (!following) {

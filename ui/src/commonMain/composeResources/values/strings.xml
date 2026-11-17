@@ -141,6 +141,10 @@
     <string name="save_route">Save this route</string>
     <string name="add_stop">Add stop</string>
     <string name="remove_stop">Remove stop</string>
+    <string name="stop_picker_title">Add a stop along the way</string>
+    <string name="stop_ahead">%1$s ahead · %2$s off the route</string>
+    <string name="stop_none">Nothing found along the next %1$s.</string>
+    <string name="stop_failed">There is no route to this stop.</string>
     <string name="stops_not_in_transit">Public transport routes leave out the stops along the way.</string>
     <string name="update_from_here">Update from where you are</string>
     <string name="remove_saved_route">Remove saved route</string>
