@@ -134,6 +134,9 @@ class MapController internal constructor(
 
     var onLongPress: ((LatLng) -> Unit)? by mutableStateOf(null)
 
+    /** A button floating on the map below the compass, set by the screen that needs it. */
+    var floatingAction: MapAction? by mutableStateOf(null)
+
     /** Stops drawn as tappable dots. */
     var stops: List<SearchResult.Stop> by stopsState
 

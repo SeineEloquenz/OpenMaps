@@ -95,6 +95,7 @@ fun OpenMap(
                 modifier = Modifier.align(Alignment.TopStart),
             )
             DisappearingCompassButton(Modifier.align(Alignment.TopEnd))
+            controller.floatingAction?.let { MapActionButton(it, Modifier.align(Alignment.TopEnd)) }
             MaplibreLogo(Modifier.align(Alignment.BottomStart))
             MapAttribution(Modifier.align(Alignment.BottomEnd))
         }

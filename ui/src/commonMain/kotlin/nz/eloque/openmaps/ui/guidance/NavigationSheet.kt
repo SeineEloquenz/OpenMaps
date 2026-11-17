@@ -45,6 +45,7 @@ import nz.eloque.openmaps.core.model.SettingsStore
 import nz.eloque.openmaps.core.model.TransportMode
 import nz.eloque.openmaps.core.model.VoiceGuidance
 import nz.eloque.openmaps.core.model.VoiceStatus
+import nz.eloque.openmaps.map.MapAction
 import nz.eloque.openmaps.map.MapController
 import nz.eloque.openmaps.map.MapLine
 import nz.eloque.openmaps.map.NavigationPuck
@@ -96,6 +97,14 @@ fun NavigationSheet(
     LaunchedEffect(map) { snapshotFlow { map.isMovedByUser }.filter { it }.collect { following = false } }
     ShowTripOnMap(map, state, following)
     val arrived = state?.status == NavigationStatus.ARRIVED
+    var pickingStop by rememberSaveable { mutableStateOf(false) }
+    val addStopLabel = stringResource(Res.string.add_stop)
+    val canAddStop = state != null && !arrived
+    DisposableEffect(map, canAddStop) {
+        val action = MapAction(Icons.Default.AddLocationAlt, addStopLabel) { pickingStop = true }.takeIf { canAddStop }
+        map.floatingAction = action
+        onDispose { if (map.floatingAction === action) map.floatingAction = null }
+    }
     LaunchedEffect(arrived) {
         if (arrived) {
             delay(END_AFTER_ARRIVAL)
@@ -160,17 +169,8 @@ fun NavigationSheet(
                                 )
                         }
                     }
-                    var pickingStop by rememberSaveable { mutableStateOf(false) }
                     if (pickingStop) {
-                        StopPicker(trip, unit, onAdd = { viewModel.addStop(it.place.location) }, onDismiss = {
-                            pickingStop =
-                                false
-                        })
-                    }
-                    if (trip.status != NavigationStatus.ARRIVED) {
-                        IconButton(onClick = { pickingStop = true }) {
-                            Icon(Icons.Default.AddLocationAlt, contentDescription = stringResource(Res.string.add_stop))
-                        }
+                        StopPicker(trip, unit, onAdd = { viewModel.addStop(it.place.location) }, onDismiss = { pickingStop = false })
                     }
                     if (!following) {
                         FilledTonalIconButton(onClick = { following = true }) {
