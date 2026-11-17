@@ -33,6 +33,7 @@ import kotlinx.coroutines.launch
 import nz.eloque.openmaps.core.model.LatLng
 import nz.eloque.openmaps.core.model.SettingsStore
 import nz.eloque.openmaps.core.model.TripWatchStore
+import nz.eloque.openmaps.core.model.WatchedTrip
 import nz.eloque.openmaps.ui.components.clockTime
 import nz.eloque.openmaps.ui.components.formatDistance
 import nz.eloque.openmaps.ui.components.rememberNow
@@ -51,7 +52,7 @@ import org.koin.compose.koinInject
 @Composable
 fun ActivePills(
     userLocation: LatLng?,
-    onOpenTrips: () -> Unit,
+    onOpenWatched: (WatchedTrip) -> Unit,
     onOpenTrack: (Long) -> Unit,
     onShowCar: () -> Unit,
     onWalkToCar: () -> Unit,
@@ -80,7 +81,7 @@ fun ActivePills(
                     } else {
                         ""
                     }
-            Pill(Icons.Default.TrackChanges, text, alert = late, onClick = onOpenTrips)
+            Pill(Icons.Default.TrackChanges, text, alert = late, onClick = { onOpenWatched(trip) })
         }
         recording?.let { current ->
             var open by remember { mutableStateOf(false) }

@@ -44,7 +44,7 @@ fun OpenMap(
     LaunchedEffect(controller) {
         if (centeredOnFirstFix) return@LaunchedEffect
         snapshotFlow { controller.hasLocationFix }.first { it }
-        centeredOnFirstFix = controller.centerOnUser()
+        centeredOnFirstFix = controller.cameraPlaced || controller.centerOnUser()
     }
 
     LaunchedEffect(controller) {

@@ -442,6 +442,7 @@ fun App(
                                                 onDirectionsTo = { backStack.add(DirectionsKey(from = null, to = it.toEndpoint())) },
                                                 onSetFavourite = { backStack.add(SearchKey(saveAs = it)) },
                                                 onOpenRoute = { backStack.add(DirectionsKey(it.from?.toEndpoint(), it.to?.toEndpoint())) },
+                                                onOpenWatched = { backStack.add(RouteKey(it.id, it.destination)) },
                                             )
                                         }
                                         entry<MeasureKey> { MeasureSheet(it, map) }
@@ -606,7 +607,7 @@ fun App(
                                     { modifier ->
                                         ActivePills(
                                             userLocation = map.userLocation,
-                                            onOpenTrips = { openTab(TripsKey) },
+                                            onOpenWatched = { backStack.add(RouteKey(it.id, it.destination)) },
                                             onOpenTrack = { backStack.add(TrackKey(it)) },
                                             onShowCar = { map.onParkedCarClick?.invoke() },
                                             onWalkToCar = {

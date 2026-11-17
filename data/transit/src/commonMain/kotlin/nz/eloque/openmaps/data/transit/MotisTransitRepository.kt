@@ -2,6 +2,7 @@ package nz.eloque.openmaps.data.transit
 
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
@@ -71,6 +72,17 @@ internal class MotisTransitRepository(
         val response: ItineraryDto = client.get("${baseUrl()}/v6/trip") { parameter("tripId", tripId) }.body()
         return response.toItinerary()
     }
+
+    override suspend fun itinerary(id: String): Itinerary? =
+        try {
+            client
+                .get("${baseUrl()}/v6/refresh-itinerary") { parameter("itineraryId", id) }
+                .body<ItineraryDto>()
+                .toItinerary()
+                .copy(id = id)
+        } catch (_: ClientRequestException) {
+            null
+        }
 
     override suspend fun departures(
         stopId: String,

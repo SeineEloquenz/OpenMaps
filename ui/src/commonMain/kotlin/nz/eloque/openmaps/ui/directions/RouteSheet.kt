@@ -26,7 +26,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -41,16 +44,20 @@ import nz.eloque.openmaps.core.model.Itinerary
 import nz.eloque.openmaps.core.model.Leg
 import nz.eloque.openmaps.core.model.SettingsStore
 import nz.eloque.openmaps.core.model.SharedRental
+import nz.eloque.openmaps.core.model.TransitRepository
 import nz.eloque.openmaps.core.model.TransportMode
 import nz.eloque.openmaps.core.model.Waypoint
 import nz.eloque.openmaps.map.MapController
 import nz.eloque.openmaps.ui.components.BookButton
 import nz.eloque.openmaps.ui.components.LineChip
+import nz.eloque.openmaps.ui.components.LoadState
+import nz.eloque.openmaps.ui.components.LoadStateContent
 import nz.eloque.openmaps.ui.components.clockTime
 import nz.eloque.openmaps.ui.components.formatDistance
 import nz.eloque.openmaps.ui.components.formatDuration
 import nz.eloque.openmaps.ui.components.icon
 import nz.eloque.openmaps.ui.components.label
+import nz.eloque.openmaps.ui.components.loadOnce
 import nz.eloque.openmaps.ui.components.timeRange
 import nz.eloque.openmaps.ui.components.withoutLinePrefix
 import nz.eloque.openmaps.ui.navigation.RouteKey
@@ -79,17 +86,34 @@ fun RouteSheet(
     canSimulate: Boolean = false,
     onGuide: (simulate: Boolean) -> Unit = {},
 ) {
-    val itinerary = koinInject<ItineraryCache>()[route.itineraryId]
-    ShowItineraryOnMap(map, itinerary)
-    if (itinerary == null) {
-        Text(
-            stringResource(Res.string.route_expired),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(16.dp),
-        )
-        return
+    val cache = koinInject<ItineraryCache>()
+    val transit = koinInject<TransitRepository>()
+    var attempt by remember { mutableIntStateOf(0) }
+    // Guidance finds the itinerary only in the cache.
+    val state by produceState<LoadState<Itinerary?>>(
+        cache[route.itineraryId]?.let {
+            LoadState.Loaded(it)
+        } ?: LoadState.Loading,
+        route.itineraryId,
+        attempt,
+    ) {
+        if (value is LoadState.Loaded) return@produceState
+        value = LoadState.Loading
+        value = loadOnce { transit.itinerary(route.itineraryId)?.also { cache.put(listOf(it)) } }
     }
-    RouteTimeline(itinerary, route.destinationName ?: stringResource(Res.string.your_location), snackbar, canSimulate, onGuide)
+    val itinerary = (state as? LoadState.Loaded)?.value
+    ShowItineraryOnMap(map, itinerary)
+    LoadStateContent(state, onRetry = { attempt++ }) { loaded ->
+        if (loaded == null) {
+            Text(
+                stringResource(Res.string.route_expired),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(16.dp),
+            )
+        } else {
+            RouteTimeline(loaded, route.destinationName ?: stringResource(Res.string.your_location), snackbar, canSimulate, onGuide)
+        }
+    }
 }
 
 @Composable

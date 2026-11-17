@@ -5,11 +5,14 @@ import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.Url
 import io.ktor.http.headersOf
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
 import nz.eloque.openmaps.core.model.GeoBounds
 import nz.eloque.openmaps.core.model.LatLng
 import nz.eloque.openmaps.core.model.Leg
@@ -24,6 +27,7 @@ import nz.eloque.openmaps.core.model.WalkingSpeed
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
@@ -85,6 +89,28 @@ class MotisClientTest {
             assertEquals(false, bus.isWheelchairAccessible)
             assertTrue(bus.geometry.size > 1)
             assertEquals("de-DELFI_000008400058", requests.single().parameters["toPlace"])
+        }
+
+    @Test
+    fun rebuildsAnItineraryUnderItsOriginalId() =
+        runTest {
+            val itinerary = Json.parseToJsonElement(PLAN_JSON).jsonObject.getValue("itineraries").jsonArray[0].toString()
+            val repository = MotisTransitRepository(client(itinerary), { TRANSITOUS_API })
+
+            val rebuilt = repository.itinerary("saved-id")
+            assertEquals("saved-id", rebuilt?.id)
+            assertEquals("saved-id", requests.single().parameters["itineraryId"])
+            assertTrue(rebuilt!!.legs.any { it is Leg.Transit })
+        }
+
+    @Test
+    fun itinerariesTheServiceCannotRebuildAreNull() =
+        runTest {
+            val failing =
+                HttpClient(MockEngine { respond("""{"error":"x"}""", HttpStatusCode.BadRequest) }) {
+                    expectSuccess = true
+                }
+            assertNull(MotisTransitRepository(failing, { TRANSITOUS_API }).itinerary("gone"))
         }
 
     @Test

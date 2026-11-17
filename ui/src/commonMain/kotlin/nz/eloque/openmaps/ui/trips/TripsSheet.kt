@@ -55,6 +55,7 @@ fun TripsSheet(
     onDirectionsTo: (SearchResult) -> Unit,
     onSetFavourite: (FavouriteLabel) -> Unit,
     onOpenRoute: (SavedRoute) -> Unit,
+    onOpenWatched: (WatchedTrip) -> Unit,
 ) {
     val places = koinInject<PlacesStore>()
     val favourites by places.favourites.collectAsStateWithLifecycle(emptyList())
@@ -89,7 +90,7 @@ fun TripsSheet(
         }
         if (watched.isNotEmpty()) item { SectionTitle(Res.string.trips_watched) }
         items(watched, key = { "watch-${it.id}" }) { trip ->
-            WatchedTripItem(trip, onStop = { watcher.stop(trip.id) })
+            WatchedTripItem(trip, onClick = { onOpenWatched(trip) }, onStop = { watcher.stop(trip.id) })
         }
         if (routes.isNotEmpty()) item { SectionTitle(Res.string.saved_routes) }
         items(routes, key = { "route-${it.id}" }) { route ->
@@ -121,6 +122,7 @@ fun TripsSheet(
 @Composable
 private fun WatchedTripItem(
     trip: WatchedTrip,
+    onClick: () -> Unit,
     onStop: () -> Unit,
 ) {
     val first = trip.legs.first()
@@ -140,5 +142,6 @@ private fun WatchedTripItem(
             }
         },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+        modifier = Modifier.clickable(onClick = onClick),
     )
 }

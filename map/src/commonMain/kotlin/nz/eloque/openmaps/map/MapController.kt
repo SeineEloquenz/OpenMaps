@@ -252,6 +252,10 @@ class MapController internal constructor(
 
     fun requestLocationPermission() = location.requestPermission()
 
+    /** True once a place or route has been put in view, so the start no longer centers on the user. */
+    var cameraPlaced = false
+        private set
+
     /** Returns false when there is no location fix yet. */
     suspend fun centerOnUser(): Boolean {
         val position = location.lastLocation?.position ?: return false
@@ -266,6 +270,7 @@ class MapController internal constructor(
         target: LatLng,
         zoomIn: Boolean = true,
     ) {
+        cameraPlaced = true
         awaitEngaged()
         val current = mapState.cameraPosition.zoom
         mapState.animateCamera(CameraUpdate(center = target.toPosition(), zoom = if (zoomIn) maxOf(current, PLACE_ZOOM) else current))
@@ -314,6 +319,7 @@ class MapController internal constructor(
 
     suspend fun fit(points: List<LatLng>) {
         if (points.isEmpty()) return
+        cameraPlaced = true
         awaitEngaged()
         val box =
             BoundingBox(

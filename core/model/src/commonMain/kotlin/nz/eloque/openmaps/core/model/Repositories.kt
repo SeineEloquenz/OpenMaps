@@ -69,6 +69,9 @@ interface TransitRepository {
     /** The whole run of one vehicle, as an itinerary with a single transit leg. */
     suspend fun trip(tripId: String): Itinerary
 
+    /** Itinerary [id] from an earlier [plan] with live times, or null when the service cannot rebuild it. */
+    suspend fun itinerary(id: String): Itinerary?
+
     suspend fun departures(
         stopId: String,
         time: Instant? = null,
