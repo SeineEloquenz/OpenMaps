@@ -10,6 +10,7 @@ import kotlinx.coroutines.launch
 import nz.eloque.openmaps.core.model.LocationUpdates
 import nz.eloque.openmaps.core.model.ServiceCatalog
 import nz.eloque.openmaps.core.model.VoiceGuidance
+import nz.eloque.openmaps.core.platform.Contacts
 import nz.eloque.openmaps.core.platform.Files
 import nz.eloque.openmaps.core.platform.ReminderScheduler
 import nz.eloque.openmaps.core.platform.Sharer
@@ -63,6 +64,8 @@ class OpenMapsApplication : Application() {
                     }
                     single { AndroidFiles(this@OpenMapsApplication) }
                     single<Files> { get<AndroidFiles>() }
+                    single { AndroidContacts(this@OpenMapsApplication) }
+                    single<Contacts> { get<AndroidContacts>() }
                     single<Sharer> {
                         Sharer { text ->
                             val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text)

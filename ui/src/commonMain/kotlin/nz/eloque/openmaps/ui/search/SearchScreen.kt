@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Contacts
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -50,6 +51,7 @@ import nz.eloque.openmaps.ui.resources.Res
 import nz.eloque.openmaps.ui.resources.back
 import nz.eloque.openmaps.ui.resources.category_nearby
 import nz.eloque.openmaps.ui.resources.clear
+import nz.eloque.openmaps.ui.resources.contact_address
 import nz.eloque.openmaps.ui.resources.favourites
 import nz.eloque.openmaps.ui.resources.home
 import nz.eloque.openmaps.ui.resources.no_results
@@ -122,7 +124,7 @@ fun SearchScreen(
                     }
                 }
                 when (val state = results) {
-                    null -> SuggestionList(suggestions, select)
+                    null -> SuggestionList(suggestions, select, viewModel::searchContact)
                     else ->
                         LoadStateContent(
                             state,
@@ -141,8 +143,12 @@ private const val MAX_CATEGORY_ROWS = 2
 private fun SuggestionList(
     suggestions: Suggestions,
     onSelect: (SearchResult) -> Unit,
+    onContacts: () -> Unit,
 ) {
     LazyColumn {
+        item {
+            ResultRow(stringResource(Res.string.contact_address), null, Icons.Default.Contacts, onContacts)
+        }
         section(Res.string.favourites, suggestions.favourites.isNotEmpty())
         items(suggestions.favourites, key = { "favourite-${it.id}" }) { favourite ->
             val label = favourite.label.titleRes

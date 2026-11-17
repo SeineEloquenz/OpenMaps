@@ -5,6 +5,7 @@
     <string name="back">Back</string>
     <string name="clear">Clear</string>
     <string name="no_results">No results</string>
+    <string name="contact_address">Address from contacts</string>
     <string name="my_location">My location</string>
     <string name="dropped_pin">Dropped pin</string>
     <string name="waiting_for_location">Waiting for location</string>

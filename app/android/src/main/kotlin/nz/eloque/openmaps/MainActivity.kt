@@ -1,7 +1,9 @@
 package nz.eloque.openmaps
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.os.Bundle
+import android.provider.ContactsContract.CommonDataKinds.StructuredPostal
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -22,12 +24,20 @@ import org.koin.android.ext.android.inject
 
 class MainActivity : ComponentActivity() {
     private val files: AndroidFiles by inject()
+    private val contacts: AndroidContacts by inject()
 
     private val picker =
         registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
             lifecycleScope.launch {
                 awaitMapBack()
                 files.onPicked(uri)
+            }
+        }
+    private val contactPicker =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            lifecycleScope.launch {
+                awaitMapBack()
+                contacts.onPicked(result.data?.data)
             }
         }
     private val links = Channel<String>(Channel.BUFFERED)
@@ -37,6 +47,14 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         files.launchPicker = { picker.launch(arrayOf("application/gpx+xml", "application/octet-stream", "application/xml", "text/xml")) }
+        contacts.launchPicker = {
+            try {
+                contactPicker.launch(Intent(Intent.ACTION_PICK, StructuredPostal.CONTENT_URI))
+                true
+            } catch (_: ActivityNotFoundException) {
+                false
+            }
+        }
         if (savedInstanceState == null) handle(intent)
         setContent { App(BuildConfig.VERSION_NAME, debug = BuildConfig.DEBUG, links = linkFlow) }
         val active = guidanceActive(get(), get())
@@ -55,6 +73,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         files.launchPicker = null
+        contacts.launchPicker = null
         super.onDestroy()
     }
 

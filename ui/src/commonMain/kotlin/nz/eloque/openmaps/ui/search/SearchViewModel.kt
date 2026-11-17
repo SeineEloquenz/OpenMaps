@@ -23,6 +23,7 @@ import nz.eloque.openmaps.core.model.formatted
 import nz.eloque.openmaps.core.model.parseCoordinates
 import nz.eloque.openmaps.core.model.plusCode
 import nz.eloque.openmaps.core.model.storageKey
+import nz.eloque.openmaps.core.platform.Contacts
 import nz.eloque.openmaps.ui.components.LoadState
 import nz.eloque.openmaps.ui.components.loadOnce
 
@@ -35,6 +36,7 @@ data class Suggestions(
 class SearchViewModel(
     private val geocoder: Geocoder,
     private val places: PlacesStore,
+    private val contacts: Contacts,
 ) : ViewModel() {
     private val _query = MutableStateFlow("")
     val query: StateFlow<String> = _query.asStateFlow()
@@ -72,6 +74,11 @@ class SearchViewModel(
 
     fun setQuery(value: String) {
         _query.value = value
+    }
+
+    /** Searches for an address the user picks from their contacts. */
+    fun searchContact() {
+        viewModelScope.launch { contacts.pickAddress()?.let(::setQuery) }
     }
 
     fun remember(result: SearchResult) {
