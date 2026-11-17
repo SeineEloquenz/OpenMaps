@@ -1,6 +1,7 @@
 package nz.eloque.openmaps.data.routing
 
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.map
 import nz.eloque.openmaps.core.model.Itinerary
 import nz.eloque.openmaps.core.model.LocationUpdates
 import nz.eloque.openmaps.core.model.Navigator
@@ -38,6 +39,8 @@ val ActiveRoutingServer =
         helpUrl = "https://fossgis.de/arbeitsgruppen/osm-server/nutzungsbedingungen/",
     )
 
+internal const val ORI_ROAD_EVENTS = "https://ori.eloque.nz"
+
 /** An open-road-incidents server for roadworks and closures on the map. */
 val RoadEventsServer =
     ServiceSetting(
@@ -45,7 +48,7 @@ val RoadEventsServer =
         ServiceRole.ROAD_EVENTS,
         ServiceSettingKind.SERVER_URL,
         "OpenRoadIncidents",
-        default = "https://ori.eloque.nz",
+        default = ORI_ROAD_EVENTS,
     )
 
 /** The settings this module's sources read. */
@@ -99,5 +102,5 @@ fun routingModule(
             get(),
         )
     }
-    single<RoadEvents> { OpenRoadIncidents(get(), get<SettingsStore>().serviceValue(RoadEventsServer.id)) }
+    single<RoadEvents> { OpenRoadIncidents(get(), get<SettingsStore>().serviceValue(RoadEventsServer.id).map { it ?: ORI_ROAD_EVENTS }) }
 }

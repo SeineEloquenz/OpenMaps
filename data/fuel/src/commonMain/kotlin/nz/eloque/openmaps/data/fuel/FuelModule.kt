@@ -16,9 +16,11 @@ val FuelPricesServer =
         ServiceRole.FUEL_PRICES,
         ServiceSettingKind.SERVER_URL,
         "open-fuel-prices",
-        default = "https://ori.eloque.nz/fuel",
+        default = ORI_FUEL_PRICES,
         helpUrl = "https://github.com/SeineEloquenz/open-fuel-prices",
     )
+
+internal const val ORI_FUEL_PRICES = "https://ori.eloque.nz/fuel"
 
 /** The settings this module's sources read. */
 val fuelServiceSettings = listOf(FuelPricesServer)
@@ -26,7 +28,10 @@ val fuelServiceSettings = listOf(FuelPricesServer)
 /** Registers each source as a [FuelPriceSource]. Other modules add countries by registering more. */
 val fuelModule =
     module {
-        single { OriFuelPrices(get(), get<SettingsStore>().serviceValue(FuelPricesServer.id)) } bind FuelPriceSource::class
+        single {
+            val settings = get<SettingsStore>()
+            OriFuelPrices(get(), baseUrl = { settings.serviceValue(FuelPricesServer.id).value ?: ORI_FUEL_PRICES })
+        } bind FuelPriceSource::class
         single { AustriaPrices(get()) } bind FuelPriceSource::class
         single { TankPulsPrices(get()) } bind FuelPriceSource::class
         single<FuelPrices> { CombinedFuelPrices(getAll()) }

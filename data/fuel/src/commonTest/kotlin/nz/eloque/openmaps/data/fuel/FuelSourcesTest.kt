@@ -84,7 +84,7 @@ class FuelSourcesTest {
                     expectSuccess = true
                     install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
                 }
-            val source = OriFuelPrices(client, server)
+            val source = OriFuelPrices(client, baseUrl = { server.value })
 
             val station = source.stations(LatLng(41.9, 12.55), GeoBounds(41.85, 12.52, 41.95, 12.6)).single()
             val germany = source.stations(LatLng(49.0, 8.4), GeoBounds(48.9, 8.3, 49.1, 8.5))

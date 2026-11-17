@@ -8,7 +8,6 @@ import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.SerialName
@@ -68,7 +67,7 @@ internal data class OfpPriceDto(
 /** Prices from an open-fuel-prices server, which collects the countries that publish whole-country files. */
 internal class OriFuelPrices(
     private val client: HttpClient,
-    private val baseUrl: StateFlow<String?>,
+    private val baseUrl: () -> String?,
     private val now: () -> Instant = { Clock.System.now() },
 ) : FuelPriceSource {
     override val attribution = Attribution("open-fuel-prices", "https://github.com/SeineEloquenz/open-fuel-prices")
@@ -76,7 +75,7 @@ internal class OriFuelPrices(
     // The server says which countries it covers, so areas are checked against its index instead.
     override val coverage = listOf(GeoBounds(-90.0, -180.0, 90.0, 180.0))
 
-    override val available get() = !baseUrl.value.isNullOrBlank()
+    override val available get() = !baseUrl().isNullOrBlank()
 
     private val lock = Mutex()
     private var index: Triple<String, Instant, OfpIndexDto>? = null
@@ -86,7 +85,7 @@ internal class OriFuelPrices(
         center: LatLng,
         area: GeoBounds,
     ): List<PricedStation> {
-        val base = baseUrl.value?.takeIf { it.isNotBlank() }?.trimEnd('/') ?: return emptyList()
+        val base = baseUrl()?.takeIf { it.isNotBlank() }?.trimEnd('/') ?: return emptyList()
         val index = index(base)
         val sources =
             index.sources
