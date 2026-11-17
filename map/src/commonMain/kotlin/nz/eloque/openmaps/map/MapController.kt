@@ -123,6 +123,7 @@ class MapController internal constructor(
     private val roadEventsState: MutableState<RoadEventTiles?>,
     private val puckState: MutableState<NavigationPuck?>,
     private val parkedCarState: MutableState<LatLng?>,
+    private val measuringState: MutableState<List<LatLng>?>,
 ) {
     val isLocationPermissionGranted: Boolean
         get() = location.permission is LocationPermission.Granted
@@ -162,6 +163,9 @@ class MapController internal constructor(
 
     /** The button for choosing [layers], shown where [floatingAction] goes while that is unset. */
     var layersAction: MapAction? by mutableStateOf(null)
+
+    /** Points of a distance being measured, joined up to the crosshair at the map center, or null when not measuring. */
+    var measuring: List<LatLng>? by measuringState
 
     /** Where the user left the car, drawn as a badge. */
     var parkedCar: LatLng? by parkedCarState
@@ -342,6 +346,7 @@ fun rememberMapController(
     val roadEventsState = remember { mutableStateOf<RoadEventTiles?>(null) }
     val puckState = remember { mutableStateOf<NavigationPuck?>(null) }
     val parkedCarState = remember { mutableStateOf<LatLng?>(null) }
+    val measuringState = remember { mutableStateOf<List<LatLng>?>(null, referentialEqualityPolicy()) }
     val puckIcon =
         rememberVectorPainter(Icons.Default.Navigation).let { painter ->
             image(remember(painter, markerColor) { BadgePainter(painter, markerColor, Color.White) }, size = DpSize(30.dp, 30.dp))
@@ -458,6 +463,9 @@ fun rememberMapController(
                 )
             }
             RouteLabels(routesState.value, routeColors) { id -> controllerRef[0]?.onRouteClick?.invoke(id) }
+            measuringState.value?.let { points ->
+                MeasureLayers(points + listOfNotNull(controllerRef[0]?.center), markerColor)
+            }
             puckState.value?.let { puck ->
                 val source = rememberGeoJsonSource(GeoJsonData.Features(Point(puck.position.toPosition())))
                 if (puck.bearing == null) {
@@ -505,6 +513,7 @@ fun rememberMapController(
             roadEventsState,
             puckState,
             parkedCarState,
+            measuringState,
         )
     }
         .also { controllerRef[0] = it }

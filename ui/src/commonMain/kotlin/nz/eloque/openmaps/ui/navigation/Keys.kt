@@ -124,6 +124,13 @@ data class TripKey(
 @Serializable
 data object SavedKey : NavKey
 
+/** Measuring a distance on the map, starting at a point. */
+@Serializable
+data class MeasureKey(
+    val latitude: Double,
+    val longitude: Double,
+) : NavKey
+
 /** A trip with turn-by-turn guidance. A null [from] starts at the user's location. [simulate] drives the route by itself. */
 @Serializable
 data class NavigationKey(

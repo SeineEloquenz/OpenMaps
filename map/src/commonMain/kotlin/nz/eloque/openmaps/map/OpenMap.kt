@@ -81,6 +81,7 @@ fun OpenMap(
         viewportInsets = contentPadding,
         interactions = interactions,
     ) {
+        if (controller.measuring != null) Crosshair(Modifier.padding(contentPadding))
         Box(
             Modifier
                 .fillMaxSize()

@@ -113,6 +113,7 @@ import nz.eloque.openmaps.ui.guidance.TransitGuidanceBanner
 import nz.eloque.openmaps.ui.guidance.TransitGuidanceSheet
 import nz.eloque.openmaps.ui.home.HomeSheet
 import nz.eloque.openmaps.ui.layers.LayersSheet
+import nz.eloque.openmaps.ui.measure.MeasureSheet
 import nz.eloque.openmaps.ui.navigation.AboutKey
 import nz.eloque.openmaps.ui.navigation.CategoryKey
 import nz.eloque.openmaps.ui.navigation.DirectionsField
@@ -121,6 +122,7 @@ import nz.eloque.openmaps.ui.navigation.Endpoint
 import nz.eloque.openmaps.ui.navigation.HomeKey
 import nz.eloque.openmaps.ui.navigation.ListKey
 import nz.eloque.openmaps.ui.navigation.MapLink
+import nz.eloque.openmaps.ui.navigation.MeasureKey
 import nz.eloque.openmaps.ui.navigation.NavigationKey
 import nz.eloque.openmaps.ui.navigation.PlaceKey
 import nz.eloque.openmaps.ui.navigation.RoadEventKey
@@ -357,6 +359,7 @@ fun App(
                                         onOpenTrip = { tripId, stopName -> backStack.add(TripKey(tripId, stopName)) },
                                     )
                                 }
+                                entry<MeasureKey> { MeasureSheet(it, map) }
                                 entry<SavedKey> {
                                     SavedSheet(
                                         onOpenPlace = { backStack.add(it.toKey()) },
@@ -414,6 +417,7 @@ fun App(
                                         onDirections = { backStack.add(DirectionsKey(from = null, to = place.toEndpoint())) },
                                         onOpenStop = backStack::add,
                                         onOpenTrip = { tripId, stopName -> backStack.add(TripKey(tripId, stopName)) },
+                                        onMeasure = { backStack.add(MeasureKey(place.latitude, place.longitude)) },
                                     )
                                 }
                                 entry<StopKey> { stop ->

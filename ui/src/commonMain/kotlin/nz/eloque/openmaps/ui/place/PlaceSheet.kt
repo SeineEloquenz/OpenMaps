@@ -37,6 +37,7 @@ import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Straighten
 import androidx.compose.material.icons.filled.TakeoutDining
 import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material.icons.filled.Wc
@@ -119,6 +120,7 @@ import nz.eloque.openmaps.ui.resources.feature_wifi
 import nz.eloque.openmaps.ui.resources.filter_baby_changing
 import nz.eloque.openmaps.ui.resources.filter_bottle_refill
 import nz.eloque.openmaps.ui.resources.fuel_prices
+import nz.eloque.openmaps.ui.resources.measure_distance
 import nz.eloque.openmaps.ui.resources.nearby_departures
 import nz.eloque.openmaps.ui.resources.operator
 import nz.eloque.openmaps.ui.resources.phone
@@ -148,6 +150,7 @@ fun PlaceSheet(
     onDirections: () -> Unit,
     onOpenStop: (StopKey) -> Unit,
     onOpenTrip: (tripId: String, stopName: String) -> Unit,
+    onMeasure: () -> Unit,
 ) {
     val viewModel = koinViewModel<PlaceViewModel> { parametersOf(place.parsedId, place.location, !place.pinned, place.category == "fuel") }
     val details by viewModel.details.collectAsStateWithLifecycle()
@@ -167,7 +170,7 @@ fun PlaceSheet(
             }
             StatusLine(place, loaded, map)
         }
-        ActionRow(place, loaded, shareUrl = viewModel.pageUrl ?: map.linkTo(place.location), onDirections)
+        ActionRow(place, loaded, shareUrl = viewModel.pageUrl ?: map.linkTo(place.location), onDirections, onMeasure)
         media?.let { MediaSection(it) }
         loaded?.description?.let {
             Text(it, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
@@ -227,6 +230,7 @@ private fun ActionRow(
     details: PlaceDetails?,
     shareUrl: String,
     onDirections: () -> Unit,
+    onMeasure: () -> Unit,
 ) {
     val uriHandler = LocalUriHandler.current
     val sharer = koinInject<Sharer>()
@@ -245,6 +249,7 @@ private fun ActionRow(
             item { ActionButton(Icons.Default.Language, Res.string.website) { uriHandler.openUri(url) } }
         }
         item { ActionButton(Icons.Default.Share, Res.string.share) { sharer.share("${place.name}\n$shareUrl") } }
+        item { ActionButton(Icons.Default.Straighten, Res.string.measure_distance, onMeasure) }
         item { ActionButton(Icons.Outlined.Flag, Res.string.report) { reporting = true } }
     }
 }
