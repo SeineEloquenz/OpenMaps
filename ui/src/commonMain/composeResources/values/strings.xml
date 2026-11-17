@@ -261,7 +261,7 @@
     <string name="api_keys">API keys</string>
     <string name="api_keys_detail">Some services work through a key built into OpenMaps and shared by everyone using it. If one runs into its limits, enter your own free key.</string>
     <string name="privacy">Privacy</string>
-    <string name="privacy_detail">There is no account and no tracking. Searches and routes are sent to Transitous, walking and cycling routes to the Valhalla server of FOSSGIS e.V., place details are looked up on Nominatim, nearby places on Photon, photos and summaries of places you open on Wikimedia, fuel prices for the area you search on the price services of Austria or Germany and on ori.eloque.nz, roadworks for the map you look at also on ori.eloque.nz, and map tiles come from OpenFreeMap. Your location only leaves the device as part of these requests.</string>
+    <string name="privacy_detail">There is no account and no tracking. Searches and transit routes are sent to Transitous, car routes to ori.eloque.nz, walking and cycling routes and car routes outside its map to the Valhalla server of FOSSGIS e.V., place details are looked up on Nominatim, nearby places on Photon, photos and summaries of places you open on Wikimedia, fuel prices for the area you search on the price services of Austria or Germany and on ori.eloque.nz, roadworks for the map you look at also on ori.eloque.nz, and map tiles come from OpenFreeMap. Your location only leaves the device as part of these requests.</string>
 
     <string name="opening_hours">Opening hours</string>
     <string name="open_now">Open</string>

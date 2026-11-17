@@ -22,7 +22,7 @@ val RoutingServer =
         ServiceRole.STREET_ROUTING,
         ServiceSettingKind.SERVER_URL,
         "Valhalla",
-        default = null,
+        default = ORI_SERVER,
         helpUrl = "https://github.com/valhalla/valhalla",
     )
 
@@ -39,7 +39,7 @@ val ActiveRoutingServer =
         helpUrl = "https://fossgis.de/arbeitsgruppen/osm-server/nutzungsbedingungen/",
     )
 
-internal const val ORI_ROAD_EVENTS = "https://ori.eloque.nz"
+internal const val ORI_SERVER = "https://ori.eloque.nz"
 
 /** An open-road-incidents server for roadworks and closures on the map. */
 val RoadEventsServer =
@@ -48,7 +48,7 @@ val RoadEventsServer =
         ServiceRole.ROAD_EVENTS,
         ServiceSettingKind.SERVER_URL,
         "OpenRoadIncidents",
-        default = ORI_ROAD_EVENTS,
+        default = ORI_SERVER,
     )
 
 /** The settings this module's sources read. */
@@ -85,7 +85,7 @@ fun routingModule(
     single {
         val settings = get<SettingsStore>()
         ValhallaServers(
-            car = { settings.serviceValue(RoutingServer.id).value },
+            car = { settings.serviceValue(RoutingServer.id).value ?: ORI_SERVER },
             active = { settings.serviceValue(ActiveRoutingServer.id).value ?: FOSSGIS_VALHALLA },
         )
     }
@@ -102,5 +102,5 @@ fun routingModule(
             get(),
         )
     }
-    single<RoadEvents> { OpenRoadIncidents(get(), get<SettingsStore>().serviceValue(RoadEventsServer.id).map { it ?: ORI_ROAD_EVENTS }) }
+    single<RoadEvents> { OpenRoadIncidents(get(), get<SettingsStore>().serviceValue(RoadEventsServer.id).map { it ?: ORI_SERVER }) }
 }
