@@ -17,15 +17,11 @@ data class Waypoint(
     val location: LatLng,
     val stopId: String?,
     val platform: String?,
-    val scheduledPlatform: String?,
     val arrival: EventTime?,
     val departure: EventTime?,
     val isCancelled: Boolean,
     val timeZone: String?,
-) {
-    val platformChanged: Boolean
-        get() = platformChanged(platform, scheduledPlatform)
-}
+)
 
 data class Line(
     val shortName: String?,
@@ -123,28 +119,7 @@ data class Departure(
     val headsign: String?,
     val time: EventTime,
     val platform: String?,
-    val scheduledPlatform: String? = null,
     val tripId: String?,
     val isCancelled: Boolean,
     val alerts: List<Alert>,
-) {
-    val platformChanged: Boolean
-        get() = platformChanged(platform, scheduledPlatform)
-}
-
-/** True when the stop moved to another platform. Numbered platforms compare by number, as feeds write `2` and `2(U)` alike. */
-fun platformChanged(
-    platform: String?,
-    scheduled: String?,
-): Boolean {
-    if (platform == null || scheduled == null) return false
-    val number = PlatformNumber.find(platform)?.value
-    val scheduledNumber = PlatformNumber.find(scheduled)?.value
-    if (number != null && scheduledNumber != null) return number.trimStart('0') != scheduledNumber.trimStart('0')
-    return platform.bare() != scheduled.bare()
-}
-
-private fun String.bare() = replace(Bracketed, "").trim().lowercase()
-
-private val PlatformNumber = Regex("""^\s*\d+""")
-private val Bracketed = Regex("""\(.*?\)""")
+)

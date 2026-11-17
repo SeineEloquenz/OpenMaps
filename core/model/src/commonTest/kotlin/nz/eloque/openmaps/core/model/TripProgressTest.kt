@@ -14,7 +14,7 @@ class TripProgressTest {
         location: LatLng,
         arrival: String?,
         departure: String?,
-    ) = Waypoint(name, location, "stop-$name", null, null, arrival?.let(::event), departure?.let(::event), false, null)
+    ) = Waypoint(name, location, "stop-$name", null, arrival?.let(::event), departure?.let(::event), false, null)
 
     private val home = LatLng(49.000, 8.400)
     private val a = LatLng(49.000, 8.405)

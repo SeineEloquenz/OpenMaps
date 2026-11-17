@@ -313,7 +313,6 @@ private fun waypoint(
     location = location,
     stopId = null,
     platform = null,
-    scheduledPlatform = null,
     arrival = EventTime(time, time, isRealTime = false),
     departure = EventTime(time, time, isRealTime = false),
     isCancelled = false,

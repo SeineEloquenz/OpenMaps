@@ -30,7 +30,7 @@ class TransitTripGuideTest {
         arrival: String? = null,
         departure: String? = null,
         platform: String? = null,
-    ) = Waypoint(name, location, "stop-$name", platform, platform, arrival?.let { event(it) }, departure?.let { event(it) }, false, null)
+    ) = Waypoint(name, location, "stop-$name", platform, arrival?.let { event(it) }, departure?.let { event(it) }, false, null)
 
     private val a = LatLng(49.0, 8.40)
     private val b = LatLng(49.0, 8.42)
@@ -94,15 +94,15 @@ class TransitTripGuideTest {
             tram(
                 "1",
                 stop("Origin", LatLng(49.0, 8.38), departure = "11:55"),
-                Waypoint("End", d, "stop-End", null, null, event("12:20", "12:22"), null, false, null),
+                Waypoint("End", d, "stop-End", null, event("12:20", "12:22"), null, false, null),
                 "11:55",
                 "12:20",
                 "t1",
             ).copy(
                 intermediateStops =
                     listOf(
-                        Waypoint("A", a, "stop-A", "3", "1", event("12:00", "12:03"), event("12:00", "12:03"), false, null),
-                        Waypoint("B", b, "stop-B", null, null, event("12:10", "12:13"), event("12:10", "12:13"), false, null),
+                        Waypoint("A", a, "stop-A", "3", event("12:00", "12:03"), event("12:00", "12:03"), false, null),
+                        Waypoint("B", b, "stop-B", null, event("12:10", "12:13"), event("12:10", "12:13"), false, null),
                     ),
             )
         val updated = first.updatedFrom(run)

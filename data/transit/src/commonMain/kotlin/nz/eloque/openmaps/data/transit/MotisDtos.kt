@@ -39,7 +39,6 @@ internal data class PlaceDto(
     val scheduledArrival: String? = null,
     val scheduledDeparture: String? = null,
     val track: String? = null,
-    val scheduledTrack: String? = null,
     val cancelled: Boolean = false,
     val alerts: List<AlertDto> = emptyList(),
     val modes: List<String> = emptyList(),
