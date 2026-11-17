@@ -1,6 +1,7 @@
 package nz.eloque.openmaps.core.model
 
 import kotlinx.coroutines.flow.StateFlow
+import kotlin.time.Instant
 
 /** Kinds of public transport a route may use, as offered to the user. */
 enum class ModeGroup(
@@ -73,6 +74,11 @@ interface SettingsStore {
 
     fun setMapLayers(layers: Set<MapLayer>)
 
+    /** Where the user last left the car, null when not remembered. */
+    val parkedCar: StateFlow<ParkedCar?>
+
+    fun setParkedCar(car: ParkedCar?)
+
     /** The user's value for the [ServiceSetting] with [id], or null to use its default. */
     fun serviceValue(id: String): StateFlow<String?>
 
@@ -82,3 +88,8 @@ interface SettingsStore {
         value: String?,
     )
 }
+
+data class ParkedCar(
+    val location: LatLng,
+    val since: Instant,
+)

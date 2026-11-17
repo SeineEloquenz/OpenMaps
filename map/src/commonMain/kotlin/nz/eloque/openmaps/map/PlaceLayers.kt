@@ -377,6 +377,31 @@ internal fun ResultLayers(
     )
 }
 
+/** The parked car as a badge in the colour of the user's own places. */
+@Composable
+internal fun ParkedCarLayer(
+    location: LatLng?,
+    dark: Boolean,
+    onClick: () -> Unit,
+) {
+    location ?: return
+    val outline = if (dark) PinRingDark else Color.White
+    val color = if (dark) OwnPinDark else OwnPinLight
+    val painter = rememberVectorPainter(Icons.Default.DirectionsCar)
+    val badge = image(remember(painter, color, outline) { BadgePainter(painter, color, outline) }, size = DpSize(26.dp, 26.dp))
+    val source = rememberGeoJsonSource(GeoJsonData.Features(Point(location.toPosition())))
+    SymbolLayer(
+        id = "parked-car",
+        source = source,
+        iconImage = badge,
+        iconAllowOverlap = const(true),
+        onClick = {
+            onClick()
+            ClickResult.Consume
+        },
+    )
+}
+
 private const val RESULT_INDEX = "i"
 private const val RESULT_NAME = "n"
 private const val RESULT_ICON = "c"

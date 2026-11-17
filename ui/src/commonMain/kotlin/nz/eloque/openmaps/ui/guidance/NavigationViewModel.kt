@@ -6,10 +6,14 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import nz.eloque.openmaps.core.model.LatLng
 import nz.eloque.openmaps.core.model.NavigationState
+import nz.eloque.openmaps.core.model.NavigationStatus
 import nz.eloque.openmaps.core.model.Navigator
+import nz.eloque.openmaps.core.model.ParkedCar
 import nz.eloque.openmaps.core.model.SettingsStore
 import nz.eloque.openmaps.core.model.TransportMode
 import nz.eloque.openmaps.core.model.TravelMode
@@ -17,6 +21,7 @@ import nz.eloque.openmaps.ui.components.LoadState
 import nz.eloque.openmaps.ui.components.loadOnce
 import nz.eloque.openmaps.ui.directions.ItineraryCache
 import nz.eloque.openmaps.ui.navigation.NavigationKey
+import kotlin.time.Clock
 
 /** Runs one trip for as long as its screen is open. */
 class NavigationViewModel(
@@ -27,6 +32,15 @@ class NavigationViewModel(
     private val key: NavigationKey,
 ) : ViewModel() {
     val state: StateFlow<NavigationState?> = navigator.state
+
+    init {
+        if (key.mode == TravelMode.CAR && !key.simulate) {
+            viewModelScope.launch {
+                val arrived = navigator.state.filterNotNull().first { it.status == NavigationStatus.ARRIVED }
+                settings.setParkedCar(ParkedCar(arrived.position ?: key.to.location, Clock.System.now()))
+            }
+        }
+    }
 
     private val _start = MutableStateFlow<LoadState<Unit>?>(if (resumed()) LoadState.Loaded(Unit) else null)
 

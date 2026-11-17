@@ -42,6 +42,7 @@ import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -100,6 +101,7 @@ import nz.eloque.openmaps.ui.category.CategoryChipsHeight
 import nz.eloque.openmaps.ui.category.CategorySheet
 import nz.eloque.openmaps.ui.category.label
 import nz.eloque.openmaps.ui.components.StopsOnMap
+import nz.eloque.openmaps.ui.components.clockTime
 import nz.eloque.openmaps.ui.directions.DirectionsSheet
 import nz.eloque.openmaps.ui.directions.RouteSheet
 import nz.eloque.openmaps.ui.directions.TripSheet
@@ -138,6 +140,8 @@ import nz.eloque.openmaps.ui.resources.clear
 import nz.eloque.openmaps.ui.resources.dropped_pin
 import nz.eloque.openmaps.ui.resources.map_layers
 import nz.eloque.openmaps.ui.resources.my_location
+import nz.eloque.openmaps.ui.resources.parked_car
+import nz.eloque.openmaps.ui.resources.parked_since
 import nz.eloque.openmaps.ui.resources.search_hint
 import nz.eloque.openmaps.ui.resources.settings
 import nz.eloque.openmaps.ui.resources.waiting_for_location
@@ -233,6 +237,18 @@ fun App(
             onDispose { map.onLongPress = null }
         }
         val settings = koinInject<SettingsStore>()
+        val parkedCar by settings.parkedCar.collectAsState()
+        val carName = stringResource(Res.string.parked_car)
+        val parkedText = parkedCar?.let { stringResource(Res.string.parked_since, clockTime(it.since)) }
+        LaunchedEffect(parkedCar) { map.parkedCar = parkedCar?.location }
+        DisposableEffect(map, parkedCar) {
+            map.onParkedCarClick = {
+                parkedCar?.let { car ->
+                    backStack.add(PlaceKey(carName, car.location.latitude, car.location.longitude, parkedText, null, null, pinned = true))
+                }
+            }
+            onDispose { map.onParkedCarClick = null }
+        }
         LaunchedEffect(links) {
             links.collect { link ->
                 when (val target = parseMapLink(link)) {

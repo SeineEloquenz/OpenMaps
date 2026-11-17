@@ -6,12 +6,15 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import nz.eloque.openmaps.core.model.DistanceUnit
 import nz.eloque.openmaps.core.model.Fuel
+import nz.eloque.openmaps.core.model.LatLng
 import nz.eloque.openmaps.core.model.MapLayer
 import nz.eloque.openmaps.core.model.ModeGroup
+import nz.eloque.openmaps.core.model.ParkedCar
 import nz.eloque.openmaps.core.model.RouteOptions
 import nz.eloque.openmaps.core.model.SettingsStore
 import nz.eloque.openmaps.core.model.TravelMode
 import nz.eloque.openmaps.core.model.WalkingSpeed
+import kotlin.time.Instant
 
 /** Values this version does not know, such as a mode group added later, are ignored on read. */
 internal class PreferencesSettingsStore(
@@ -82,6 +85,26 @@ internal class PreferencesSettingsStore(
         _mapLayers.value = layers
     }
 
+    private val _parkedCar =
+        MutableStateFlow(
+            settings.getStringOrNull(PARKED_CAR)?.split(",")?.let { parts ->
+                val lat = parts.getOrNull(0)?.toDoubleOrNull()
+                val lon = parts.getOrNull(1)?.toDoubleOrNull()
+                val since = parts.getOrNull(2)?.toLongOrNull()
+                if (lat == null || lon == null || since == null) null else ParkedCar(LatLng(lat, lon), Instant.fromEpochSeconds(since))
+            },
+        )
+    override val parkedCar: StateFlow<ParkedCar?> = _parkedCar.asStateFlow()
+
+    override fun setParkedCar(car: ParkedCar?) {
+        if (car == null) {
+            settings.remove(PARKED_CAR)
+        } else {
+            settings.putString(PARKED_CAR, "${car.location.latitude},${car.location.longitude},${car.since.epochSeconds}")
+        }
+        _parkedCar.value = car
+    }
+
     private val serviceValues = mutableMapOf<String, MutableStateFlow<String?>>()
 
     override fun serviceValue(id: String): StateFlow<String?> = serviceState(id).asStateFlow()
@@ -134,5 +157,6 @@ internal class PreferencesSettingsStore(
         const val SPEEDING_ALERT = "navigation.speeding_alert"
         const val PREFERRED_FUEL = "places.preferred_fuel"
         const val MAP_LAYERS = "map.layers"
+        const val PARKED_CAR = "parking.car"
     }
 }

@@ -1,17 +1,30 @@
 package nz.eloque.openmaps.data.storage
 
 import com.russhwolf.settings.MapSettings
+import nz.eloque.openmaps.core.model.LatLng
 import nz.eloque.openmaps.core.model.ModeGroup
+import nz.eloque.openmaps.core.model.ParkedCar
 import nz.eloque.openmaps.core.model.RouteOptions
 import nz.eloque.openmaps.core.model.TravelMode
 import nz.eloque.openmaps.core.model.WalkingSpeed
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.time.Instant
 
 class PreferencesSettingsStoreTest {
     @Test
     fun defaultsWhenEmpty() {
         assertEquals(RouteOptions(), PreferencesSettingsStore(MapSettings()).routeOptions.value)
+    }
+
+    @Test
+    fun remembersAndForgetsTheParkedCar() {
+        val settings = MapSettings()
+        val car = ParkedCar(LatLng(49.00691, 8.4037), Instant.fromEpochSeconds(1_800_000_000))
+        PreferencesSettingsStore(settings).setParkedCar(car)
+        assertEquals(car, PreferencesSettingsStore(settings).parkedCar.value)
+        PreferencesSettingsStore(settings).setParkedCar(null)
+        assertEquals(null, PreferencesSettingsStore(settings).parkedCar.value)
     }
 
     @Test

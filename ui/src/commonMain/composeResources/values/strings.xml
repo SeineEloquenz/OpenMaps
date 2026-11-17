@@ -45,6 +45,10 @@
     <string name="report_failed">The note could not be sent. Try again later.</string>
     <string name="report_view">View note</string>
     <string name="route_options">Options</string>
+    <string name="parked_car">Your car</string>
+    <string name="parked_since">Parked at %1$s</string>
+    <string name="save_parking">Save parking</string>
+    <string name="walk_there">Walk there</string>
     <string name="coordinates">Coordinates, tap to copy</string>
     <string name="route_has_tolls">Tolls</string>
     <string name="route_has_motorways">Motorways</string>

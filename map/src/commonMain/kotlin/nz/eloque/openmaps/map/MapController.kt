@@ -122,6 +122,7 @@ class MapController internal constructor(
     private val routesState: MutableState<List<MapRoute>>,
     private val roadEventsState: MutableState<RoadEventTiles?>,
     private val puckState: MutableState<NavigationPuck?>,
+    private val parkedCarState: MutableState<LatLng?>,
 ) {
     val isLocationPermissionGranted: Boolean
         get() = location.permission is LocationPermission.Granted
@@ -161,6 +162,11 @@ class MapController internal constructor(
 
     /** The button for choosing [layers], shown where [floatingAction] goes while that is unset. */
     var layersAction: MapAction? by mutableStateOf(null)
+
+    /** Where the user left the car, drawn as a badge. */
+    var parkedCar: LatLng? by parkedCarState
+
+    var onParkedCarClick: (() -> Unit)? by mutableStateOf(null)
 
     /** Shared vehicles and their stations. */
     var sharing: List<SharingPin> by sharingState
@@ -335,6 +341,7 @@ fun rememberMapController(
     val routesState = remember { mutableStateOf<List<MapRoute>>(emptyList(), referentialEqualityPolicy()) }
     val roadEventsState = remember { mutableStateOf<RoadEventTiles?>(null) }
     val puckState = remember { mutableStateOf<NavigationPuck?>(null) }
+    val parkedCarState = remember { mutableStateOf<LatLng?>(null) }
     val puckIcon =
         rememberVectorPainter(Icons.Default.Navigation).let { painter ->
             image(remember(painter, markerColor) { BadgePainter(painter, markerColor, Color.White) }, size = DpSize(30.dp, 30.dp))
@@ -365,6 +372,7 @@ fun rememberMapController(
             PlaceLayers(dark) { place -> controllerRef[0]?.onPlaceClick?.invoke(place) }
             ResultLayers(resultsState.value, resultIconState.value, dark) { place -> controllerRef[0]?.onPlaceClick?.invoke(place) }
             SharingLayers(sharingState.value, dark) { id -> controllerRef[0]?.onSharingClick?.invoke(id) }
+            ParkedCarLayer(parkedCarState.value, dark) { controllerRef[0]?.onParkedCarClick?.invoke() }
             OtherRouteLines(routesState.value, routeColors) { id -> controllerRef[0]?.onRouteClick?.invoke(id) }
             linesState.value.filter { it.points.size >= 2 }.forEachIndexed { index, line ->
                 key(index, line) {
@@ -496,6 +504,7 @@ fun rememberMapController(
             routesState,
             roadEventsState,
             puckState,
+            parkedCarState,
         )
     }
         .also { controllerRef[0] = it }
