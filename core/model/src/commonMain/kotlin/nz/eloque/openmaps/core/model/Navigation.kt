@@ -98,6 +98,8 @@ data class LocationFix(
     /** In degrees from north. */
     val bearing: Float?,
     val timeMillis: Long,
+    /** Meters above sea level, null where the device gives none. */
+    val altitude: Double? = null,
 )
 
 interface LocationUpdates {

@@ -3,7 +3,9 @@ package nz.eloque.openmaps
 import android.app.Application
 import android.content.Intent
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import nz.eloque.openmaps.core.model.LocationUpdates
 import nz.eloque.openmaps.core.model.ServiceCatalog
@@ -27,6 +29,8 @@ import nz.eloque.openmaps.navigation.SpeedingAlert
 import nz.eloque.openmaps.navigation.guidanceActive
 import nz.eloque.openmaps.navigation.guidanceAnnouncements
 import nz.eloque.openmaps.reminder.AndroidReminderScheduler
+import nz.eloque.openmaps.tracks.RecordingService
+import nz.eloque.openmaps.ui.tracks.TrackRecorder
 import nz.eloque.openmaps.ui.uiModule
 import org.koin.android.ext.android.get
 import org.koin.android.ext.koin.androidContext
@@ -78,6 +82,11 @@ class OpenMapsApplication : Application() {
         SpeedingAlert(get(), get(), MainScope())
         MainScope().launch {
             guidanceActive(get(), get()).filter { it }.collect { NavigationService.start(this@OpenMapsApplication) }
+        }
+        MainScope().launch {
+            get<TrackRecorder>().recording.map { it != null }.distinctUntilChanged().filter { it }.collect {
+                RecordingService.start(this@OpenMapsApplication)
+            }
         }
     }
 

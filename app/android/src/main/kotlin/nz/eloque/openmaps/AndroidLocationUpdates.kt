@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
+import android.os.Build
 import android.os.Looper
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -40,6 +41,7 @@ private fun Location.toFix() =
         speed = if (hasSpeed()) speed else null,
         bearing = if (hasBearing()) bearing else null,
         timeMillis = time,
+        altitude = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE && hasMslAltitude()) mslAltitudeMeters else null,
     )
 
 private const val INTERVAL_MILLIS = 1_000L

@@ -160,6 +160,7 @@ import nz.eloque.openmaps.ui.settings.SettingsPage
 import nz.eloque.openmaps.ui.sharing.SharingSheet
 import nz.eloque.openmaps.ui.stop.StopSheet
 import nz.eloque.openmaps.ui.theme.OpenMapsTheme
+import nz.eloque.openmaps.ui.tracks.TrackRecorder
 import nz.eloque.openmaps.ui.tracks.TrackSheet
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
@@ -248,6 +249,8 @@ fun App(
         val carName = stringResource(Res.string.parked_car)
         val parkedText = parkedCar?.let { stringResource(Res.string.parked_since, clockTime(it.since)) }
         LaunchedEffect(parkedCar) { map.parkedCar = parkedCar?.location }
+        val recorder = koinInject<TrackRecorder>()
+        LaunchedEffect(recorder) { recorder.recording.collect { map.recording = it?.points?.map { point -> point.location }.orEmpty() } }
         DisposableEffect(map, parkedCar) {
             map.onParkedCarClick = {
                 parkedCar?.let { car ->
@@ -369,6 +372,7 @@ fun App(
                                         onDirectionsTo = { backStack.add(DirectionsKey(from = null, to = it.toEndpoint())) },
                                         onSetFavourite = { backStack.add(SearchKey(saveAs = it)) },
                                         onOpenSaved = { backStack.add(SavedKey) },
+                                        onOpenTrack = { backStack.add(TrackKey(it)) },
                                         onOpenTrip = { tripId, stopName -> backStack.add(TripKey(tripId, stopName)) },
                                     )
                                 }

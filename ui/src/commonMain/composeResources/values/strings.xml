@@ -45,6 +45,12 @@
     <string name="report_failed">The note could not be sent. Try again later.</string>
     <string name="report_view">View note</string>
     <string name="route_options">Options</string>
+    <string name="recorded_track">Track %1$s %2$s</string>
+    <string name="record_track">Record track</string>
+    <string name="recording">Recording</string>
+    <string name="recording_since">Since %1$s</string>
+    <string name="stop_and_save">Stop</string>
+    <string name="discard">Discard</string>
     <string name="tracks">Tracks</string>
     <string name="import_gpx">Import GPX</string>
     <string name="import_gpx_failed">That file holds no tracks or routes.</string>

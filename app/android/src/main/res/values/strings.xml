@@ -3,6 +3,9 @@
     <string name="app_name">OpenMaps</string>
     <string name="reminders_channel">Reminders</string>
     <string name="navigation_channel">Navigation</string>
+    <string name="recording_channel">Track recording</string>
+    <string name="recording_title">Recording a track</string>
+    <string name="recording_stop">Stop and save</string>
     <string name="navigation_next">In %1$s: %2$s</string>
     <string name="navigation_left">%1$s · %2$d min left</string>
     <string name="navigation_arrived">You have arrived</string>

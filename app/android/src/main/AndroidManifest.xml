@@ -81,6 +81,11 @@
             android:exported="false"
             android:foregroundServiceType="location" />
 
+        <service
+            android:name=".tracks.RecordingService"
+            android:exported="false"
+            android:foregroundServiceType="location" />
+
         <receiver
             android:name=".reminder.ReminderReceiver"
             android:exported="false" />

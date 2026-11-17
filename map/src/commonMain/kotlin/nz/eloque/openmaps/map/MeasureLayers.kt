@@ -49,3 +49,14 @@ internal fun Crosshair(modifier: Modifier = Modifier) {
         Icon(Icons.Default.Add, contentDescription = null, tint = Color.White, modifier = Modifier.align(Alignment.Center).size(30.dp))
     }
 }
+
+/** The track being recorded, as a line ending at the latest point. */
+@Composable
+internal fun RecordingLayer(
+    points: List<LatLng>,
+    color: Color,
+) {
+    if (points.size < 2) return
+    val source = rememberGeoJsonSource(GeoJsonData.Features(LineString(points.map { it.toPosition() })))
+    LineLayer(id = "recording-line", source = source, color = const(color), width = const(4.dp))
+}

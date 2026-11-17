@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.FiberManualRecord
 import androidx.compose.material.icons.filled.LocalParking
 import androidx.compose.material.icons.outlined.Bookmarks
 import androidx.compose.material3.AssistChip
@@ -25,10 +26,12 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.launch
 import nz.eloque.openmaps.core.model.Favourite
 import nz.eloque.openmaps.core.model.FavouriteLabel
 import nz.eloque.openmaps.core.model.ParkedCar
@@ -48,15 +51,22 @@ import nz.eloque.openmaps.ui.navigation.StopKey
 import nz.eloque.openmaps.ui.resources.Res
 import nz.eloque.openmaps.ui.resources.allow_location
 import nz.eloque.openmaps.ui.resources.clear
+import nz.eloque.openmaps.ui.resources.discard
 import nz.eloque.openmaps.ui.resources.nearby_departures
 import nz.eloque.openmaps.ui.resources.nearby_needs_location
 import nz.eloque.openmaps.ui.resources.no_departures
 import nz.eloque.openmaps.ui.resources.parked_car
 import nz.eloque.openmaps.ui.resources.parked_since
+import nz.eloque.openmaps.ui.resources.record_track
+import nz.eloque.openmaps.ui.resources.recording
+import nz.eloque.openmaps.ui.resources.recording_since
 import nz.eloque.openmaps.ui.resources.save_parking
 import nz.eloque.openmaps.ui.resources.saved
+import nz.eloque.openmaps.ui.resources.stop_and_save
 import nz.eloque.openmaps.ui.resources.walk_there
 import nz.eloque.openmaps.ui.search.titleRes
+import nz.eloque.openmaps.ui.tracks.Recording
+import nz.eloque.openmaps.ui.tracks.TrackRecorder
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
@@ -70,6 +80,7 @@ fun HomeSheet(
     onSetFavourite: (FavouriteLabel) -> Unit,
     onOpenSaved: () -> Unit,
     onOpenTrip: (tripId: String, stopName: String) -> Unit,
+    onOpenTrack: (Long) -> Unit,
 ) {
     val viewModel = koinViewModel<HomeViewModel>()
     val nearby by viewModel.nearby.collectAsStateWithLifecycle()
@@ -79,6 +90,9 @@ fun HomeSheet(
     val parked by settings.parkedCar.collectAsStateWithLifecycle()
     val unit by settings.distanceUnit.collectAsStateWithLifecycle()
     val carName = stringResource(Res.string.parked_car)
+    val recorder = koinInject<TrackRecorder>()
+    val recording by recorder.recording.collectAsStateWithLifecycle()
+    val scope = rememberCoroutineScope()
     val userLocation = map.userLocation
     LaunchedEffect(userLocation) { userLocation?.let(viewModel::setLocation) }
 
@@ -95,7 +109,21 @@ fun HomeSheet(
                     }?.let { here ->
                         { settings.setParkedCar(ParkedCar(here, Clock.System.now())) }
                     },
+                onRecord =
+                    {
+                        if (map.isLocationPermissionGranted) recorder.start() else map.requestLocationPermission()
+                    }.takeIf { recording == null },
             )
+        }
+        recording?.let { current ->
+            item {
+                RecordingCard(
+                    current,
+                    distance = formatDistance(current.distanceMeters, unit),
+                    onStop = { scope.launch { recorder.stop()?.let(onOpenTrack) } },
+                    onDiscard = recorder::discard,
+                )
+            }
         }
         parked?.let { car ->
             item {
@@ -152,6 +180,7 @@ private fun FavouritesRow(
     onSetFavourite: (FavouriteLabel) -> Unit,
     onOpenSaved: () -> Unit,
     onSaveParking: (() -> Unit)?,
+    onRecord: (() -> Unit)?,
 ) {
     val missing = listOf(FavouriteLabel.HOME, FavouriteLabel.WORK).filter { label -> favourites.none { it.label == label } }
     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -168,6 +197,15 @@ private fun FavouritesRow(
                 label = { Text(label.titleRes?.let { stringResource(it) }.orEmpty()) },
                 leadingIcon = { Icon(Icons.Default.Add, contentDescription = null) },
             )
+        }
+        onRecord?.let { record ->
+            item {
+                AssistChip(
+                    onClick = record,
+                    label = { Text(stringResource(Res.string.record_track)) },
+                    leadingIcon = { Icon(Icons.Default.FiberManualRecord, contentDescription = null) },
+                )
+            }
         }
         onSaveParking?.let { save ->
             item {
@@ -214,3 +252,27 @@ private fun ParkedCarCard(
 
 private fun ParkedCar.toSearchResult(name: String) =
     SearchResult.Place(id = null, name = name, location = location, area = null, category = "parking")
+
+@Composable
+private fun RecordingCard(
+    recording: Recording,
+    distance: String,
+    onStop: () -> Unit,
+    onDiscard: () -> Unit,
+) {
+    OutlinedCard(Modifier.fillMaxWidth().padding(top = 8.dp)) {
+        Row(Modifier.padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Default.FiberManualRecord, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+            Column(Modifier.weight(1f).padding(start = 16.dp)) {
+                Text(stringResource(Res.string.recording), style = MaterialTheme.typography.titleSmall)
+                Text(
+                    "$distance · ${stringResource(Res.string.recording_since, clockTime(recording.startedAt))}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            TextButton(onClick = onStop) { Text(stringResource(Res.string.stop_and_save)) }
+            IconButton(onClick = onDiscard) { Icon(Icons.Default.Close, contentDescription = stringResource(Res.string.discard)) }
+        }
+    }
+}

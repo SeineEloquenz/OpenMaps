@@ -14,6 +14,7 @@ import nz.eloque.openmaps.ui.place.PlaceViewModel
 import nz.eloque.openmaps.ui.search.SearchViewModel
 import nz.eloque.openmaps.ui.sharing.SharingViewModel
 import nz.eloque.openmaps.ui.stop.StopViewModel
+import nz.eloque.openmaps.ui.tracks.TrackRecorder
 import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
@@ -27,6 +28,7 @@ val uiModule =
             PlaceViewModel(get(), get(), get(), getOrNull(), params.getOrNull(), params.get(), params.get(), params.get())
         }
         single { ItineraryCache() }
+        single { TrackRecorder(get(), get()) }
         viewModel { params -> DirectionsViewModel(get(), get(), get(), get(), params.get()) }
         single { ActiveTrip() }
         viewModel { params -> NavigationViewModel(get(), get(), get(), get(), params.get()) }
