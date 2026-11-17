@@ -13,13 +13,15 @@ import org.maplibre.compose.sources.rememberRasterTileSource
 internal fun RadarLayers(
     radar: RadarFrames?,
     selected: Int,
+    dark: Boolean,
 ) {
     if (radar == null) return
     Anchor.Below(FIRST_LABEL_LAYER) {
         radar.frames.forEachIndexed { index, frame ->
-            key(frame.urlTemplate) {
+            val url = if (dark) frame.darkUrlTemplate else frame.urlTemplate
+            key(url) {
                 val tiles =
-                    rememberRasterTileSource(listOf(frame.urlTemplate), tileSize = 256) {
+                    rememberRasterTileSource(listOf(url), tileSize = 256) {
                         maxZoom = radar.maxZoom
                         attributionHtml = radar.attribution
                     }

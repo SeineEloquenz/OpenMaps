@@ -43,8 +43,12 @@ class RainViewerRadarTest {
             assertEquals(Instant.fromEpochSeconds(1794951600), frames.frames.first().time)
             assertEquals(Instant.fromEpochSeconds(1794954600), frames.frames[frames.latestObserved].time)
             assertEquals(
-                "https://api.librewxr.net/v2/radar/1794955200/256/{z}/{x}/{y}/2/1_1.png",
+                "https://api.librewxr.net/v2/radar/1794955200/256/{z}/{x}/{y}/2/1_1.png?arrows=dark&lightning=dots",
                 frames.frames.last().urlTemplate,
+            )
+            assertEquals(
+                "https://api.librewxr.net/v2/radar/1794955200/256/{z}/{x}/{y}/2/1_1.png?arrows=light&lightning=dots",
+                frames.frames.last().darkUrlTemplate,
             )
         }
 

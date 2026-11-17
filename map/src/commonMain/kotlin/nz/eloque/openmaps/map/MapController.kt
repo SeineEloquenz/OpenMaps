@@ -393,7 +393,7 @@ fun rememberMapController(
             initialCameraPosition = CameraPosition(center = EUROPE, zoom = 3.5),
         ) {
             OverlayLayers(layersState.value, dark)
-            RadarLayers(radarState.value?.takeIf { MapLayer.RAIN_RADAR in layersState.value }, radarFrameState.value)
+            RadarLayers(radarState.value?.takeIf { MapLayer.RAIN_RADAR in layersState.value }, radarFrameState.value, dark)
             RoadLayers(roadEventsState.value, dark, MapLayer.ROADWORKS in layersState.value) { properties ->
                 controllerRef[0]?.onRoadEventClick?.invoke(properties)
             }

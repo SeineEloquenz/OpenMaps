@@ -7,8 +7,10 @@ import kotlin.time.Instant
 data class RadarFrame(
     val time: Instant,
     val forecast: Boolean,
-    /** With `{z}`, `{x}` and `{y}` placeholders. */
+    /** With `{z}`, `{x}` and `{y}` placeholders, for the light map. */
     val urlTemplate: String,
+    /** The same for the dark map. */
+    val darkUrlTemplate: String,
 )
 
 data class RadarFrames(

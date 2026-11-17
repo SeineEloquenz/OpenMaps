@@ -83,11 +83,15 @@ internal fun WeatherMapsDto.toFrames(): RadarFrames {
     fun frame(
         dto: FrameDto,
         forecast: Boolean,
-    ) = RadarFrame(
-        Instant.fromEpochSeconds(dto.time),
-        forecast,
-        "${host.trimEnd('/')}${dto.path}/$TILE_SIZE/{z}/{x}/{y}/$COLOUR_SCHEME/$SMOOTH_SNOW.png",
-    )
+    ): RadarFrame {
+        val template = "${host.trimEnd('/')}${dto.path}/$TILE_SIZE/{z}/{x}/{y}/$COLOUR_SCHEME/$SMOOTH_SNOW.png"
+        return RadarFrame(
+            Instant.fromEpochSeconds(dto.time),
+            forecast,
+            "$template?arrows=dark&lightning=$LIGHTNING",
+            "$template?arrows=light&lightning=$LIGHTNING",
+        )
+    }
     val newest = radar.past.maxOfOrNull { it.time } ?: 0
     val past = radar.past.filter { newest - it.time < PAST_SECONDS }.sortedBy { it.time }
     return RadarFrames(
@@ -104,6 +108,8 @@ private const val COLOUR_SCHEME = 2
 
 // Smoothed, with snow drawn in its own colours.
 private const val SMOOTH_SNOW = "1_1"
+
+private const val LIGHTNING = "dots"
 
 private const val PAST_SECONDS = 3600
 private const val MAX_ZOOM = 8
