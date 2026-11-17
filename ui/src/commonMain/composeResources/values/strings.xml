@@ -454,4 +454,13 @@
     <string name="feature_gluten_free">Gluten-free options</string>
     <string name="feature_cards">Cards accepted</string>
     <string name="feature_toilets">Toilets</string>
+    <string name="feature_halal">Halal</string>
+    <string name="feature_kosher">Kosher</string>
+    <string name="feature_organic">Organic</string>
+    <string name="feature_reservations">Takes reservations</string>
+    <string name="feature_reservation_required">Reservation required</string>
+    <string name="feature_drive_through">Drive-through</string>
+    <string name="feature_air_conditioning">Air conditioning</string>
+    <string name="feature_dogs">Dogs welcome</string>
+    <string name="feature_wheelchair_toilet">Wheelchair toilet</string>
 </resources>

@@ -96,6 +96,17 @@ internal fun Map<String, String>.features(): Set<PlaceFeature> {
         if (yes("cash_in")) add(PlaceFeature.CASH_DEPOSIT)
         if (yes("changing_table")) add(PlaceFeature.CHANGING_TABLE)
         if (yes("bottle")) add(PlaceFeature.BOTTLE_REFILL)
+        if (yes("diet:halal")) add(PlaceFeature.HALAL)
+        if (yes("diet:kosher")) add(PlaceFeature.KOSHER)
+        if (yes("organic")) add(PlaceFeature.ORGANIC)
+        when (this@features["reservation"]) {
+            "required" -> add(PlaceFeature.RESERVATION_REQUIRED)
+            "yes", "recommended" -> add(PlaceFeature.RESERVATIONS)
+        }
+        if (yes("drive_through")) add(PlaceFeature.DRIVE_THROUGH)
+        if (yes("air_conditioning")) add(PlaceFeature.AIR_CONDITIONING)
+        if (this@features["dog"] in setOf("yes", "leashed", "unleashed", "designated")) add(PlaceFeature.DOGS)
+        if (yes("toilets:wheelchair")) add(PlaceFeature.WHEELCHAIR_TOILET)
     }
 }
 

@@ -39,4 +39,14 @@ class OsmTagsTest {
         assertEquals(setOf(Fuel.DIESEL), tags.fuels())
         assertTrue(tags.features().containsAll(setOf(PlaceFeature.CASH_DEPOSIT, PlaceFeature.CHANGING_TABLE)))
     }
+
+    @Test
+    fun readsDietReservationsAndDogs() {
+        val tags = mapOf("diet:halal" to "only", "reservation" to "recommended", "dog" to "leashed", "toilets:wheelchair" to "yes")
+        assertEquals(
+            setOf(PlaceFeature.HALAL, PlaceFeature.RESERVATIONS, PlaceFeature.DOGS, PlaceFeature.WHEELCHAIR_TOILET),
+            tags.features(),
+        )
+        assertEquals(setOf(PlaceFeature.RESERVATION_REQUIRED), mapOf("reservation" to "required", "dog" to "no").features())
+    }
 }

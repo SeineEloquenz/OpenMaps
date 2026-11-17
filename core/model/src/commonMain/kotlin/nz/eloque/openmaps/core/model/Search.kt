@@ -80,6 +80,15 @@ enum class PlaceFeature {
     CASH_DEPOSIT,
     CHANGING_TABLE,
     BOTTLE_REFILL,
+    HALAL,
+    KOSHER,
+    ORGANIC,
+    RESERVATIONS,
+    RESERVATION_REQUIRED,
+    DRIVE_THROUGH,
+    AIR_CONDITIONING,
+    DOGS,
+    WHEELCHAIR_TOILET,
 }
 
 /** [REGULAR] and [PREMIUM] are the grades of countries whose petrol is not sold as 95 and 98 octane, such as Mexico. */

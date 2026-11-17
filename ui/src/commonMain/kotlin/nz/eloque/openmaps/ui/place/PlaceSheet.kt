@@ -20,14 +20,17 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Accessible
+import androidx.compose.material.icons.filled.AcUnit
 import androidx.compose.material.icons.filled.BabyChangingStation
 import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Deck
 import androidx.compose.material.icons.filled.DeliveryDining
+import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Eco
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.EventSeat
 import androidx.compose.material.icons.filled.Grain
 import androidx.compose.material.icons.filled.Grass
 import androidx.compose.material.icons.filled.Language
@@ -35,9 +38,12 @@ import androidx.compose.material.icons.filled.LocalAtm
 import androidx.compose.material.icons.filled.LocalHospital
 import androidx.compose.material.icons.filled.LocalParking
 import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.filled.Pets
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.filled.RestaurantMenu
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Spa
 import androidx.compose.material.icons.filled.Straighten
 import androidx.compose.material.icons.filled.TakeoutDining
 import androidx.compose.material.icons.filled.WaterDrop
@@ -109,15 +115,24 @@ import nz.eloque.openmaps.ui.resources.coordinates
 import nz.eloque.openmaps.ui.resources.cuisine
 import nz.eloque.openmaps.ui.resources.email
 import nz.eloque.openmaps.ui.resources.fact_cash_deposit
+import nz.eloque.openmaps.ui.resources.feature_air_conditioning
 import nz.eloque.openmaps.ui.resources.feature_cards
 import nz.eloque.openmaps.ui.resources.feature_delivery
+import nz.eloque.openmaps.ui.resources.feature_dogs
+import nz.eloque.openmaps.ui.resources.feature_drive_through
 import nz.eloque.openmaps.ui.resources.feature_emergency
 import nz.eloque.openmaps.ui.resources.feature_gluten_free
+import nz.eloque.openmaps.ui.resources.feature_halal
+import nz.eloque.openmaps.ui.resources.feature_kosher
+import nz.eloque.openmaps.ui.resources.feature_organic
 import nz.eloque.openmaps.ui.resources.feature_outdoor_seating
+import nz.eloque.openmaps.ui.resources.feature_reservation_required
+import nz.eloque.openmaps.ui.resources.feature_reservations
 import nz.eloque.openmaps.ui.resources.feature_takeaway
 import nz.eloque.openmaps.ui.resources.feature_toilets
 import nz.eloque.openmaps.ui.resources.feature_vegan
 import nz.eloque.openmaps.ui.resources.feature_vegetarian
+import nz.eloque.openmaps.ui.resources.feature_wheelchair_toilet
 import nz.eloque.openmaps.ui.resources.feature_wifi
 import nz.eloque.openmaps.ui.resources.filter_baby_changing
 import nz.eloque.openmaps.ui.resources.filter_bottle_refill
@@ -170,7 +185,8 @@ fun PlaceSheet(
     Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
         Column(Modifier.padding(horizontal = 16.dp)) {
             Text(place.name, style = MaterialTheme.typography.headlineSmall)
-            val subtitle = listOfNotNull(place.category?.toCategoryLabel(), place.subtitle).joinToString(" · ")
+            val stars = loaded?.stars?.takeIf { it in 1..7 }?.let { "★".repeat(it) }
+            val subtitle = listOfNotNull(place.category?.toCategoryLabel(), stars, place.subtitle).joinToString(" · ")
             if (subtitle.isNotEmpty()) {
                 Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
@@ -405,6 +421,15 @@ private fun PlaceFeature.display(): Pair<ImageVector, StringResource> =
         PlaceFeature.CASH_DEPOSIT -> Icons.Default.LocalAtm to Res.string.fact_cash_deposit
         PlaceFeature.CHANGING_TABLE -> Icons.Default.BabyChangingStation to Res.string.filter_baby_changing
         PlaceFeature.BOTTLE_REFILL -> Icons.Default.WaterDrop to Res.string.filter_bottle_refill
+        PlaceFeature.HALAL -> Icons.Default.RestaurantMenu to Res.string.feature_halal
+        PlaceFeature.KOSHER -> Icons.Default.RestaurantMenu to Res.string.feature_kosher
+        PlaceFeature.ORGANIC -> Icons.Default.Spa to Res.string.feature_organic
+        PlaceFeature.RESERVATIONS -> Icons.Default.EventSeat to Res.string.feature_reservations
+        PlaceFeature.RESERVATION_REQUIRED -> Icons.Default.EventSeat to Res.string.feature_reservation_required
+        PlaceFeature.DRIVE_THROUGH -> Icons.Default.DirectionsCar to Res.string.feature_drive_through
+        PlaceFeature.AIR_CONDITIONING -> Icons.Default.AcUnit to Res.string.feature_air_conditioning
+        PlaceFeature.DOGS -> Icons.Default.Pets to Res.string.feature_dogs
+        PlaceFeature.WHEELCHAIR_TOILET -> Icons.AutoMirrored.Filled.Accessible to Res.string.feature_wheelchair_toilet
     }
 
 @Composable
