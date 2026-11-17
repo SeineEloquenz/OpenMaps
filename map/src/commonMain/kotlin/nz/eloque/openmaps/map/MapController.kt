@@ -36,6 +36,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.mapLatest
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonPrimitive
@@ -234,6 +235,7 @@ class MapController internal constructor(
         target: LatLng,
         zoomIn: Boolean = true,
     ) {
+        awaitEngaged()
         val current = mapState.cameraPosition.zoom
         mapState.animateCamera(CameraUpdate(center = target.toPosition(), zoom = if (zoomIn) maxOf(current, PLACE_ZOOM) else current))
     }
@@ -272,8 +274,16 @@ class MapController internal constructor(
         return "https://www.openstreetmap.org/?mlat=$latitude&mlon=$longitude#map=18/$latitude/$longitude"
     }
 
+    // Camera moves before the map view is attached are dropped, as when a link starts the app.
+    private suspend fun awaitEngaged() {
+        withTimeoutOrNull(ENGAGE_TIMEOUT_MILLIS) {
+            while (!mapState.isEngaged) delay(ENGAGE_POLL_MILLIS)
+        }
+    }
+
     suspend fun fit(points: List<LatLng>) {
         if (points.isEmpty()) return
+        awaitEngaged()
         val box =
             BoundingBox(
                 west = points.minOf { it.longitude },
@@ -499,6 +509,8 @@ private val LoadingDarkStyle =
         """{"version":8,"sources":{},"layers":[{"id":"background","type":"background","paint":{"background-color":"#1c1c1c"}}]}""",
     )
 private const val USER_ZOOM = 15.0
+private const val ENGAGE_TIMEOUT_MILLIS = 5_000L
+private const val ENGAGE_POLL_MILLIS = 50L
 
 /** Time for the tiles of a new view to load before places are read from them. */
 private const val TILE_SETTLE_MILLIS = 600L
