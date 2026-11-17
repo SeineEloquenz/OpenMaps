@@ -45,7 +45,7 @@ val RoadEventsServer =
         ServiceRole.ROAD_EVENTS,
         ServiceSettingKind.SERVER_URL,
         "OpenRoadIncidents",
-        default = null,
+        default = "https://ori.eloque.nz",
     )
 
 /** The settings this module's sources read. */

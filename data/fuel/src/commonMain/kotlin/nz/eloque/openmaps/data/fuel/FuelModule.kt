@@ -16,7 +16,7 @@ val FuelPricesServer =
         ServiceRole.FUEL_PRICES,
         ServiceSettingKind.SERVER_URL,
         "open-fuel-prices",
-        default = null,
+        default = "https://ori.eloque.nz/fuel",
         helpUrl = "https://github.com/SeineEloquenz/open-fuel-prices",
     )
 
