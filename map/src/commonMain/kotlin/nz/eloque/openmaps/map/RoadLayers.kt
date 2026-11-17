@@ -43,6 +43,7 @@ import kotlin.math.hypot
 internal fun RoadLayers(
     tiles: RoadEventTiles?,
     dark: Boolean,
+    shown: Boolean,
     onClick: (Map<String, String>) -> Unit,
 ) {
     if (tiles == null) return
@@ -61,7 +62,7 @@ internal fun RoadLayers(
     val closedBadge = image(remember(closedPainter, outline) { BadgePainter(closedPainter, ClosedColor, outline) }, size = BadgeSize)
     val worksBadge = image(remember(worksPainter, outline) { BadgePainter(worksPainter, WorksColor, outline) }, size = BadgeSize)
     val handler: FeaturesClickHandler = { clicked ->
-        val properties = clicked.firstOrNull()?.properties
+        val properties = clicked.firstOrNull()?.properties?.takeIf { shown }
         if (properties == null) {
             ClickResult.Pass
         } else {
@@ -71,20 +72,23 @@ internal fun RoadLayers(
     }
     val lines = any(feature.geometryType() eq const(GeometryType.LineString), feature.geometryType() eq const(GeometryType.MultiLineString))
     val points = any(feature.geometryType() eq const(GeometryType.Point), feature.geometryType() eq const(GeometryType.MultiPoint))
-    LineLayer(
-        id = ROAD_LINES,
-        source = source,
-        sourceLayer = tiles.layer,
-        minZoom = LINES_MIN_ZOOM,
-        filter = lines,
-        color = color,
-        opacity = switch(feature[tiles.exactProperty].convertToString(), case("false", const(0.55f)), fallback = const(0.9f)),
-        width = const(4.dp),
-        cap = const(LineCap.Round),
-        join = const(LineJoin.Round),
-        onClick = handler,
-    )
-    // Nearly transparent rather than invisible, which would drop it from tap hit tests.
+    if (shown) {
+        LineLayer(
+            id = ROAD_LINES,
+            source = source,
+            sourceLayer = tiles.layer,
+            minZoom = LINES_MIN_ZOOM,
+            filter = lines,
+            color = color,
+            opacity = switch(feature[tiles.exactProperty].convertToString(), case("false", const(0.55f)), fallback = const(0.9f)),
+            width = const(4.dp),
+            cap = const(LineCap.Round),
+            join = const(LineJoin.Round),
+            onClick = handler,
+        )
+    }
+    // Kept while hidden, as it keeps the tiles loaded that route notes read, and nearly transparent rather than invisible,
+    // which would drop it from tap hit tests.
     LineLayer(
         id = ROAD_LINE_TARGETS,
         source = source,
@@ -95,16 +99,18 @@ internal fun RoadLayers(
         width = const(24.dp),
         onClick = handler,
     )
-    SymbolLayer(
-        id = ROAD_BADGES,
-        source = source,
-        sourceLayer = tiles.layer,
-        minZoom = BADGES_MIN_ZOOM,
-        filter = points,
-        iconImage = switch(feature[tiles.closedProperty].convertToString(), case("true", closedBadge), fallback = worksBadge),
-        iconAllowOverlap = const(true),
-        onClick = handler,
-    )
+    if (shown) {
+        SymbolLayer(
+            id = ROAD_BADGES,
+            source = source,
+            sourceLayer = tiles.layer,
+            minZoom = BADGES_MIN_ZOOM,
+            filter = points,
+            iconImage = switch(feature[tiles.closedProperty].convertToString(), case("true", closedBadge), fallback = worksBadge),
+            iconAllowOverlap = const(true),
+            onClick = handler,
+        )
+    }
 }
 
 internal fun JsonObject.asText(): Map<String, String> =

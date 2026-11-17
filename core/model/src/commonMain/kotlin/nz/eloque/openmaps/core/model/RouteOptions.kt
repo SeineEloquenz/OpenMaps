@@ -42,6 +42,8 @@ data class RouteOptions(
 
 enum class DistanceUnit { METRIC, IMPERIAL }
 
+enum class MapLayer { TERRAIN, TRANSIT, CYCLING, HIKING, ROADWORKS }
+
 interface SettingsStore {
     val routeOptions: StateFlow<RouteOptions>
 
@@ -65,6 +67,11 @@ interface SettingsStore {
     val preferredFuel: StateFlow<Fuel?>
 
     fun setPreferredFuel(fuel: Fuel?)
+
+    /** Optional layers drawn over the base map. */
+    val mapLayers: StateFlow<Set<MapLayer>>
+
+    fun setMapLayers(layers: Set<MapLayer>)
 
     /** The user's value for the [ServiceSetting] with [id], or null to use its default. */
     fun serviceValue(id: String): StateFlow<String?>

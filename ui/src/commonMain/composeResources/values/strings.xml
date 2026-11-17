@@ -135,6 +135,12 @@
     <string name="favourites">Favourites</string>
     <string name="saved_routes">Routes</string>
     <string name="lists">Lists</string>
+    <string name="map_layers">Map layers</string>
+    <string name="layer_terrain">Terrain</string>
+    <string name="layer_transit">Rail and tram</string>
+    <string name="layer_cycling">Cycling routes</string>
+    <string name="layer_hiking">Hiking routes</string>
+    <string name="layer_roadworks">Roadworks</string>
     <string name="new_list">New list…</string>
     <string name="list_name">List name</string>
     <string name="list_icon">Icon</string>

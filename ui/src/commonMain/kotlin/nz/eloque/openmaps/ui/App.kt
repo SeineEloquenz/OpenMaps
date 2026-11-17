@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Settings
@@ -43,8 +44,11 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -85,6 +89,7 @@ import nz.eloque.openmaps.core.model.RoadEvents
 import nz.eloque.openmaps.core.model.SettingsStore
 import nz.eloque.openmaps.core.model.TransportMode
 import nz.eloque.openmaps.core.model.TripGuide
+import nz.eloque.openmaps.map.MapAction
 import nz.eloque.openmaps.map.MapController
 import nz.eloque.openmaps.map.OpenMap
 import nz.eloque.openmaps.map.rememberMapController
@@ -104,6 +109,7 @@ import nz.eloque.openmaps.ui.guidance.SpeedSign
 import nz.eloque.openmaps.ui.guidance.TransitGuidanceBanner
 import nz.eloque.openmaps.ui.guidance.TransitGuidanceSheet
 import nz.eloque.openmaps.ui.home.HomeSheet
+import nz.eloque.openmaps.ui.layers.LayersSheet
 import nz.eloque.openmaps.ui.navigation.AboutKey
 import nz.eloque.openmaps.ui.navigation.CategoryKey
 import nz.eloque.openmaps.ui.navigation.DirectionsField
@@ -129,6 +135,7 @@ import nz.eloque.openmaps.ui.place.PlaceSheet
 import nz.eloque.openmaps.ui.resources.Res
 import nz.eloque.openmaps.ui.resources.clear
 import nz.eloque.openmaps.ui.resources.dropped_pin
+import nz.eloque.openmaps.ui.resources.map_layers
 import nz.eloque.openmaps.ui.resources.my_location
 import nz.eloque.openmaps.ui.resources.search_hint
 import nz.eloque.openmaps.ui.resources.settings
@@ -261,6 +268,14 @@ fun App(
         }
         val roadEvents = koinInject<RoadEvents>()
         LaunchedEffect(map) { roadEvents.tiles.collect { map.roadEvents = it } }
+        LaunchedEffect(map) { settings.mapLayers.collect { map.layers = it } }
+        var showLayers by rememberSaveable { mutableStateOf(false) }
+        val layersLabel = stringResource(Res.string.map_layers)
+        DisposableEffect(map, layersLabel) {
+            map.layersAction = MapAction(Icons.Default.Layers, layersLabel) { showLayers = true }
+            onDispose { map.layersAction = null }
+        }
+        if (showLayers) LayersSheet(onDismiss = { showLayers = false })
         DisposableEffect(map) {
             map.onRoadEventClick = { properties ->
                 val top = backStack.lastOrNull()

@@ -44,6 +44,7 @@ import kotlinx.serialization.json.put
 import nz.eloque.openmaps.core.model.GeoBounds
 import nz.eloque.openmaps.core.model.LatLng
 import nz.eloque.openmaps.core.model.LoadedPlaces
+import nz.eloque.openmaps.core.model.MapLayer
 import nz.eloque.openmaps.core.model.PlaceCategory
 import nz.eloque.openmaps.core.model.RoadEventTiles
 import nz.eloque.openmaps.core.model.SearchResult
@@ -114,6 +115,7 @@ class MapController internal constructor(
     private val stopsState: MutableState<List<SearchResult.Stop>>,
     private val resultsState: MutableState<List<SearchResult.Place>>,
     private val resultIconState: MutableState<ImageVector?>,
+    private val layersState: MutableState<Set<MapLayer>>,
     private val sharingState: MutableState<List<SharingPin>>,
     private val routesState: MutableState<List<MapRoute>>,
     private val roadEventsState: MutableState<RoadEventTiles?>,
@@ -151,6 +153,12 @@ class MapController internal constructor(
 
     /** Drawn on every result pin in place of its category icon, as for the places of a list. */
     var resultIcon: ImageVector? by resultIconState
+
+    /** Optional layers drawn with the base map. */
+    var layers: Set<MapLayer> by layersState
+
+    /** The button for choosing [layers], shown where [floatingAction] goes while that is unset. */
+    var layersAction: MapAction? by mutableStateOf(null)
 
     /** Shared vehicles and their stations. */
     var sharing: List<SharingPin> by sharingState
@@ -320,6 +328,7 @@ fun rememberMapController(
     val stopsState = remember { mutableStateOf<List<SearchResult.Stop>>(emptyList()) }
     val resultsState = remember { mutableStateOf<List<SearchResult.Place>>(emptyList()) }
     val resultIconState = remember { mutableStateOf<ImageVector?>(null) }
+    val layersState = remember { mutableStateOf(setOf(MapLayer.ROADWORKS)) }
     val sharingState = remember { mutableStateOf<List<SharingPin>>(emptyList(), referentialEqualityPolicy()) }
     val routesState = remember { mutableStateOf<List<MapRoute>>(emptyList(), referentialEqualityPolicy()) }
     val roadEventsState = remember { mutableStateOf<RoadEventTiles?>(null) }
@@ -347,7 +356,10 @@ fun rememberMapController(
             baseStyle = if (dark) darkBase ?: LoadingDarkStyle else BaseStyle.Uri(LIGHT_STYLE),
             initialCameraPosition = CameraPosition(center = EUROPE, zoom = 3.5),
         ) {
-            RoadLayers(roadEventsState.value, dark) { properties -> controllerRef[0]?.onRoadEventClick?.invoke(properties) }
+            OverlayLayers(layersState.value, dark)
+            RoadLayers(roadEventsState.value, dark, MapLayer.ROADWORKS in layersState.value) { properties ->
+                controllerRef[0]?.onRoadEventClick?.invoke(properties)
+            }
             PlaceLayers(dark) { place -> controllerRef[0]?.onPlaceClick?.invoke(place) }
             ResultLayers(resultsState.value, resultIconState.value, dark) { place -> controllerRef[0]?.onPlaceClick?.invoke(place) }
             SharingLayers(sharingState.value, dark) { id -> controllerRef[0]?.onSharingClick?.invoke(id) }
@@ -470,6 +482,7 @@ fun rememberMapController(
             stopsState,
             resultsState,
             resultIconState,
+            layersState,
             sharingState,
             routesState,
             roadEventsState,

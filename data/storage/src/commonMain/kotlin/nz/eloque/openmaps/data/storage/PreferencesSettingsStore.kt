@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import nz.eloque.openmaps.core.model.DistanceUnit
 import nz.eloque.openmaps.core.model.Fuel
+import nz.eloque.openmaps.core.model.MapLayer
 import nz.eloque.openmaps.core.model.ModeGroup
 import nz.eloque.openmaps.core.model.RouteOptions
 import nz.eloque.openmaps.core.model.SettingsStore
@@ -65,6 +66,22 @@ internal class PreferencesSettingsStore(
         _preferredFuel.value = fuel
     }
 
+    private val _mapLayers =
+        MutableStateFlow(
+            settings
+                .getStringOrNull(MAP_LAYERS)
+                ?.split(',')
+                ?.mapNotNull { name -> MapLayer.entries.firstOrNull { it.name == name } }
+                ?.toSet()
+                ?: setOf(MapLayer.ROADWORKS),
+        )
+    override val mapLayers: StateFlow<Set<MapLayer>> = _mapLayers.asStateFlow()
+
+    override fun setMapLayers(layers: Set<MapLayer>) {
+        settings.putString(MAP_LAYERS, layers.joinToString(",") { it.name })
+        _mapLayers.value = layers
+    }
+
     private val serviceValues = mutableMapOf<String, MutableStateFlow<String?>>()
 
     override fun serviceValue(id: String): StateFlow<String?> = serviceState(id).asStateFlow()
@@ -116,5 +133,6 @@ internal class PreferencesSettingsStore(
         const val DISTANCE_UNIT = "units.distance"
         const val SPEEDING_ALERT = "navigation.speeding_alert"
         const val PREFERRED_FUEL = "places.preferred_fuel"
+        const val MAP_LAYERS = "map.layers"
     }
 }
