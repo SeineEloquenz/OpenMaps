@@ -23,7 +23,7 @@ val uiModule =
         viewModelOf(::SearchViewModel)
         viewModel { params -> StopViewModel(get(), params.get()) }
         viewModel { params ->
-            PlaceViewModel(get(), get(), get(), getOrNull(), params.getOrNull(), params.get(), params.get(), params.get())
+            PlaceViewModel(get(), get(), get(), getOrNull(), params.getOrNull(), params.get(), params.get(), params.get(), params.get())
         }
         single { ItineraryCache() }
         single { TrackRecorder(get(), get()) }

@@ -5,10 +5,13 @@ import io.ktor.client.call.body
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.decodeURLPart
 import io.ktor.http.encodeURLPathPart
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
@@ -17,6 +20,7 @@ import nz.eloque.openmaps.core.model.GeoBounds
 import nz.eloque.openmaps.core.model.LatLng
 import nz.eloque.openmaps.core.model.MediaLinks
 import nz.eloque.openmaps.core.model.PlaceArticle
+import nz.eloque.openmaps.core.model.PlaceGuide
 import nz.eloque.openmaps.core.model.PlaceMedia
 import nz.eloque.openmaps.core.model.PlaceMediaSource
 import nz.eloque.openmaps.core.model.PlacePhoto
@@ -127,19 +131,24 @@ internal data class PageUrlDto(
     val page: String,
 )
 
-/** Photos from Wikimedia Commons and Wikidata, and summaries from Wikipedia in the device language. */
+/** Photos from Wikimedia Commons and Wikidata, summaries from Wikipedia and travel guide entries from Wikivoyage, in the device language. */
 internal class WikimediaMedia(
     private val client: HttpClient,
     private val language: () -> String?,
 ) : PlaceMediaSource {
+    private val articles = WikitextCache()
+
     override suspend fun media(
         links: MediaLinks,
+        name: String?,
         location: LatLng,
         bounds: GeoBounds?,
     ): PlaceMedia =
         coroutineScope {
             val wikidata = links.wikidata?.takeIf { WikidataId.matches(it) }
-            val article = async { runCatching { article(links, wikidata) }.getOrNull() }
+            val sitelinks = async { wikidata?.let { runCatching { sitelinks(it) }.getOrNull() }.orEmpty() }
+            val article = async { runCatching { article(links, sitelinks.await()) }.getOrNull() }
+            val guide = async { runCatching { guide(name, location, wikidata, sitelinks.await()) }.getOrNull() }
             val images = wikidata?.let { async { wikidataStrings(it, IMAGE) } }
             val categories = wikidata?.let { async { wikidataStrings(it, COMMONS_CATEGORY) } }
             val category =
@@ -158,6 +167,7 @@ internal class WikimediaMedia(
                 photos = linked.ifEmpty { nearby },
                 photosNearby = linked.isEmpty() && nearby.isNotEmpty(),
                 article = article.await(),
+                guide = guide.await(),
             )
         }
 
@@ -243,47 +253,180 @@ internal class WikimediaMedia(
         parameter("formatversion", 2)
     }
 
+    private fun languages() = listOfNotNull(language()?.takeIf { it.isNotBlank() }, "en").distinct()
+
+    /** The item's Wikipedia and Wikivoyage article titles by site, such as `dewiki` or `enwikivoyage`. */
+    private suspend fun sitelinks(wikidata: String): Map<String, String> {
+        val sites = languages().flatMap { listOf("${it}wiki", "${it}wikivoyage") }
+        val result: EntitiesDto =
+            client
+                .get(WIKIDATA_API) {
+                    parameter("action", "wbgetentities")
+                    parameter("ids", wikidata)
+                    parameter("props", "sitelinks")
+                    parameter("sitefilter", sites.joinToString("|"))
+                    parameter("format", "json")
+                    parameter("formatversion", 2)
+                }.body()
+        return result.entities[wikidata]?.sitelinks.orEmpty().mapValues { it.value.title }
+    }
+
     private suspend fun article(
         links: MediaLinks,
-        wikidata: String?,
+        sitelinks: Map<String, String>,
     ): PlaceArticle? {
-        val (wiki, title) = articleTitle(links, wikidata) ?: return null
-        val summary: SummaryDto =
-            client.get(
-                "https://$wiki.wikipedia.org/api/rest_v1/page/summary/${title.replace(' ', '_').encodeURLPathPart()}",
-            ).body()
+        val (wiki, title) = articleTitle(links, sitelinks) ?: return null
+        val summary = summary("$wiki.wikipedia.org", title)
         if (summary.type == "disambiguation" || summary.extract.isBlank()) return null
-        val url = summary.contentUrls?.mobile?.page ?: "https://$wiki.wikipedia.org/wiki/${title.replace(' ', '_').encodeURLPathPart()}"
-        return PlaceArticle(summary.title, summary.extract, url)
+        return PlaceArticle(summary.title, summary.extract, summary.contentUrls?.mobile?.page ?: pageUrl("$wiki.wikipedia.org", title))
     }
 
     /** The Wikipedia language and article title, preferring the device language. */
-    private suspend fun articleTitle(
+    private fun articleTitle(
         links: MediaLinks,
-        wikidata: String?,
+        sitelinks: Map<String, String>,
     ): Pair<String, String>? {
-        val preferred = language()?.takeIf { it.isNotBlank() }
-        if (wikidata != null) {
-            val sites = listOfNotNull(preferred, "en").distinct().map { "${it}wiki" }
-            val result: EntitiesDto =
-                client
-                    .get(WIKIDATA_API) {
-                        parameter("action", "wbgetentities")
-                        parameter("ids", wikidata)
-                        parameter("props", "sitelinks")
-                        parameter("sitefilter", sites.joinToString("|"))
-                        parameter("format", "json")
-                        parameter("formatversion", 2)
-                    }.body()
-            val sitelinks = result.entities[wikidata]?.sitelinks.orEmpty()
-            sites.firstNotNullOfOrNull { site -> sitelinks[site]?.let { site.removeSuffix("wiki") to it.title } }?.let { return it }
-        }
+        languages().firstNotNullOfOrNull { wiki -> sitelinks["${wiki}wiki"]?.let { wiki to it } }?.let { return it }
         val tag = links.wikipedia ?: return null
         val wiki = tag.substringBefore(':', "")
         val title = tag.substringAfter(':')
         return if (WikiCode.matches(wiki) && title.isNotBlank()) wiki to title else null
     }
+
+    /** The place's own Wikivoyage article, or else its listing in an article about the area around it. */
+    private suspend fun guide(
+        name: String?,
+        location: LatLng,
+        wikidata: String?,
+        sitelinks: Map<String, String>,
+    ): PlaceGuide? {
+        val wikis = languages().filter { it in Wikivoyages }
+        wikis.firstNotNullOfOrNull { wiki -> sitelinks["${wiki}wikivoyage"]?.let { wiki to it } }?.let { (wiki, title) ->
+            val summary = summary("$wiki.wikivoyage.org", title)
+            if (summary.extract.isNotBlank()) {
+                return PlaceGuide(
+                    summary.title,
+                    summary.extract,
+                    summary.contentUrls?.mobile?.page ?: pageUrl("$wiki.wikivoyage.org", title),
+                )
+            }
+        }
+        if (name == null) return null
+        for (wiki in wikis) {
+            val host = "$wiki.wikivoyage.org"
+            for (title in nearbyArticles(host, location)) {
+                val listing = articles.get(host, title) { rawWikitext(host, title) }.firstOrNull { it.matches(name, location, wikidata) }
+                if (listing != null) return PlaceGuide(title, listing.description, pageUrl(host, title))
+            }
+        }
+        return null
+    }
+
+    private suspend fun nearbyArticles(
+        host: String,
+        location: LatLng,
+    ): List<String> {
+        val result: GeoSearchDto =
+            client
+                .get("https://$host/w/api.php") {
+                    parameter("action", "query")
+                    parameter("list", "geosearch")
+                    parameter("gscoord", "${location.latitude}|${location.longitude}")
+                    parameter("gsradius", GUIDE_RADIUS_METERS)
+                    parameter("gslimit", GUIDE_ARTICLES)
+                    parameter("format", "json")
+                    parameter("formatversion", 2)
+                }.body()
+        return result.query?.geosearch.orEmpty().map { it.title }
+    }
+
+    private suspend fun rawWikitext(
+        host: String,
+        title: String,
+    ): String =
+        client
+            .get("https://$host/w/index.php") {
+                parameter("title", title)
+                parameter("action", "raw")
+            }.bodyAsText()
+
+    private suspend fun summary(
+        host: String,
+        title: String,
+    ): SummaryDto = client.get("https://$host/api/rest_v1/page/summary/${title.replace(' ', '_').encodeURLPathPart()}").body()
 }
+
+private fun pageUrl(
+    host: String,
+    title: String,
+) = "https://$host/wiki/${title.replace(' ', '_').encodeURLPathPart()}"
+
+/** The listings of recently read Wikivoyage articles, so places in the same town do not fetch its article again. */
+private class WikitextCache {
+    private val mutex = Mutex()
+    private val entries = LinkedHashMap<String, List<WikivoyageListing>>()
+
+    suspend fun get(
+        host: String,
+        title: String,
+        load: suspend () -> String,
+    ): List<WikivoyageListing> {
+        val key = "$host/$title"
+        mutex.withLock { entries[key]?.let { return it } }
+        val listings = wikivoyageListings(load())
+        mutex.withLock {
+            entries[key] = listings
+            while (entries.size > CACHED_ARTICLES) entries.remove(entries.keys.first())
+        }
+        return listings
+    }
+}
+
+@Serializable
+internal data class GeoSearchDto(
+    val query: GeoSearchResultsDto? = null,
+)
+
+@Serializable
+internal data class GeoSearchResultsDto(
+    val geosearch: List<GeoSearchPageDto> = emptyList(),
+)
+
+@Serializable
+internal data class GeoSearchPageDto(
+    val title: String,
+)
+
+private const val GUIDE_RADIUS_METERS = 10_000
+private const val GUIDE_ARTICLES = 2
+private const val CACHED_ARTICLES = 8
+
+private val Wikivoyages =
+    setOf(
+        "bn",
+        "de",
+        "el",
+        "en",
+        "eo",
+        "es",
+        "fa",
+        "fi",
+        "fr",
+        "he",
+        "hi",
+        "it",
+        "ja",
+        "nl",
+        "pl",
+        "ps",
+        "pt",
+        "ru",
+        "sv",
+        "tr",
+        "uk",
+        "vi",
+        "zh",
+    )
 
 private val WikidataId = Regex("Q\\d+")
 private val WikiCode = Regex("[a-z-]{2,12}")

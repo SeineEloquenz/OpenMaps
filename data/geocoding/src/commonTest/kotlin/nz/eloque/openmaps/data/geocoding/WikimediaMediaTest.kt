@@ -77,7 +77,7 @@ class WikimediaMediaTest {
     @Test
     fun linkedPhotoAndArticleInDeviceLanguage() =
         runTest {
-            val media = source().media(MediaLinks(wikidata = "Q190804"), LatLng(52.36, 4.885), null)
+            val media = source().media(MediaLinks(wikidata = "Q190804"), null, LatLng(52.36, 4.885), null)
 
             val photo = media.photos.first()
             assertFalse(media.photosNearby)
@@ -92,7 +92,7 @@ class WikimediaMediaTest {
     @Test
     fun nearbyPhotosWhenNothingIsLinked() =
         runTest {
-            val media = source().media(MediaLinks(), LatLng(49.0, 8.39), null)
+            val media = source().media(MediaLinks(), null, LatLng(49.0, 8.39), null)
 
             assertTrue(media.photosNearby)
             assertEquals(listOf("https://x/near.jpg", "https://x/far.jpg"), media.photos.map { it.url })
@@ -102,7 +102,7 @@ class WikimediaMediaTest {
     @Test
     fun nearbyPhotosAroundTheOutline() =
         runTest {
-            source().media(MediaLinks(), LatLng(49.0, 8.39), GeoBounds(48.999, 8.389, 49.001, 8.391))
+            source().media(MediaLinks(), null, LatLng(49.0, 8.39), GeoBounds(48.999, 8.389, 49.001, 8.391))
 
             val bbox =
                 requests.single {

@@ -13,17 +13,29 @@ data class PlaceArticle(
     val url: String,
 )
 
+/** What a travel guide says about the place, either its own article or its listing in [article]. */
+data class PlaceGuide(
+    val article: String,
+    val text: String,
+    val url: String,
+)
+
 data class PlaceMedia(
     val photos: List<PlacePhoto>,
     /** True when [photos] were taken near the place rather than linked to it, so they may show something else. */
     val photosNearby: Boolean,
     val article: PlaceArticle?,
+    val guide: PlaceGuide? = null,
 )
 
 interface PlaceMediaSource {
-    /** Photos and an encyclopedia summary for the place, falling back to photos taken in or near [bounds], or near [location]. */
+    /**
+     * Photos, an encyclopedia summary and a travel guide entry for the place called [name], falling back to photos taken in or near
+     * [bounds], or near [location].
+     */
     suspend fun media(
         links: MediaLinks,
+        name: String?,
         location: LatLng,
         bounds: GeoBounds?,
     ): PlaceMedia

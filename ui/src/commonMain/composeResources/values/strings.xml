@@ -442,6 +442,8 @@
     <string name="fact_cash_deposit">Cash deposit</string>
     <string name="fact_free_entry">Free entry</string>
     <string name="read_on_wikipedia">Read more on Wikipedia</string>
+    <string name="read_on_wikivoyage">Read more on Wikivoyage</string>
+    <string name="travel_guide">Wikivoyage · %1$s</string>
     <string name="photos_commons">Photos from Wikimedia Commons</string>
     <string name="photos_nearby">Photos taken nearby, from Wikimedia Commons</string>
     <string name="feature_emergency">Emergency department</string>

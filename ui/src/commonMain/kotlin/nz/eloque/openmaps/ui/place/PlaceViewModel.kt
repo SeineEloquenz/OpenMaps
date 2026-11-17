@@ -35,6 +35,7 @@ class PlaceViewModel(
     /** False for dropped pins, which are not a place anyone photographs or writes about. */
     private val withMedia: Boolean,
     private val gasStation: Boolean,
+    private val name: String,
 ) : ViewModel() {
     val nearby: StateFlow<LoadState<List<NearbyStop>>> =
         refreshing { transit.nearbyStops(location, maxStops = 2, maxLines = 3) }
@@ -81,7 +82,9 @@ class PlaceViewModel(
             val details = _details.value as? LoadState.Loaded ?: return@launch
             if (withMedia && _media.value == null) {
                 _media.value =
-                    runCatching { mediaSource.media(details.value?.links ?: MediaLinks(), location, details.value?.bounds) }.getOrNull()
+                    runCatching {
+                        mediaSource.media(details.value?.links ?: MediaLinks(), name, location, details.value?.bounds)
+                    }.getOrNull()
             }
         }
     }

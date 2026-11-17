@@ -146,9 +146,11 @@ import nz.eloque.openmaps.ui.resources.photos_nearby
 import nz.eloque.openmaps.ui.resources.prices_from
 import nz.eloque.openmaps.ui.resources.prices_updated
 import nz.eloque.openmaps.ui.resources.read_on_wikipedia
+import nz.eloque.openmaps.ui.resources.read_on_wikivoyage
 import nz.eloque.openmaps.ui.resources.report
 import nz.eloque.openmaps.ui.resources.save_parking
 import nz.eloque.openmaps.ui.resources.share
+import nz.eloque.openmaps.ui.resources.travel_guide
 import nz.eloque.openmaps.ui.resources.website
 import nz.eloque.openmaps.ui.resources.wheelchair
 import nz.eloque.openmaps.ui.resources.wheelchair_limited
@@ -173,7 +175,8 @@ fun PlaceSheet(
     onOpenTrip: (tripId: String, stopName: String) -> Unit,
     onMeasure: () -> Unit,
 ) {
-    val viewModel = koinViewModel<PlaceViewModel> { parametersOf(place.parsedId, place.location, !place.pinned, place.category == "fuel") }
+    val viewModel =
+        koinViewModel<PlaceViewModel> { parametersOf(place.parsedId, place.location, !place.pinned, place.category == "fuel", place.name) }
     val details by viewModel.details.collectAsStateWithLifecycle()
     val media by viewModel.media.collectAsStateWithLifecycle()
     val nearby by viewModel.nearby.collectAsStateWithLifecycle()
@@ -349,6 +352,19 @@ private fun MediaSection(media: PlaceMedia) {
             Text(article.extract, maxLines = 5, overflow = TextOverflow.Ellipsis)
             TextButton(onClick = { uriHandler.openUri(article.url) }, contentPadding = PaddingValues(0.dp)) {
                 Text(stringResource(Res.string.read_on_wikipedia))
+            }
+        }
+    }
+    media.guide?.let { guide ->
+        Column(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+            Text(
+                stringResource(Res.string.travel_guide, guide.article),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(guide.text, maxLines = 5, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 2.dp))
+            TextButton(onClick = { uriHandler.openUri(guide.url) }, contentPadding = PaddingValues(0.dp)) {
+                Text(stringResource(Res.string.read_on_wikivoyage))
             }
         }
     }
