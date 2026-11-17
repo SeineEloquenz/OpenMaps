@@ -144,12 +144,7 @@ class DirectionsViewModel(
     private fun loadForMode() {
         when (mode.value) {
             TravelMode.TRANSIT -> planTransit()
-            TravelMode.WALK ->
-                when (val transitState = _result.value) {
-                    null, LoadState.Failed -> planStreet()
-                    is LoadState.Loaded -> if (hasStops || transitState.value.direct == null) planStreet()
-                    LoadState.Loading -> if (hasStops) planStreet()
-                }
+            TravelMode.WALK -> planStreet()
             TravelMode.CAR -> planStreet()
             TravelMode.BIKE -> {
                 planStreet()
@@ -190,14 +185,12 @@ class DirectionsViewModel(
         planJob =
             viewModelScope.launch {
                 _result.value = loadOnce { transit.plan(request).toDirections() }
-                if (mode.value == TravelMode.WALK) loadForMode()
             }
     }
 
     private fun planStreet() {
         if (_street.value != null) return
-        val walkKnown = !hasStops && (_result.value as? LoadState.Loaded)?.value?.direct != null
-        val modes = setOf(TransportMode.CAR, TransportMode.BIKE) + if (walkKnown) emptySet() else setOf(TransportMode.WALK)
+        val modes = setOf(TransportMode.CAR, TransportMode.BIKE, TransportMode.WALK)
         val request = streetRequest(modes) ?: return
         _street.value = LoadState.Loading
         streetJob =

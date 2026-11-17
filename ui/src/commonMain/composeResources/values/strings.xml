@@ -136,6 +136,8 @@
     <string name="saved_routes">Routes</string>
     <string name="lists">Lists</string>
     <string name="map_layers">Map layers</string>
+    <string name="elevation_summary">↗ %1$s  ↘ %2$s</string>
+    <string name="elevation_range">%1$s – %2$s</string>
     <string name="layer_terrain">Terrain</string>
     <string name="layer_transit">Rail and tram</string>
     <string name="layer_cycling">Cycling routes</string>

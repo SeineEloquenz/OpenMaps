@@ -81,6 +81,7 @@ class ValhallaStreetRouterTest {
             assertTrue("\"exclude_closures\":false" in body)
             assertTrue("\"search_cutoff\":1000" in body)
             assertTrue("\"type\":\"wheelchair\"" in body)
+            assertTrue("\"elevation_interval\":30.0" in body)
         }
 
     @Test
@@ -91,6 +92,7 @@ class ValhallaStreetRouterTest {
             assertTrue("\"use_tolls\":0.0" in body)
             assertTrue("\"use_ferry\":0.0" in body)
             assertTrue("use_highways" !in body)
+            assertTrue("elevation_interval" !in body)
         }
 
     @Test

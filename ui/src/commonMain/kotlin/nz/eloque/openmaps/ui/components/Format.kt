@@ -32,6 +32,16 @@ fun formatDistance(
         }
     }
 
+/** A height or climb, in whole meters or feet. */
+fun formatHeight(
+    meters: Double,
+    unit: DistanceUnit = DistanceUnit.METRIC,
+): String =
+    when (unit) {
+        DistanceUnit.METRIC -> "${meters.roundToInt()} m"
+        DistanceUnit.IMPERIAL -> "${(meters / METERS_PER_FOOT).roundToInt()} ft"
+    }
+
 /** Three decimals, as pumps show them, with the symbol for euros. */
 fun formatPrice(
     price: Double,

@@ -62,6 +62,8 @@ sealed interface Leg {
         val streets: List<String> = emptyList(),
         /** The shared vehicle ridden on this leg, or null for the user's own feet, bike or car. */
         val rental: SharedRental? = null,
+        /** Null when the routing service gave no heights. */
+        val elevation: ElevationProfile? = null,
     ) : Leg
 
     data class Transit(

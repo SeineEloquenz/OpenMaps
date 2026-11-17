@@ -159,7 +159,7 @@ fun DirectionsSheet(
 
     val loaded = (result as? LoadState.Loaded)?.value
     val direct = (street as? LoadState.Loaded)?.value.orEmpty()
-    val walk = loaded?.direct?.takeUnless { viewModel.hasStops } ?: direct[TransportMode.WALK]
+    val walk = direct[TransportMode.WALK]
     val routes =
         mapOf(
             TravelMode.CAR to direct[TransportMode.CAR],
@@ -246,7 +246,7 @@ fun DirectionsSheet(
                 item { Text(stringResource(Res.string.stops_not_in_transit), color = MaterialTheme.colorScheme.onSurfaceVariant) }
             }
         }
-        val state = if (mode == TravelMode.TRANSIT || (mode == TravelMode.WALK && walk != null && street == null)) result else street
+        val state = if (mode == TravelMode.TRANSIT) result else street
         when {
             viewModel.needsUserLocation && !map.isLocationPermissionGranted ->
                 item {
@@ -378,6 +378,11 @@ private fun StreetRouteCard(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            if (mode == TravelMode.WALK || mode == TravelMode.BIKE) {
+                legs.mapNotNull { it.elevation }.reduceOrNull { a, b -> a + b }?.let {
+                    ElevationChart(it, unit, Modifier.padding(top = 4.dp))
+                }
+            }
             val closures = events.count { it.closed }
             val works = events.size - closures
             listOfNotNull(

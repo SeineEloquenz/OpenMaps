@@ -14,6 +14,7 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import nz.eloque.openmaps.core.model.ElevationProfile
 import nz.eloque.openmaps.core.model.EventTime
 import nz.eloque.openmaps.core.model.Itinerary
 import nz.eloque.openmaps.core.model.LatLng
@@ -37,6 +38,7 @@ internal data class RouteRequestDto(
     @SerialName("date_time") val dateTime: DateTimeDto,
     @SerialName("directions_type") val directionsType: String,
     val units: String,
+    @SerialName("elevation_interval") val elevationInterval: Double? = null,
 )
 
 @Serializable
@@ -87,6 +89,8 @@ internal data class TripLegDto(
     val shape: String,
     val summary: SummaryDto,
     val maneuvers: List<ManeuverDto> = emptyList(),
+    val elevation: List<Double>? = null,
+    @SerialName("elevation_interval") val elevationInterval: Double? = null,
 )
 
 @Serializable
@@ -140,6 +144,7 @@ internal class ValhallaStreetRouter(
                 dateTime = DateTimeDto(type = 0),
                 directionsType = "maneuvers",
                 units = "kilometers",
+                elevationInterval = ELEVATION_SPACING_METERS.takeIf { mode != TransportMode.CAR },
             )
         val response: RouteResponseDto =
             try {
@@ -174,6 +179,7 @@ internal class ValhallaStreetRouter(
                 geometry = legs.flatMap { decodePolyline(it.shape, precision = 6) },
                 distanceMeters = legs.sumOf { it.summary.length } * 1000,
                 streets = mainStreets(legs.flatMap { it.maneuvers }),
+                elevation = legs.mapNotNull { it.profile() }.reduceOrNull(ElevationProfile::plus),
             )
         return Itinerary(
             id = "valhalla:${mode.name}:${start.epochSeconds}:${request.from}:${request.via.joinToString(":")}:${request.to}",
@@ -252,3 +258,11 @@ internal fun mainStreets(
             .toSet()
     return named.map { it.first }.distinct().filter { it in longest }
 }
+
+private fun TripLegDto.profile(): ElevationProfile? {
+    val heights = elevation?.takeIf { it.size >= 2 } ?: return null
+    return ElevationProfile(elevationInterval ?: ELEVATION_SPACING_METERS, heights)
+}
+
+// Fine enough for a chart of a walk or ride, while keeping the response small.
+private const val ELEVATION_SPACING_METERS = 30.0
