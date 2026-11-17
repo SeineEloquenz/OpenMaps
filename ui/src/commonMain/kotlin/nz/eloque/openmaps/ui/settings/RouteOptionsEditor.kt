@@ -257,7 +257,7 @@ private fun SizeField(
     )
 }
 
-private val Vehicle.label: StringResource
+internal val Vehicle.label: StringResource
     get() =
         when (this) {
             Vehicle.CAR -> Res.string.vehicle_car
@@ -266,7 +266,7 @@ private val Vehicle.label: StringResource
             Vehicle.TRUCK -> Res.string.vehicle_truck
         }
 
-private val Vehicle.icon: ImageVector
+internal val Vehicle.icon: ImageVector
     get() =
         when (this) {
             Vehicle.CAR -> Icons.Default.DirectionsCar

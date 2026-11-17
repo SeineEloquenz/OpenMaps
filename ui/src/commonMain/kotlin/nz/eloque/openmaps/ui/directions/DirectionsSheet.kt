@@ -77,6 +77,7 @@ import nz.eloque.openmaps.core.model.RouteFeature
 import nz.eloque.openmaps.core.model.SettingsStore
 import nz.eloque.openmaps.core.model.TransportMode
 import nz.eloque.openmaps.core.model.TravelMode
+import nz.eloque.openmaps.core.model.Vehicle
 import nz.eloque.openmaps.core.model.best
 import nz.eloque.openmaps.map.MapController
 import nz.eloque.openmaps.ui.components.LineChip
@@ -134,6 +135,8 @@ import nz.eloque.openmaps.ui.resources.your_location
 import nz.eloque.openmaps.ui.roads.color
 import nz.eloque.openmaps.ui.roads.icon
 import nz.eloque.openmaps.ui.settings.RouteOptionsEditor
+import nz.eloque.openmaps.ui.settings.icon
+import nz.eloque.openmaps.ui.settings.label
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
@@ -226,6 +229,7 @@ fun DirectionsSheet(
         item {
             ModeTabs(
                 selected = mode,
+                vehicle = options.vehicle,
                 durations =
                     routes.mapValues { it.value?.duration } +
                         (TravelMode.TRANSIT to best?.duration),
@@ -333,6 +337,7 @@ fun DirectionsSheet(
 @Composable
 private fun ModeTabs(
     selected: TravelMode,
+    vehicle: Vehicle,
     durations: Map<TravelMode, Duration?>,
     onSelect: (TravelMode) -> Unit,
 ) {
@@ -341,7 +346,13 @@ private fun ModeTabs(
             Tab(
                 selected = mode == selected,
                 onClick = { onSelect(mode) },
-                icon = { Icon(mode.icon, contentDescription = stringResource(mode.label)) },
+                icon = {
+                    if (mode == TravelMode.CAR) {
+                        Icon(vehicle.icon, contentDescription = stringResource(vehicle.label))
+                    } else {
+                        Icon(mode.icon, contentDescription = stringResource(mode.label))
+                    }
+                },
                 text = {
                     Text(
                         durations[mode]?.let { formatDuration(it) } ?: "",
