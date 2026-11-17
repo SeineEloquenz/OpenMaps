@@ -219,6 +219,13 @@
     <string name="warning_until">Until %1$s</string>
     <string name="warning_source">Source: %1$s</string>
     <string name="warning_at_destination">At the destination</string>
+    <string name="reviews">Reviews</string>
+    <plurals name="reviews_count">
+        <item quantity="one">%1$d review</item>
+        <item quantity="other">%1$d reviews</item>
+    </plurals>
+    <string name="reviews_all">Show all %1$d</string>
+    <string name="reviews_source">From</string>
     <string name="layer_roadworks">Roadworks</string>
     <string name="layer_buildings">3D buildings</string>
     <string name="new_list">New list…</string>
@@ -332,6 +339,7 @@
     <string name="role_fuel_prices">Fuel prices</string>
     <string name="role_rain_radar">Rain radar</string>
     <string name="role_weather_warnings">Weather warnings</string>
+    <string name="role_reviews">Reviews</string>
     <string name="category_restaurants">Restaurants</string>
     <string name="category_cafes">Cafés</string>
     <string name="category_supermarkets">Supermarkets</string>

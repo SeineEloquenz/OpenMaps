@@ -84,6 +84,7 @@ dependencies {
     implementation(project(":data:storage"))
     implementation(project(":data:fuel"))
     implementation(project(":data:weather"))
+    implementation(project(":data:reviews"))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.work.runtime)
     implementation(libs.compose.runtime)

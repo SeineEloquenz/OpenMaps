@@ -31,6 +31,7 @@ include(
     ":data:routing",
     ":data:fuel",
     ":data:weather",
+    ":data:reviews",
 )
 
 val localComposeKitPath = providers.environmentVariable("LOCAL_COMPOSE_KIT").orNull?.takeIf { it.isNotBlank() }

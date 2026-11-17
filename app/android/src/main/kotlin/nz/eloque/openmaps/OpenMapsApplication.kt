@@ -20,6 +20,8 @@ import nz.eloque.openmaps.data.fuel.fuelModule
 import nz.eloque.openmaps.data.fuel.fuelServiceSettings
 import nz.eloque.openmaps.data.geocoding.geocodingModule
 import nz.eloque.openmaps.data.geocoding.geocodingServiceSettings
+import nz.eloque.openmaps.data.reviews.reviewsModule
+import nz.eloque.openmaps.data.reviews.reviewsServiceSettings
 import nz.eloque.openmaps.data.routing.routingModule
 import nz.eloque.openmaps.data.routing.routingServiceSettings
 import nz.eloque.openmaps.data.storage.storageModule
@@ -66,7 +68,7 @@ class OpenMapsApplication : Application() {
                     single {
                         ServiceCatalog(
                             transitServiceSettings + routingServiceSettings + geocodingServiceSettings + fuelServiceSettings +
-                                weatherServiceSettings,
+                                weatherServiceSettings + reviewsServiceSettings,
                         )
                     }
                     single { AndroidFiles(this@OpenMapsApplication) }
@@ -86,6 +88,7 @@ class OpenMapsApplication : Application() {
                 geocodingModule(language = { Locale.getDefault().language }),
                 fuelModule,
                 weatherModule,
+                reviewsModule,
                 storageModule,
                 uiModule,
             )

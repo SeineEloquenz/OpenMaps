@@ -187,6 +187,7 @@ fun PlaceSheet(
             prices?.let { FuelPriceSection(it, now) }
             LoadStateContent(details, onRetry = viewModel::load) { it?.let { DetailRows(it, place.name) } }
             CoordinatesRow(place.location)
+            if (!place.pinned) ReviewsSection(place.name, place.location)
             val stops = (nearby as? LoadState.Loaded)?.value.orEmpty()
             if (stops.isNotEmpty()) {
                 HorizontalDivider(Modifier.padding(vertical = 8.dp))
