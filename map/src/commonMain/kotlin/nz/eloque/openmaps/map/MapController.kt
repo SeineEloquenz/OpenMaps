@@ -48,6 +48,7 @@ import nz.eloque.openmaps.core.model.LatLng
 import nz.eloque.openmaps.core.model.LoadedPlaces
 import nz.eloque.openmaps.core.model.MapLayer
 import nz.eloque.openmaps.core.model.PlaceCategory
+import nz.eloque.openmaps.core.model.RadarFrames
 import nz.eloque.openmaps.core.model.RoadEventTiles
 import nz.eloque.openmaps.core.model.SearchResult
 import nz.eloque.openmaps.core.model.TransportMode
@@ -125,6 +126,8 @@ class MapController internal constructor(
     private val parkedCarState: MutableState<LatLng?>,
     private val measuringState: MutableState<List<LatLng>?>,
     private val recordingState: MutableState<List<LatLng>>,
+    private val radarState: MutableState<RadarFrames?>,
+    private val radarFrameState: MutableState<Int>,
 ) {
     val isLocationPermissionGranted: Boolean
         get() = location.permission is LocationPermission.Granted
@@ -204,6 +207,12 @@ class MapController internal constructor(
             CameraAnimation.Ease { duration = FollowAnimation },
         )
     }
+
+    /** Rain radar frames, drawn while the radar layer is on. */
+    var radar: RadarFrames? by radarState
+
+    /** Index of the radar frame shown. */
+    var radarFrame: Int by radarFrameState
 
     /** Road events drawn on the map, or null for none. */
     var roadEvents: RoadEventTiles? by roadEventsState
@@ -358,6 +367,8 @@ fun rememberMapController(
     val parkedCarState = remember { mutableStateOf<LatLng?>(null) }
     val measuringState = remember { mutableStateOf<List<LatLng>?>(null, referentialEqualityPolicy()) }
     val recordingState = remember { mutableStateOf<List<LatLng>>(emptyList(), referentialEqualityPolicy()) }
+    val radarState = remember { mutableStateOf<RadarFrames?>(null) }
+    val radarFrameState = remember { mutableStateOf(0) }
     val puckIcon =
         rememberVectorPainter(Icons.Default.Navigation).let { painter ->
             image(remember(painter, markerColor) { BadgePainter(painter, markerColor, Color.White) }, size = DpSize(30.dp, 30.dp))
@@ -382,6 +393,7 @@ fun rememberMapController(
             initialCameraPosition = CameraPosition(center = EUROPE, zoom = 3.5),
         ) {
             OverlayLayers(layersState.value, dark)
+            RadarLayers(radarState.value?.takeIf { MapLayer.RAIN_RADAR in layersState.value }, radarFrameState.value)
             RoadLayers(roadEventsState.value, dark, MapLayer.ROADWORKS in layersState.value) { properties ->
                 controllerRef[0]?.onRoadEventClick?.invoke(properties)
             }
@@ -527,6 +539,8 @@ fun rememberMapController(
             parkedCarState,
             measuringState,
             recordingState,
+            radarState,
+            radarFrameState,
         )
     }
         .also { controllerRef[0] = it }

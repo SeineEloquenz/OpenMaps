@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Construction
 import androidx.compose.material.icons.filled.DirectionsTransit
 import androidx.compose.material.icons.filled.Hiking
+import androidx.compose.material.icons.filled.Umbrella
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -55,6 +56,7 @@ import nz.eloque.openmaps.ui.resources.layer_buildings
 import nz.eloque.openmaps.ui.resources.layer_cycling
 import nz.eloque.openmaps.ui.resources.layer_default
 import nz.eloque.openmaps.ui.resources.layer_hiking
+import nz.eloque.openmaps.ui.resources.layer_rain_radar
 import nz.eloque.openmaps.ui.resources.layer_roadworks
 import nz.eloque.openmaps.ui.resources.layer_seamarks
 import nz.eloque.openmaps.ui.resources.layer_terrain
@@ -66,7 +68,15 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 
 private val Details =
-    listOf(MapLayer.TRANSIT, MapLayer.CYCLING, MapLayer.HIKING, MapLayer.ROADWORKS, MapLayer.BUILDINGS_3D, MapLayer.SEAMARKS)
+    listOf(
+        MapLayer.TRANSIT,
+        MapLayer.CYCLING,
+        MapLayer.HIKING,
+        MapLayer.ROADWORKS,
+        MapLayer.BUILDINGS_3D,
+        MapLayer.SEAMARKS,
+        MapLayer.RAIN_RADAR,
+    )
 
 /** Chooses the map type and switches the optional map details on and off. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -189,6 +199,7 @@ private val MapLayer.label: StringResource
             MapLayer.ROADWORKS -> Res.string.layer_roadworks
             MapLayer.BUILDINGS_3D -> Res.string.layer_buildings
             MapLayer.SEAMARKS -> Res.string.layer_seamarks
+            MapLayer.RAIN_RADAR -> Res.string.layer_rain_radar
         }
 
 private val MapLayer.badge: ImageVector?
@@ -199,6 +210,7 @@ private val MapLayer.badge: ImageVector?
             MapLayer.HIKING -> Icons.Default.Hiking
             MapLayer.ROADWORKS -> Icons.Default.Construction
             MapLayer.SEAMARKS -> Icons.Default.Anchor
+            MapLayer.RAIN_RADAR -> Icons.Default.Umbrella
             else -> null
         }
 
@@ -225,6 +237,9 @@ private val MapLayer.drawing: DrawScope.() -> Unit
             }
             MapLayer.SEAMARKS -> {
                 { drawSeamarks() }
+            }
+            MapLayer.RAIN_RADAR -> {
+                { drawRadar() }
             }
         }
 
@@ -331,6 +346,13 @@ private fun DrawScope.drawRoadworks() {
     )
 }
 
+private fun DrawScope.drawRadar() {
+    land()
+    drawCircle(RainLight, radius = size.minDimension * 0.34f, center = Offset(size.width * 0.42f, size.height * 0.45f))
+    drawCircle(RainLight, radius = size.minDimension * 0.22f, center = Offset(size.width * 0.72f, size.height * 0.62f))
+    drawCircle(RainHeavy, radius = size.minDimension * 0.16f, center = Offset(size.width * 0.46f, size.height * 0.42f))
+}
+
 private fun DrawScope.drawSeamarks() {
     drawRect(Water)
     drawLine(
@@ -418,3 +440,5 @@ private val BuildingSide = Color(0xFFBDC1C6)
 private val BuoyRed = Color(0xFFD93025)
 private val BuoyGreen = Color(0xFF188038)
 private val Fairway = Color(0xFF7A3E9D)
+private val RainLight = Color(0xFF8AB4F8)
+private val RainHeavy = Color(0xFF1A73E8)

@@ -200,6 +200,10 @@
     <string name="layer_cycling">Cycling</string>
     <string name="layer_hiking">Hiking</string>
     <string name="layer_seamarks">Seamarks</string>
+    <string name="layer_rain_radar">Rain radar</string>
+    <string name="radar_forecast">Forecast %1$s</string>
+    <string name="radar_play">Play</string>
+    <string name="radar_pause">Pause</string>
     <string name="layer_roadworks">Roadworks</string>
     <string name="layer_buildings">3D buildings</string>
     <string name="new_list">New list…</string>
@@ -311,6 +315,7 @@
     <string name="role_nearby_search">Nearby places</string>
     <string name="role_charging_stations">Charging stations</string>
     <string name="role_fuel_prices">Fuel prices</string>
+    <string name="role_rain_radar">Rain radar</string>
     <string name="category_restaurants">Restaurants</string>
     <string name="category_cafes">Cafés</string>
     <string name="category_supermarkets">Supermarkets</string>

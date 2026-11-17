@@ -54,6 +54,7 @@ import nz.eloque.openmaps.ui.resources.role_charging_stations
 import nz.eloque.openmaps.ui.resources.role_fuel_prices
 import nz.eloque.openmaps.ui.resources.role_nearby_search
 import nz.eloque.openmaps.ui.resources.role_place_details
+import nz.eloque.openmaps.ui.resources.role_rain_radar
 import nz.eloque.openmaps.ui.resources.role_road_events
 import nz.eloque.openmaps.ui.resources.role_street_routing
 import nz.eloque.openmaps.ui.resources.role_transit
@@ -220,4 +221,5 @@ private val ServiceRole.label: StringResource
             ServiceRole.NEARBY_SEARCH -> Res.string.role_nearby_search
             ServiceRole.CHARGING_STATIONS -> Res.string.role_charging_stations
             ServiceRole.FUEL_PRICES -> Res.string.role_fuel_prices
+            ServiceRole.RAIN_RADAR -> Res.string.role_rain_radar
         }

@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -72,7 +73,10 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.offset
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
@@ -98,9 +102,11 @@ import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass
 import nz.eloque.openmaps.core.model.Geocoder
 import nz.eloque.openmaps.core.model.LatLng
+import nz.eloque.openmaps.core.model.MapLayer
 import nz.eloque.openmaps.core.model.Navigator
 import nz.eloque.openmaps.core.model.PlaceCategory
 import nz.eloque.openmaps.core.model.PlacesStore
+import nz.eloque.openmaps.core.model.RainRadar
 import nz.eloque.openmaps.core.model.RoadEvents
 import nz.eloque.openmaps.core.model.SearchResult
 import nz.eloque.openmaps.core.model.SettingsStore
@@ -131,6 +137,7 @@ import nz.eloque.openmaps.ui.guidance.TransitGuidanceBanner
 import nz.eloque.openmaps.ui.guidance.TransitGuidanceSheet
 import nz.eloque.openmaps.ui.home.ActivePills
 import nz.eloque.openmaps.ui.layers.LayersSheet
+import nz.eloque.openmaps.ui.layers.RadarTimeline
 import nz.eloque.openmaps.ui.measure.MeasureSheet
 import nz.eloque.openmaps.ui.navigation.AboutKey
 import nz.eloque.openmaps.ui.navigation.CategoryKey
@@ -329,6 +336,22 @@ fun App(
         val roadEvents = koinInject<RoadEvents>()
         LaunchedEffect(map) { roadEvents.tiles.collect { map.roadEvents = it } }
         LaunchedEffect(map) { settings.mapLayers.collect { map.layers = it } }
+        val rainRadar = koinInject<RainRadar>()
+        val mapLayers by settings.mapLayers.collectAsStateWithLifecycle()
+        val radarOn = MapLayer.RAIN_RADAR in mapLayers
+        val lifecycle = LocalLifecycleOwner.current.lifecycle
+        LaunchedEffect(map, radarOn) {
+            if (!radarOn) {
+                map.radar = null
+                return@LaunchedEffect
+            }
+            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                rainRadar.frames.collect { frames ->
+                    map.radar = frames
+                    if (frames != null) map.radarFrame = frames.latestObserved
+                }
+            }
+        }
         var showLayers by rememberSaveable { mutableStateOf(false) }
         val layersLabel = stringResource(Res.string.map_layers)
         DisposableEffect(map, layersLabel) {
@@ -605,24 +628,28 @@ fun App(
                             pills =
                                 if (top == HomeKey) {
                                     { modifier ->
-                                        ActivePills(
-                                            userLocation = map.userLocation,
-                                            onOpenWatched = { backStack.add(RouteKey(it.id, it.destination)) },
-                                            onOpenTrack = { backStack.add(TrackKey(it)) },
-                                            onShowCar = { map.onParkedCarClick?.invoke() },
-                                            onWalkToCar = {
-                                                parkedCar?.let { car ->
-                                                    settings.setTravelMode(TravelMode.WALK)
-                                                    backStack.add(
-                                                        DirectionsKey(
-                                                            from = null,
-                                                            to = Endpoint(carName, car.location.latitude, car.location.longitude),
-                                                        ),
-                                                    )
-                                                }
-                                            },
-                                            modifier = modifier,
-                                        )
+                                        Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            map.radar?.let { frames ->
+                                                RadarTimeline(frames, map.radarFrame, onSelect = { map.radarFrame = it })
+                                            }
+                                            ActivePills(
+                                                userLocation = map.userLocation,
+                                                onOpenWatched = { backStack.add(RouteKey(it.id, it.destination)) },
+                                                onOpenTrack = { backStack.add(TrackKey(it)) },
+                                                onShowCar = { map.onParkedCarClick?.invoke() },
+                                                onWalkToCar = {
+                                                    parkedCar?.let { car ->
+                                                        settings.setTravelMode(TravelMode.WALK)
+                                                        backStack.add(
+                                                            DirectionsKey(
+                                                                from = null,
+                                                                to = Endpoint(carName, car.location.latitude, car.location.longitude),
+                                                            ),
+                                                        )
+                                                    }
+                                                },
+                                            )
+                                        }
                                     }
                                 } else {
                                     null

@@ -10,6 +10,7 @@ enum class ServiceRole {
     NEARBY_SEARCH,
     CHARGING_STATIONS,
     FUEL_PRICES,
+    RAIN_RADAR,
 }
 
 enum class ServiceSettingKind {

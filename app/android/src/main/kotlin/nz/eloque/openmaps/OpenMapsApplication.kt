@@ -25,6 +25,8 @@ import nz.eloque.openmaps.data.routing.routingServiceSettings
 import nz.eloque.openmaps.data.storage.storageModule
 import nz.eloque.openmaps.data.transit.transitModule
 import nz.eloque.openmaps.data.transit.transitServiceSettings
+import nz.eloque.openmaps.data.weather.weatherModule
+import nz.eloque.openmaps.data.weather.weatherServiceSettings
 import nz.eloque.openmaps.navigation.AndroidVoiceGuidance
 import nz.eloque.openmaps.navigation.NavigationService
 import nz.eloque.openmaps.navigation.SpeedingAlert
@@ -62,7 +64,10 @@ class OpenMapsApplication : Application() {
                         )
                     }
                     single {
-                        ServiceCatalog(transitServiceSettings + routingServiceSettings + geocodingServiceSettings + fuelServiceSettings)
+                        ServiceCatalog(
+                            transitServiceSettings + routingServiceSettings + geocodingServiceSettings + fuelServiceSettings +
+                                weatherServiceSettings,
+                        )
                     }
                     single { AndroidFiles(this@OpenMapsApplication) }
                     single<Files> { get<AndroidFiles>() }
@@ -80,6 +85,7 @@ class OpenMapsApplication : Application() {
                 routingModule(language = { Locale.getDefault().toLanguageTag() }),
                 geocodingModule(language = { Locale.getDefault().language }),
                 fuelModule,
+                weatherModule,
                 storageModule,
                 uiModule,
             )

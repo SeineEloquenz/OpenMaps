@@ -113,7 +113,7 @@ private const val TERRAIN_EXAGGERATION = 0.8f
 private const val FIRST_WATER_LAYER = "waterway_tunnel"
 
 // The first label layer of the OpenFreeMap styles, so overlays stay under names and road numbers.
-private const val FIRST_LABEL_LAYER = "road_one_way_arrow"
+internal const val FIRST_LABEL_LAYER = "road_one_way_arrow"
 private const val TRAILS_MAX_ZOOM = 18
 private const val TRAILS_OPACITY = 0.85f
 private const val TRAILS_ATTRIBUTION =
