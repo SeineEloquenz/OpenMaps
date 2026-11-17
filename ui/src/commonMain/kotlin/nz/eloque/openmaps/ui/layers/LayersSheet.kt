@@ -4,7 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,9 +30,15 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.ModalBottomSheetProperties
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -48,6 +54,10 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
+import kotlinx.coroutines.launch
 import nz.eloque.openmaps.core.model.MapLayer
 import nz.eloque.openmaps.core.model.SettingsStore
 import nz.eloque.openmaps.ui.resources.Res
@@ -56,6 +66,7 @@ import nz.eloque.openmaps.ui.resources.layer_buildings
 import nz.eloque.openmaps.ui.resources.layer_cycling
 import nz.eloque.openmaps.ui.resources.layer_default
 import nz.eloque.openmaps.ui.resources.layer_hiking
+import nz.eloque.openmaps.ui.resources.layer_options_hint
 import nz.eloque.openmaps.ui.resources.layer_rain_radar
 import nz.eloque.openmaps.ui.resources.layer_roadworks
 import nz.eloque.openmaps.ui.resources.layer_seamarks
@@ -84,7 +95,24 @@ private val Details =
 fun LayersSheet(onDismiss: () -> Unit) {
     val settings = koinInject<SettingsStore>()
     val layers by settings.mapLayers.collectAsStateWithLifecycle()
-    ModalBottomSheet(onDismissRequest = onDismiss) {
+    var optionsOf by rememberSaveable { mutableStateOf<MapLayer?>(null) }
+    val sheetState = rememberModalBottomSheetState()
+    val scope = rememberCoroutineScope()
+    val close: () -> Unit = { scope.launch { sheetState.hide() }.invokeOnCompletion { onDismiss() } }
+    // Back is handled here alone, since sharing it with the sheet's own handling loses a press after the options close.
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        properties = ModalBottomSheetProperties(shouldDismissOnBackPress = false),
+    ) {
+        NavigationBackHandler(
+            rememberNavigationEventState(NavigationEventInfo.None),
+            onBackCompleted = { if (optionsOf != null) optionsOf = null else close() },
+        )
+        optionsOf?.let { layer ->
+            LayerOptions(layer, onBack = { optionsOf = null }, onDismiss = close)
+            return@ModalBottomSheet
+        }
         Column(Modifier.padding(horizontal = 12.dp).padding(bottom = 32.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 12.dp)) {
                 Text(stringResource(Res.string.map_type), style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
@@ -113,13 +141,25 @@ fun LayersSheet(onDismiss: () -> Unit) {
             Text(
                 stringResource(Res.string.map_details),
                 style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(start = 12.dp, top = 24.dp, bottom = 16.dp),
+                modifier = Modifier.padding(start = 12.dp, top = 24.dp),
+            )
+            Text(
+                stringResource(Res.string.layer_options_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 12.dp, top = 4.dp, bottom = 16.dp),
             )
             TileGrid(
                 Details.map { layer ->
                     {
                         val on = layer in layers
-                        LayerTile(layer.label, on, { settings.setMapLayers(if (on) layers - layer else layers + layer) }, layer.badge) {
+                        LayerTile(
+                            layer.label,
+                            on,
+                            { settings.setMapLayers(if (on) layers - layer else layers + layer) },
+                            layer.badge,
+                            onLongClick = { optionsOf = layer }.takeIf { layer.hasOptions },
+                        ) {
                             layer.drawing(this)
                         }
                     }
@@ -152,13 +192,14 @@ private fun LayerTile(
     selected: Boolean,
     onClick: () -> Unit,
     badge: ImageVector? = null,
+    onLongClick: (() -> Unit)? = null,
     drawing: DrawScope.() -> Unit,
 ) {
     val accent = MaterialTheme.colorScheme.primary
     val shape = RoundedCornerShape(14.dp)
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.width(TileWidth).clickable(role = Role.Checkbox, onClick = onClick),
+        modifier = Modifier.width(TileWidth).combinedClickable(role = Role.Checkbox, onLongClick = onLongClick, onClick = onClick),
     ) {
         Box(
             Modifier
@@ -189,7 +230,7 @@ private fun LayerTile(
     }
 }
 
-private val MapLayer.label: StringResource
+internal val MapLayer.label: StringResource
     get() =
         when (this) {
             MapLayer.TERRAIN -> Res.string.layer_terrain

@@ -7,12 +7,15 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.transformLatest
 import kotlinx.serialization.Serializable
 import nz.eloque.openmaps.core.model.RadarFrame
 import nz.eloque.openmaps.core.model.RadarFrames
+import nz.eloque.openmaps.core.model.RadarOptions
 import nz.eloque.openmaps.core.model.RainRadar
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
@@ -41,6 +44,7 @@ internal data class FrameDto(
 internal class RainViewerRadar(
     private val client: HttpClient,
     private val baseUrl: Flow<String?>,
+    private val options: Flow<RadarOptions>,
     private val refresh: Duration = 5.minutes,
 ) : RainRadar {
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -49,25 +53,23 @@ internal class RainViewerRadar(
             val base = configured?.takeIf { it.isNotBlank() }?.trimEnd('/')
             emit(null)
             if (base == null) return@transformLatest
-            emitAll(framesFrom(base))
+            emitAll(combine(mapsFrom(base), options) { maps, options -> maps.toFrames(options) })
         }
 
-    private fun framesFrom(base: String): Flow<RadarFrames> =
+    private fun mapsFrom(base: String): Flow<WeatherMapsDto> =
         flow {
-            var last: RadarFrames? = null
             var pause = RetryFirst
             while (true) {
                 val loaded =
                     try {
-                        client.get("$base/public/weather-maps.json").body<WeatherMapsDto>().toFrames()
+                        client.get("$base/public/weather-maps.json").body<WeatherMapsDto>()
                     } catch (e: CancellationException) {
                         throw e
                     } catch (_: Exception) {
                         null
                     }
                 if (loaded != null) {
-                    if (loaded != last) emit(loaded)
-                    last = loaded
+                    emit(loaded)
                     pause = RetryFirst
                     delay(refresh)
                 } else {
@@ -75,11 +77,11 @@ internal class RainViewerRadar(
                     pause = minOf(pause * 2, refresh)
                 }
             }
-        }
+        }.distinctUntilChanged { old, new -> old.radar == new.radar && old.host == new.host }
 }
 
 /** The last hour of measured frames and the forecast. Older frames would only add tile requests. */
-internal fun WeatherMapsDto.toFrames(): RadarFrames {
+internal fun WeatherMapsDto.toFrames(options: RadarOptions = RadarOptions()): RadarFrames {
     fun frame(
         dto: FrameDto,
         forecast: Boolean,
@@ -88,8 +90,8 @@ internal fun WeatherMapsDto.toFrames(): RadarFrames {
         return RadarFrame(
             Instant.fromEpochSeconds(dto.time),
             forecast,
-            "$template?arrows=dark&lightning=$LIGHTNING",
-            "$template?arrows=light&lightning=$LIGHTNING",
+            template + query(options, "dark"),
+            template + query(options, "light"),
         )
     }
     val newest = radar.past.maxOfOrNull { it.time } ?: 0
@@ -99,6 +101,19 @@ internal fun WeatherMapsDto.toFrames(): RadarFrames {
         maxZoom = MAX_ZOOM,
         attribution = ATTRIBUTION,
     )
+}
+
+/** Tile options, with [arrowStyle] picked to stand out on the map below. */
+private fun query(
+    options: RadarOptions,
+    arrowStyle: String,
+): String {
+    val parameters =
+        listOfNotNull(
+            "arrows=$arrowStyle".takeIf { options.arrows },
+            "lightning=$LIGHTNING".takeIf { options.lightning },
+        )
+    return if (parameters.isEmpty()) "" else parameters.joinToString("&", prefix = "?")
 }
 
 private const val TILE_SIZE = 256

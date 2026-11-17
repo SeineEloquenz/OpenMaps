@@ -11,6 +11,7 @@ import nz.eloque.openmaps.core.model.LatLng
 import nz.eloque.openmaps.core.model.MapLayer
 import nz.eloque.openmaps.core.model.ModeGroup
 import nz.eloque.openmaps.core.model.ParkedCar
+import nz.eloque.openmaps.core.model.RadarOptions
 import nz.eloque.openmaps.core.model.RouteOptions
 import nz.eloque.openmaps.core.model.SettingsStore
 import nz.eloque.openmaps.core.model.TravelMode
@@ -90,6 +91,21 @@ internal class PreferencesSettingsStore(
     override fun setMapLayers(layers: Set<MapLayer>) {
         settings.putString(MAP_LAYERS, layers.joinToString(",") { it.name })
         _mapLayers.value = layers
+    }
+
+    private val _radarOptions =
+        MutableStateFlow(
+            RadarOptions(
+                arrows = settings.getBoolean(RADAR_ARROWS, true),
+                lightning = settings.getBoolean(RADAR_LIGHTNING, true),
+            ),
+        )
+    override val radarOptions: StateFlow<RadarOptions> = _radarOptions.asStateFlow()
+
+    override fun setRadarOptions(options: RadarOptions) {
+        settings.putBoolean(RADAR_ARROWS, options.arrows)
+        settings.putBoolean(RADAR_LIGHTNING, options.lightning)
+        _radarOptions.value = options
     }
 
     private val _parkedCar =
@@ -178,6 +194,8 @@ internal class PreferencesSettingsStore(
         const val SPEEDING_ALERT = "navigation.speeding_alert"
         const val PREFERRED_FUEL = "places.preferred_fuel"
         const val MAP_LAYERS = "map.layers"
+        const val RADAR_ARROWS = "map.radar.arrows"
+        const val RADAR_LIGHTNING = "map.radar.lightning"
         const val PARKED_CAR = "parking.car"
     }
 }

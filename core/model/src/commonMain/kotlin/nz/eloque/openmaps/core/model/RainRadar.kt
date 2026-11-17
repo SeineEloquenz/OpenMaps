@@ -23,6 +23,12 @@ data class RadarFrames(
     val latestObserved: Int get() = frames.indexOfLast { !it.forecast }.coerceAtLeast(0)
 }
 
+/** What the radar layer draws besides the rain. */
+data class RadarOptions(
+    val arrows: Boolean = true,
+    val lightning: Boolean = true,
+)
+
 interface RainRadar {
     /** The current frames, refreshed while collected, or null while no source is set up or reachable. */
     val frames: Flow<RadarFrames?>

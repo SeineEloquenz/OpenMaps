@@ -26,5 +26,8 @@ val weatherServiceSettings = listOf(RainRadarServer)
 
 val weatherModule =
     module {
-        single<RainRadar> { RainViewerRadar(get(), get<SettingsStore>().serviceValue(RainRadarServer.id).map { it ?: LIBREWXR }) }
+        single<RainRadar> {
+            val settings = get<SettingsStore>()
+            RainViewerRadar(get(), settings.serviceValue(RainRadarServer.id).map { it ?: LIBREWXR }, settings.radarOptions)
+        }
     }

@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
+import nz.eloque.openmaps.core.model.RadarOptions
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -38,7 +39,7 @@ class RainViewerRadarTest {
     @Test
     fun theLastHourAndTheForecastAreShown() =
         runTest {
-            val frames = RainViewerRadar(client(), flowOf("https://wxr.example/")).frames.filterNotNull().first()
+            val frames = RainViewerRadar(client(), flowOf("https://wxr.example/"), flowOf(RadarOptions())).frames.filterNotNull().first()
             assertEquals(listOf(false, false, true), frames.frames.map { it.forecast })
             assertEquals(Instant.fromEpochSeconds(1794951600), frames.frames.first().time)
             assertEquals(Instant.fromEpochSeconds(1794954600), frames.frames[frames.latestObserved].time)
@@ -53,8 +54,26 @@ class RainViewerRadarTest {
         }
 
     @Test
+    fun hiddenExtrasLeaveTheTilesPlain() =
+        runTest {
+            val options = RadarOptions(arrows = false, lightning = true)
+            val frames = RainViewerRadar(client(), flowOf("https://wxr.example"), flowOf(options)).frames.filterNotNull().first()
+            assertEquals(
+                "https://api.librewxr.net/v2/radar/1794955200/256/{z}/{x}/{y}/2/1_1.png?lightning=dots",
+                frames.frames.last().darkUrlTemplate,
+            )
+            val plain =
+                RainViewerRadar(
+                    client(),
+                    flowOf("https://wxr.example"),
+                    flowOf(RadarOptions(false, false)),
+                ).frames.filterNotNull().first()
+            assertEquals("https://api.librewxr.net/v2/radar/1794955200/256/{z}/{x}/{y}/2/1_1.png", plain.frames.last().urlTemplate)
+        }
+
+    @Test
     fun noServerMeansNoFrames() =
         runTest {
-            assertNull(RainViewerRadar(client(), flowOf("")).frames.toList().single())
+            assertNull(RainViewerRadar(client(), flowOf(""), flowOf(RadarOptions())).frames.toList().single())
         }
 }

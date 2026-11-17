@@ -204,6 +204,11 @@
     <string name="radar_forecast">Forecast %1$s</string>
     <string name="radar_play">Play</string>
     <string name="radar_pause">Pause</string>
+    <string name="radar_arrows">Motion arrows</string>
+    <string name="radar_arrows_detail">Where the rain is heading and how fast</string>
+    <string name="radar_lightning">Lightning</string>
+    <string name="radar_lightning_detail">Strikes in the ten minutes of each frame, where satellites see them</string>
+    <string name="layer_options_hint">Long press a detail for its options</string>
     <string name="layer_roadworks">Roadworks</string>
     <string name="layer_buildings">3D buildings</string>
     <string name="new_list">New list…</string>

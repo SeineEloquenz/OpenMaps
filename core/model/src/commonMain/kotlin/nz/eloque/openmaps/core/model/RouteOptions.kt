@@ -105,6 +105,10 @@ interface SettingsStore {
 
     fun setMapLayers(layers: Set<MapLayer>)
 
+    val radarOptions: StateFlow<RadarOptions>
+
+    fun setRadarOptions(options: RadarOptions)
+
     /** Where the user last left the car, null when not remembered. */
     val parkedCar: StateFlow<ParkedCar?>
 
