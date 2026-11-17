@@ -37,7 +37,7 @@ internal fun OverlayLayers(
                 id = "terrain",
                 source = dem,
                 shadowColor = const(if (dark) Color.Black else Color(0xFF473B24)),
-                highlightColor = const(if (dark) Color(0xFF3A3A3A) else Color.White),
+                highlightColor = const(if (dark) Color(0xFF5C5C5C) else Color.White),
                 exaggeration = const(TERRAIN_EXAGGERATION),
             )
         }
@@ -98,7 +98,7 @@ private fun TransitLines(dark: Boolean) {
 }
 
 private const val TERRAIN_TILEJSON = "https://tiles.mapterhorn.com/tilejson.json"
-private const val TERRAIN_EXAGGERATION = 0.4f
+private const val TERRAIN_EXAGGERATION = 0.8f
 private const val FIRST_WATER_LAYER = "waterway_tunnel"
 
 // The first label layer of the OpenFreeMap styles, so overlays stay under names and road numbers.
