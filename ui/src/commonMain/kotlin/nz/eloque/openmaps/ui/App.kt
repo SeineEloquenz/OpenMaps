@@ -86,6 +86,7 @@ import nz.eloque.openmaps.core.model.Navigator
 import nz.eloque.openmaps.core.model.PlaceCategory
 import nz.eloque.openmaps.core.model.PlacesStore
 import nz.eloque.openmaps.core.model.RoadEvents
+import nz.eloque.openmaps.core.model.SearchResult
 import nz.eloque.openmaps.core.model.SettingsStore
 import nz.eloque.openmaps.core.model.TransportMode
 import nz.eloque.openmaps.core.model.TripGuide
@@ -143,6 +144,7 @@ import nz.eloque.openmaps.ui.resources.waiting_for_location
 import nz.eloque.openmaps.ui.roads.RoadEventSheet
 import nz.eloque.openmaps.ui.saved.ListSheet
 import nz.eloque.openmaps.ui.saved.SavedSheet
+import nz.eloque.openmaps.ui.search.COORDINATES_CATEGORY
 import nz.eloque.openmaps.ui.search.SearchScreen
 import nz.eloque.openmaps.ui.settings.SettingsPage
 import nz.eloque.openmaps.ui.sharing.SharingSheet
@@ -373,7 +375,9 @@ fun App(
                                             }
                                             val field = search.field
                                             val index = backStack.indexOfLast { it is DirectionsKey }
-                                            if (field == null || index < 0) {
+                                            if (field == null && (result as? SearchResult.Place)?.category == COORDINATES_CATEGORY) {
+                                                dropPin(result.location)
+                                            } else if (field == null || index < 0) {
                                                 backStack.add(result.toKey())
                                             } else {
                                                 val directions = backStack[index] as DirectionsKey

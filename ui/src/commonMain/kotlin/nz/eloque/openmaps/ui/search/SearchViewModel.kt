@@ -19,6 +19,9 @@ import nz.eloque.openmaps.core.model.Geocoder
 import nz.eloque.openmaps.core.model.LatLng
 import nz.eloque.openmaps.core.model.PlacesStore
 import nz.eloque.openmaps.core.model.SearchResult
+import nz.eloque.openmaps.core.model.formatted
+import nz.eloque.openmaps.core.model.parseCoordinates
+import nz.eloque.openmaps.core.model.plusCode
 import nz.eloque.openmaps.core.model.storageKey
 import nz.eloque.openmaps.ui.components.LoadState
 import nz.eloque.openmaps.ui.components.loadOnce
@@ -56,6 +59,11 @@ class SearchViewModel(
                     if (trimmed.length < MIN_QUERY_LENGTH) {
                         emit(null)
                     } else {
+                        val point = parseCoordinates(trimmed, near)
+                        if (point != null) {
+                            emit(LoadState.Loaded(listOf(point.toSearchResult())))
+                            return@flow
+                        }
                         emit(LoadState.Loading)
                         emit(loadOnce { geocoder.search(trimmed, near, stopsFirst) })
                     }
@@ -75,3 +83,9 @@ class SearchViewModel(
         const val MIN_QUERY_LENGTH = 2
     }
 }
+
+/** Marks a search result that is only a typed point, which opens like a dropped pin. */
+const val COORDINATES_CATEGORY = "coordinates"
+
+private fun LatLng.toSearchResult() =
+    SearchResult.Place(id = null, name = formatted(), location = this, area = plusCode(), category = COORDINATES_CATEGORY)

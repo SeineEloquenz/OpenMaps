@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.Grass
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LocalAtm
 import androidx.compose.material.icons.filled.LocalHospital
+import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Share
@@ -63,19 +64,24 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import nz.eloque.openmaps.core.model.Accessibility
+import nz.eloque.openmaps.core.model.LatLng
 import nz.eloque.openmaps.core.model.OpeningHours
 import nz.eloque.openmaps.core.model.PlaceDetails
 import nz.eloque.openmaps.core.model.PlaceFeature
 import nz.eloque.openmaps.core.model.PlaceMedia
 import nz.eloque.openmaps.core.model.PricedStation
 import nz.eloque.openmaps.core.model.SettingsStore
+import nz.eloque.openmaps.core.model.formatted
+import nz.eloque.openmaps.core.model.plusCode
 import nz.eloque.openmaps.core.platform.Sharer
 import nz.eloque.openmaps.map.MapController
 import nz.eloque.openmaps.ui.category.label
@@ -96,6 +102,7 @@ import nz.eloque.openmaps.ui.navigation.toSearchResult
 import nz.eloque.openmaps.ui.resources.Res
 import nz.eloque.openmaps.ui.resources.address
 import nz.eloque.openmaps.ui.resources.call
+import nz.eloque.openmaps.ui.resources.coordinates
 import nz.eloque.openmaps.ui.resources.cuisine
 import nz.eloque.openmaps.ui.resources.email
 import nz.eloque.openmaps.ui.resources.fact_cash_deposit
@@ -169,6 +176,7 @@ fun PlaceSheet(
         Column(Modifier.padding(horizontal = 16.dp)) {
             prices?.let { FuelPriceSection(it, now) }
             LoadStateContent(details, onRetry = viewModel::load) { it?.let { DetailRows(it, place.name) } }
+            CoordinatesRow(place.location)
             val stops = (nearby as? LoadState.Loaded)?.value.orEmpty()
             if (stops.isNotEmpty()) {
                 HorizontalDivider(Modifier.padding(vertical = 8.dp))
@@ -394,6 +402,15 @@ private fun DetailRow(
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier,
     )
+}
+
+/** Copies the coordinates and Plus Code of [location] when tapped. */
+@Suppress("DEPRECATION")
+@Composable
+private fun CoordinatesRow(location: LatLng) {
+    val clipboard = LocalClipboardManager.current
+    val text = "${location.formatted()} · ${location.plusCode()}"
+    DetailRow(Icons.Default.MyLocation, stringResource(Res.string.coordinates), text) { clipboard.setText(AnnotatedString(text)) }
 }
 
 internal fun String.telUri() = "tel:${filter { c -> c.isDigit() || c == '+' }}"
