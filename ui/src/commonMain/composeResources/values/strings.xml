@@ -13,7 +13,6 @@
     <string name="retry">Retry</string>
 
     <string name="nearby_departures">Departures nearby</string>
-    <string name="nearby_needs_location">Allow location access to see departures near you.</string>
     <string name="allow_location">Allow location</string>
     <string name="departures">Departures</string>
     <string name="no_departures">No upcoming departures</string>
@@ -48,8 +47,6 @@
     <string name="route_options">Options</string>
     <string name="recorded_track">Track %1$s %2$s</string>
     <string name="record_track">Record track</string>
-    <string name="recording">Recording</string>
-    <string name="recording_since">Since %1$s</string>
     <string name="stop_and_save">Stop</string>
     <string name="discard">Discard</string>
     <string name="tracks">Tracks</string>
@@ -81,6 +78,16 @@
     <string name="parked_since">Parked at %1$s</string>
     <string name="save_parking">Save parking</string>
     <string name="walk_there">Walk there</string>
+    <string name="show_on_map">Show on map</string>
+    <string name="tab_map">Map</string>
+    <string name="menu">Menu</string>
+    <string name="app_name">OpenMaps</string>
+    <string name="trips">Trips</string>
+    <string name="trips_empty">Watched trips and saved routes show up here.</string>
+    <string name="trips_watched">Watching for delays</string>
+    <string name="trips_watched_leg">%1$s at %2$s from %3$s</string>
+    <string name="trips_watched_stop">Stop watching</string>
+    <string name="trips_not_set">Tap to set</string>
     <string name="coordinates">Coordinates, tap to copy</string>
     <string name="route_has_tolls">Tolls</string>
     <string name="route_has_motorways">Motorways</string>

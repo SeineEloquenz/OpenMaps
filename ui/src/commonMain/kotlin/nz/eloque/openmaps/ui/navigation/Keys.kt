@@ -124,6 +124,9 @@ data class TripKey(
 @Serializable
 data object SavedKey : NavKey
 
+@Serializable
+data object TripsKey : NavKey
+
 /** A saved track by its [nz.eloque.openmaps.core.model.TrackStore] id. */
 @Serializable
 data class TrackKey(

@@ -9,7 +9,6 @@ import nz.eloque.openmaps.ui.guidance.ActiveTrip
 import nz.eloque.openmaps.ui.guidance.NavigationViewModel
 import nz.eloque.openmaps.ui.guidance.TransitGuidanceViewModel
 import nz.eloque.openmaps.ui.guidance.TransitTripGuide
-import nz.eloque.openmaps.ui.home.HomeViewModel
 import nz.eloque.openmaps.ui.place.PlaceViewModel
 import nz.eloque.openmaps.ui.search.SearchViewModel
 import nz.eloque.openmaps.ui.sharing.SharingViewModel
@@ -21,7 +20,6 @@ import org.koin.dsl.module
 
 val uiModule =
     module {
-        viewModelOf(::HomeViewModel)
         viewModelOf(::SearchViewModel)
         viewModel { params -> StopViewModel(get(), params.get()) }
         viewModel { params ->

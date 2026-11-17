@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.Grass
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LocalAtm
 import androidx.compose.material.icons.filled.LocalHospital
+import androidx.compose.material.icons.filled.LocalParking
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Restaurant
@@ -76,6 +77,7 @@ import coil3.compose.AsyncImage
 import nz.eloque.openmaps.core.model.Accessibility
 import nz.eloque.openmaps.core.model.LatLng
 import nz.eloque.openmaps.core.model.OpeningHours
+import nz.eloque.openmaps.core.model.ParkedCar
 import nz.eloque.openmaps.core.model.PlaceDetails
 import nz.eloque.openmaps.core.model.PlaceFeature
 import nz.eloque.openmaps.core.model.PlaceMedia
@@ -130,6 +132,7 @@ import nz.eloque.openmaps.ui.resources.prices_from
 import nz.eloque.openmaps.ui.resources.prices_updated
 import nz.eloque.openmaps.ui.resources.read_on_wikipedia
 import nz.eloque.openmaps.ui.resources.report
+import nz.eloque.openmaps.ui.resources.save_parking
 import nz.eloque.openmaps.ui.resources.share
 import nz.eloque.openmaps.ui.resources.website
 import nz.eloque.openmaps.ui.resources.wheelchair
@@ -141,6 +144,7 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import kotlin.time.Clock
 import kotlin.time.Instant
 
 @Composable
@@ -234,6 +238,7 @@ private fun ActionRow(
 ) {
     val uriHandler = LocalUriHandler.current
     val sharer = koinInject<Sharer>()
+    val settings = koinInject<SettingsStore>()
     var reporting by remember { mutableStateOf(false) }
     if (reporting) ReportDialog(place.location, place.name.takeUnless { place.pinned }, onDismiss = { reporting = false })
     LazyRow(
@@ -250,6 +255,11 @@ private fun ActionRow(
         }
         item { ActionButton(Icons.Default.Share, Res.string.share) { sharer.share("${place.name}\n$shareUrl") } }
         item { ActionButton(Icons.Default.Straighten, Res.string.measure_distance, onMeasure) }
+        item {
+            ActionButton(Icons.Default.LocalParking, Res.string.save_parking) {
+                settings.setParkedCar(ParkedCar(place.location, Clock.System.now()))
+            }
+        }
         item { ActionButton(Icons.Outlined.Flag, Res.string.report) { reporting = true } }
     }
 }
