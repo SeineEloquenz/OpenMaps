@@ -19,12 +19,15 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.DirectionsBoat
 import androidx.compose.material.icons.filled.DirectionsTransit
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
+import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.SwapVert
+import androidx.compose.material.icons.filled.Toll
 import androidx.compose.material.icons.filled.TripOrigin
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.outlined.BookmarkBorder
@@ -70,6 +73,7 @@ import nz.eloque.openmaps.core.model.Navigator
 import nz.eloque.openmaps.core.model.PlacesStore
 import nz.eloque.openmaps.core.model.RoadEvent
 import nz.eloque.openmaps.core.model.RoadEvents
+import nz.eloque.openmaps.core.model.RouteFeature
 import nz.eloque.openmaps.core.model.SettingsStore
 import nz.eloque.openmaps.core.model.TransportMode
 import nz.eloque.openmaps.core.model.TravelMode
@@ -111,6 +115,9 @@ import nz.eloque.openmaps.ui.resources.remove_saved_route
 import nz.eloque.openmaps.ui.resources.remove_stop
 import nz.eloque.openmaps.ui.resources.rental_leg
 import nz.eloque.openmaps.ui.resources.route_closures
+import nz.eloque.openmaps.ui.resources.route_has_ferry
+import nz.eloque.openmaps.ui.resources.route_has_motorways
+import nz.eloque.openmaps.ui.resources.route_has_tolls
 import nz.eloque.openmaps.ui.resources.route_options
 import nz.eloque.openmaps.ui.resources.route_roadworks
 import nz.eloque.openmaps.ui.resources.save_route
@@ -144,7 +151,7 @@ fun DirectionsSheet(
     onSwap: () -> Unit,
     onRemoveStop: (Endpoint) -> Unit,
     onOpenRoute: (Itinerary) -> Unit,
-    onNavigate: (TravelMode, simulate: Boolean) -> Unit,
+    onNavigate: (TravelMode, simulate: Boolean, routeId: String?) -> Unit,
     canSimulate: Boolean = false,
 ) {
     val viewModel = koinViewModel<DirectionsViewModel> { parametersOf(directions) }
@@ -159,12 +166,14 @@ fun DirectionsSheet(
 
     val loaded = (result as? LoadState.Loaded)?.value
     val direct = (street as? LoadState.Loaded)?.value.orEmpty()
-    val walk = direct[TransportMode.WALK]
+    val cars = direct[TransportMode.CAR].orEmpty()
+    var carId by rememberSaveable { mutableStateOf<String?>(null) }
+    val car = cars.firstOrNull { it.id == carId } ?: cars.firstOrNull()
     val routes =
         mapOf(
-            TravelMode.CAR to direct[TransportMode.CAR],
-            TravelMode.WALK to walk,
-            TravelMode.BIKE to direct[TransportMode.BIKE],
+            TravelMode.CAR to car,
+            TravelMode.WALK to direct[TransportMode.WALK]?.firstOrNull(),
+            TravelMode.BIKE to direct[TransportMode.BIKE]?.firstOrNull(),
         )
     var selectedId by rememberSaveable { mutableStateOf<String?>(null) }
     val best = loaded?.itineraries?.best(arriveBy = time is TimeChoice.ArriveBy)
@@ -172,6 +181,9 @@ fun DirectionsSheet(
     if (mode == TravelMode.TRANSIT) {
         ShowItineraryOnMap(map, selected, fit = false)
         ShowRouteChoicesOnMap(map, loaded?.itineraries.orEmpty(), selected) { selectedId = it.id }
+    } else if (mode == TravelMode.CAR && cars.size > 1) {
+        ShowItineraryOnMap(map, car, fit = false)
+        ShowRouteChoicesOnMap(map, cars, car) { carId = it.id }
     } else {
         ShowItineraryOnMap(map, routes[mode])
     }
@@ -271,24 +283,30 @@ fun DirectionsSheet(
                     item { TextButton(onClick = viewModel::loadLater) { Text(stringResource(Res.string.later)) } }
                 }
             }
-            else ->
-                item {
-                    val route = routes[mode]
-                    if (route == null) {
-                        Text(stringResource(Res.string.no_routes), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    } else {
-                        val navigable = directions.to != null && koinInject<Navigator>().isAvailable(mode.transportMode)
-                        StreetRouteCard(
-                            route,
-                            mode,
-                            unit,
-                            eventsOnRoute,
-                            onClick = { onOpenRoute(route) },
-                            onStart = if (navigable) ({ onNavigate(mode, false) }) else null,
-                            onSimulate = if (navigable && canSimulate) ({ onNavigate(mode, true) }) else null,
-                        )
+            routes[mode] == null ->
+                item { Text(stringResource(Res.string.no_routes), color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            else -> {
+                val chosen = routes.getValue(mode)!!
+                val choices = if (mode == TravelMode.CAR) cars else listOf(chosen)
+                items(choices, key = { it.id }) { route ->
+                    if (route.id != chosen.id) {
+                        StreetRouteCard(route, mode, unit, emptyList(), selected = false, onClick = { carId = route.id })
+                        return@items
                     }
+                    val navigable = directions.to != null && koinInject<Navigator>().isAvailable(mode.transportMode)
+                    val routeId = route.id.takeIf { it != choices.first().id }
+                    StreetRouteCard(
+                        route,
+                        mode,
+                        unit,
+                        eventsOnRoute,
+                        selected = choices.size > 1,
+                        onClick = { onOpenRoute(route) },
+                        onStart = if (navigable) ({ onNavigate(mode, false, routeId) }) else null,
+                        onSimulate = if (navigable && canSimulate) ({ onNavigate(mode, true, routeId) }) else null,
+                    )
                 }
+            }
         }
         if (mode == TravelMode.BIKE && state is LoadState.Loaded && !viewModel.hasStops) {
             item {
@@ -343,14 +361,19 @@ private fun StreetRouteCard(
     mode: TravelMode,
     unit: DistanceUnit,
     events: List<RoadEvent>,
+    selected: Boolean,
     onClick: () -> Unit,
-    onStart: (() -> Unit)?,
-    onSimulate: (() -> Unit)?,
+    onStart: (() -> Unit)? = null,
+    onSimulate: (() -> Unit)? = null,
 ) {
     val legs = itinerary.legs.filterIsInstance<Leg.Street>()
     val meters = legs.mapNotNull { it.distanceMeters }.takeIf { it.isNotEmpty() }?.sum()
     val streets = legs.flatMap { it.streets }.distinct().take(2)
-    Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        border = if (selected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
+    ) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
@@ -378,6 +401,7 @@ private fun StreetRouteCard(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            RouteFeatures(legs.flatMap { it.features }.toSet())
             if (mode == TravelMode.WALK || mode == TravelMode.BIKE) {
                 legs.mapNotNull { it.elevation }.reduceOrNull { a, b -> a + b }?.let {
                     ElevationChart(it, unit, Modifier.padding(top = 4.dp))
@@ -406,6 +430,44 @@ private fun StreetRouteCard(
         }
     }
 }
+
+@Composable
+private fun RouteFeatures(features: Set<RouteFeature>) {
+    if (features.isEmpty()) return
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), itemVerticalAlignment = Alignment.CenterVertically) {
+        RouteFeature.entries.filter { it in features }.forEach { feature ->
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Icon(
+                    feature.icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    stringResource(feature.label),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
+private val RouteFeature.icon: ImageVector
+    get() =
+        when (this) {
+            RouteFeature.TOLLS -> Icons.Default.Toll
+            RouteFeature.MOTORWAYS -> Icons.Default.Speed
+            RouteFeature.FERRIES -> Icons.Default.DirectionsBoat
+        }
+
+private val RouteFeature.label: StringResource
+    get() =
+        when (this) {
+            RouteFeature.TOLLS -> Res.string.route_has_tolls
+            RouteFeature.MOTORWAYS -> Res.string.route_has_motorways
+            RouteFeature.FERRIES -> Res.string.route_has_ferry
+        }
 
 /** Time for the tiles of the fitted route view to load before road events are read from them. */
 private const val TILE_LOAD_MILLIS = 800L

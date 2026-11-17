@@ -64,6 +64,8 @@ sealed interface Leg {
         val rental: SharedRental? = null,
         /** Null when the routing service gave no heights. */
         val elevation: ElevationProfile? = null,
+        /** Kinds of road this leg uses that drivers may want to know about beforehand. */
+        val features: Set<RouteFeature> = emptySet(),
     ) : Leg
 
     data class Transit(
@@ -83,6 +85,12 @@ sealed interface Leg {
         override val mode: TransportMode
             get() = line.mode
     }
+}
+
+enum class RouteFeature {
+    TOLLS,
+    MOTORWAYS,
+    FERRIES,
 }
 
 data class Itinerary(

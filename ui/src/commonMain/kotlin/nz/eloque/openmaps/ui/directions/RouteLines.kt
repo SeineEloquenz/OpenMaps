@@ -62,9 +62,14 @@ fun ShowRouteChoicesOnMap(
     }
 }
 
-/** The lines a route takes, so the same route at another time counts once. */
+/** The lines a route takes, so the same route at another time counts once. Routes without public transport each count. */
 private val Itinerary.pattern: List<String>
-    get() = legs.map { leg -> if (leg is Leg.Transit) "${leg.line.mode}:${leg.line.shortName}:${leg.from.name}" else leg.mode.name }
+    get() =
+        if (legs.none { it is Leg.Transit }) {
+            listOf(id)
+        } else {
+            legs.map { leg -> if (leg is Leg.Transit) "${leg.line.mode}:${leg.line.shortName}:${leg.from.name}" else leg.mode.name }
+        }
 
 private const val MAX_ROUTE_CHOICES = 3
 

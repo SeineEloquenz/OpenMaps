@@ -13,6 +13,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import nz.eloque.openmaps.core.model.LatLng
 import nz.eloque.openmaps.core.model.Leg
+import nz.eloque.openmaps.core.model.RouteFeature
 import nz.eloque.openmaps.core.model.RouteOptions
 import nz.eloque.openmaps.core.model.StreetRequest
 import nz.eloque.openmaps.core.model.TransportMode
@@ -38,13 +39,14 @@ class ValhallaStreetRouterTest {
 
     private fun router(
         status: HttpStatusCode = HttpStatusCode.OK,
-        response: String = ROUTE_JSON,
+        response: (body: String) -> String = { ROUTE_JSON },
         url: String? = "http://localhost:8002/",
     ) = ValhallaStreetRouter(
         HttpClient(
             MockEngine { request ->
-                bodies += (request.body as TextContent).text
-                respond(response, status, headersOf(HttpHeaders.ContentType, "application/json"))
+                val body = (request.body as TextContent).text
+                bodies += body
+                respond(response(body), status, headersOf(HttpHeaders.ContentType, "application/json"))
             },
         ) {
             expectSuccess = true
@@ -105,6 +107,32 @@ class ValhallaStreetRouterTest {
         }
 
     @Test
+    fun listsOtherWaysToDriveAvoidingTheMiddleOfTheFastest() =
+        runTest {
+            val north = listOf(LatLng(49.0, 8.4), LatLng(49.02, 8.45), LatLng(49.0, 8.5))
+            val south = listOf(LatLng(49.0, 8.4), LatLng(48.98, 8.45), LatLng(49.0, 8.5))
+            val routes =
+                router(response = { body ->
+                    when {
+                        "exclude_polygons" in body -> """{"trip":${trip(south, toll = false, ferry = true)}}"""
+                        else -> """{"trip":${trip(north, toll = true)}}"""
+                    }
+                }).route(request.copy(modes = setOf(TransportMode.CAR), alternatives = true))
+            assertEquals(3, bodies.size)
+            assertTrue(bodies.all { "\"date_time\":{\"type\":0}" in it })
+            assertEquals(2, routes.map { it.id }.distinct().size)
+            assertEquals(setOf(RouteFeature.TOLLS, RouteFeature.MOTORWAYS), (routes[0].legs.single() as Leg.Street).features)
+            assertEquals(setOf(RouteFeature.MOTORWAYS, RouteFeature.FERRIES), (routes[1].legs.single() as Leg.Street).features)
+        }
+
+    @Test
+    fun asksForNoAlternativesThroughStops() =
+        runTest {
+            router().route(request.copy(modes = setOf(TransportMode.CAR), alternatives = true, via = listOf(LatLng(49.609, 6.127))))
+            assertTrue("exclude_polygons" !in bodies.single())
+        }
+
+    @Test
     fun arrivesByTheRequestedTime() =
         runTest {
             val arrival = Now + 30.minutes
@@ -115,6 +143,34 @@ class ValhallaStreetRouterTest {
     @Test
     fun unroutableRequestHasNoRoute() =
         runTest {
-            assertEquals(emptyList(), router(HttpStatusCode.BadRequest, NO_ROUTE_JSON).route(request))
+            assertEquals(emptyList(), router(HttpStatusCode.BadRequest, { NO_ROUTE_JSON }).route(request))
         }
+}
+
+private fun trip(
+    line: List<LatLng>,
+    toll: Boolean = false,
+    ferry: Boolean = false,
+) = """{"legs":[{"shape":"${encode(line)}","summary":{"time":600.0,"length":10.0},"maneuvers":[]}],""" +
+    """"summary":{"has_toll":$toll,"has_highway":true,"has_ferry":$ferry}}"""
+
+private fun encode(line: List<LatLng>): String {
+    val out = StringBuilder()
+    var lastLat = 0L
+    var lastLon = 0L
+    for (point in line) {
+        val lat = kotlin.math.round(point.latitude * 1e6).toLong()
+        val lon = kotlin.math.round(point.longitude * 1e6).toLong()
+        for (delta in listOf(lat - lastLat, lon - lastLon)) {
+            var value = if (delta < 0) (delta shl 1).inv() else delta shl 1
+            while (value >= 0x20) {
+                out.append(((0x20 or (value and 0x1f).toInt()) + 63).toChar())
+                value = value shr 5
+            }
+            out.append((value + 63).toInt().toChar())
+        }
+        lastLat = lat
+        lastLon = lon
+    }
+    return out.toString()
 }

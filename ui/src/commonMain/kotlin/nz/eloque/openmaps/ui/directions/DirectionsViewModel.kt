@@ -68,9 +68,9 @@ class DirectionsViewModel(
     private val _result = MutableStateFlow<LoadState<DirectionsResult>?>(null)
     val result: StateFlow<LoadState<DirectionsResult>?> = _result.asStateFlow()
 
-    /** Direct routes by mode, null until a tab needs them. */
-    private val _street = MutableStateFlow<LoadState<Map<TransportMode, Itinerary>>?>(null)
-    val street: StateFlow<LoadState<Map<TransportMode, Itinerary>>?> = _street.asStateFlow()
+    /** Direct routes by mode, fastest first, null until a tab needs them. */
+    private val _street = MutableStateFlow<LoadState<Map<TransportMode, List<Itinerary>>>?>(null)
+    val street: StateFlow<LoadState<Map<TransportMode, List<Itinerary>>>?> = _street.asStateFlow()
 
     /** Routes on shared bikes and scooters, null until the bike tab needs them. */
     private val _shared = MutableStateFlow<LoadState<List<Itinerary>>?>(null)
@@ -199,7 +199,7 @@ class DirectionsViewModel(
                     loadOnce {
                         val direct = streetRouter.route(request)
                         cache.put(direct)
-                        direct.filter { it.legs.isNotEmpty() }.associateBy { it.legs.first().mode }
+                        direct.filter { it.legs.isNotEmpty() }.groupBy { it.legs.first().mode }
                     }
             }
     }
@@ -219,6 +219,7 @@ class DirectionsViewModel(
                 },
             arriveBy = time is TimeChoice.ArriveBy,
             options = settings.routeOptions.value,
+            alternatives = true,
         )
     }
 

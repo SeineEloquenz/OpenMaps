@@ -132,6 +132,8 @@ data class NavigationKey(
     val mode: TravelMode,
     val simulate: Boolean = false,
     val via: List<Endpoint> = emptyList(),
+    /** A planned route the user chose over the fastest one, kept in [nz.eloque.openmaps.ui.directions.ItineraryCache]. */
+    val routeId: String? = null,
 ) : NavKey
 
 /** Guidance along a cached public transport itinerary. [simulate] follows it on the timetable by itself. */

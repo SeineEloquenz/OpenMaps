@@ -126,6 +126,8 @@ interface Navigator {
         options: RouteOptions,
         simulate: Boolean = false,
         via: List<LatLng> = emptyList(),
+        /** The line of a route the user chose among others, which the trip then follows where it can. */
+        prefer: List<LatLng>? = null,
     )
 
     /** Makes [location] the running trip's next stop, before the stops already planned. Throws when no route goes there. */

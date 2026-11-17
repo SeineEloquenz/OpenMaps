@@ -45,6 +45,9 @@
     <string name="report_failed">The note could not be sent. Try again later.</string>
     <string name="report_view">View note</string>
     <string name="route_options">Options</string>
+    <string name="route_has_tolls">Tolls</string>
+    <string name="route_has_motorways">Motorways</string>
+    <string name="route_has_ferry">Ferry</string>
     <string name="options_transport">Transport</string>
     <string name="mode_long_distance">Long-distance trains</string>
     <string name="mode_regional">Regional trains</string>

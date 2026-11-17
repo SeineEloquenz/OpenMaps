@@ -29,7 +29,7 @@ val uiModule =
         single { ItineraryCache() }
         viewModel { params -> DirectionsViewModel(get(), get(), get(), get(), params.get()) }
         single { ActiveTrip() }
-        viewModel { params -> NavigationViewModel(get(), get(), get(), params.get()) }
+        viewModel { params -> NavigationViewModel(get(), get(), get(), get(), params.get()) }
         single<TripGuide> { TransitTripGuide(get(), get()) }
         viewModel { params -> TransitGuidanceViewModel(get(), get(), get(), params.get()) }
         viewModel { params -> TripViewModel(get(), params.get()) }

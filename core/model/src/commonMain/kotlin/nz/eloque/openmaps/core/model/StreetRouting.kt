@@ -13,10 +13,12 @@ data class StreetRequest(
     val options: RouteOptions = RouteOptions(),
     /** Stops between [from] and [to], visited in order. */
     val via: List<LatLng> = emptyList(),
+    /** Also asks for other ways to drive, which only routes without [via] stops can have. */
+    val alternatives: Boolean = false,
 )
 
 /** Routes by car, bike or on foot alone, without public transport. */
 interface StreetRouter {
-    /** At most one route per requested mode. Modes without a route are left out. */
+    /** One route per requested mode, fastest first, with other car routes after it when [StreetRequest.alternatives] is set. Modes without a route are left out. */
     suspend fun route(request: StreetRequest): List<Itinerary>
 }

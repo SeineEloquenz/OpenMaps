@@ -420,9 +420,9 @@ fun App(
                                             if (index >= 0) backStack[index] = directions.copy(via = directions.via - stop)
                                         },
                                         onOpenRoute = { backStack.add(RouteKey(it.id, directions.to?.name)) },
-                                        onNavigate = { mode, simulate ->
+                                        onNavigate = { mode, simulate, routeId ->
                                             directions.to?.let {
-                                                backStack.add(NavigationKey(directions.from, it, mode, simulate, directions.via))
+                                                backStack.add(NavigationKey(directions.from, it, mode, simulate, directions.via, routeId))
                                             }
                                         },
                                         canSimulate = debug,

@@ -19,6 +19,7 @@ import nz.eloque.openmaps.core.model.EventTime
 import nz.eloque.openmaps.core.model.Itinerary
 import nz.eloque.openmaps.core.model.LatLng
 import nz.eloque.openmaps.core.model.Leg
+import nz.eloque.openmaps.core.model.RouteFeature
 import nz.eloque.openmaps.core.model.RouteOptions
 import nz.eloque.openmaps.core.model.StreetRequest
 import nz.eloque.openmaps.core.model.StreetRouter
@@ -35,10 +36,11 @@ internal data class RouteRequestDto(
     val locations: List<LocationDto>,
     val costing: String,
     @SerialName("costing_options") val costingOptions: Map<String, CostingDto>,
-    @SerialName("date_time") val dateTime: DateTimeDto,
+    @SerialName("date_time") val dateTime: DateTimeDto? = null,
     @SerialName("directions_type") val directionsType: String,
     val units: String,
     @SerialName("elevation_interval") val elevationInterval: Double? = null,
+    @SerialName("exclude_polygons") val excludePolygons: List<List<List<Double>>>? = null,
 )
 
 @Serializable
@@ -47,6 +49,9 @@ internal data class LocationDto(
     val lon: Double,
     @SerialName("search_filter") val searchFilter: SearchFilterDto,
     @SerialName("search_cutoff") val searchCutoff: Int,
+    val type: String? = null,
+    val heading: Int? = null,
+    @SerialName("heading_tolerance") val headingTolerance: Int? = null,
 )
 
 /**
@@ -82,6 +87,14 @@ internal data class RouteResponseDto(
 @Serializable
 internal data class TripDto(
     val legs: List<TripLegDto>,
+    val summary: TripSummaryDto? = null,
+)
+
+@Serializable
+internal data class TripSummaryDto(
+    @SerialName("has_toll") val hasToll: Boolean = false,
+    @SerialName("has_highway") val hasHighway: Boolean = false,
+    @SerialName("has_ferry") val hasFerry: Boolean = false,
 )
 
 @Serializable
@@ -121,23 +134,57 @@ internal class ValhallaStreetRouter(
                         runCatching { servers.first(mode) { url -> route(url, request, mode, costing) } }
                             .onFailure { if (it is CancellationException) throw it }
                             .getOrNull()
+                            .orEmpty()
                     }
                 }.awaitAll()
-                .filterNotNull()
+                .flatten()
         }
 
+    /** Null when the server has no route, so the next server is asked. */
     private suspend fun route(
         url: String,
         request: StreetRequest,
         mode: TransportMode,
         costing: String,
-    ): Itinerary? {
+    ): List<Itinerary>? {
+        val main = fetch(url, request, mode, costing)?.trip ?: return null
+        val mainItinerary = main.toItinerary(request, mode, 0) ?: return null
+        if (!request.alternatives || mode != TransportMode.CAR || request.via.isNotEmpty()) return listOf(mainItinerary)
+        val lines = mutableListOf(main.points())
+        val alternatives = mutableListOf<Itinerary>()
+        // Valhalla's own alternatives are rare and leave out live closures, so each one here avoids the middle of those found before.
+        repeat(MAX_ALTERNATIVES) {
+            val trip =
+                runCatching { fetch(url, request, mode, costing, avoid = lines.flatMap { blocksAlong(it) })?.trip }
+                    .onFailure { if (it is CancellationException) throw it }
+                    .getOrNull() ?: return@repeat
+            val line = trip.points()
+            val itinerary = trip.toItinerary(request, mode, alternatives.size + 1) ?: return@repeat
+            if (itinerary.duration > mainItinerary.duration * MAX_SLOWER ||
+                lines.any { overlap(line, it) > SAME_ROUTE_SHARE }
+            ) {
+                return@repeat
+            }
+            lines += line
+            alternatives += itinerary
+        }
+        return listOf(mainItinerary) + alternatives
+    }
+
+    private suspend fun fetch(
+        url: String,
+        request: StreetRequest,
+        mode: TransportMode,
+        costing: String,
+        avoid: List<List<List<Double>>>? = null,
+    ): RouteResponseDto? {
+        val stops =
+            request.via.map {
+                LocationDto(it.latitude, it.longitude, SearchFilterDto(excludeClosures = false), SEARCH_CUTOFF_METERS)
+            }
         val body =
             RouteRequestDto(
-                locations =
-                    (listOf(request.from) + request.via + request.to).map {
-                        LocationDto(it.latitude, it.longitude, SearchFilterDto(excludeClosures = false), SEARCH_CUTOFF_METERS)
-                    },
+                locations = listOf(request.from.location()) + stops + request.to.location(),
                 costing = costing,
                 costingOptions = mapOf(costing to costingOptions(mode, request.options)),
                 // Valhalla only applies live closures to routes leaving now.
@@ -145,26 +192,26 @@ internal class ValhallaStreetRouter(
                 directionsType = "maneuvers",
                 units = "kilometers",
                 elevationInterval = ELEVATION_SPACING_METERS.takeIf { mode != TransportMode.CAR },
+                excludePolygons = avoid,
             )
-        val response: RouteResponseDto =
-            try {
-                client
-                    .post("$url/route") {
-                        contentType(ContentType.Application.Json)
-                        setBody(body)
-                    }.body()
-            } catch (e: ClientRequestException) {
-                if (e.response.status == HttpStatusCode.BadRequest) return null
-                throw e
-            }
-        return response.toItinerary(request, mode)
+        return try {
+            client
+                .post("$url/route") {
+                    contentType(ContentType.Application.Json)
+                    setBody(body)
+                }.body()
+        } catch (e: ClientRequestException) {
+            if (e.response.status == HttpStatusCode.BadRequest) return null
+            throw e
+        }
     }
 
-    private fun RouteResponseDto.toItinerary(
+    private fun TripDto.toItinerary(
         request: StreetRequest,
         mode: TransportMode,
+        choice: Int,
     ): Itinerary? {
-        val legs = trip.legs.takeIf { it.isNotEmpty() } ?: return null
+        val legs = legs.takeIf { it.isNotEmpty() } ?: return null
         val duration = legs.sumOf { it.summary.time }.seconds
         val time = request.time ?: now()
         val start = if (request.arriveBy) time - duration else time
@@ -180,9 +227,11 @@ internal class ValhallaStreetRouter(
                 distanceMeters = legs.sumOf { it.summary.length } * 1000,
                 streets = mainStreets(legs.flatMap { it.maneuvers }),
                 elevation = legs.mapNotNull { it.profile() }.reduceOrNull(ElevationProfile::plus),
+                features = summary?.features().orEmpty(),
             )
+        val path = "${request.from}:${request.via.joinToString(":")}:${request.to}"
         return Itinerary(
-            id = "valhalla:${mode.name}:${start.epochSeconds}:${request.from}:${request.via.joinToString(":")}:${request.to}",
+            id = "valhalla:${mode.name}:${start.epochSeconds}:$path" + if (choice > 0) ":$choice" else "",
             start = start,
             end = end,
             transfers = 0,
@@ -264,5 +313,27 @@ private fun TripLegDto.profile(): ElevationProfile? {
     return ElevationProfile(elevationInterval ?: ELEVATION_SPACING_METERS, heights)
 }
 
+private fun TripSummaryDto.features(): Set<RouteFeature> =
+    buildSet {
+        if (hasToll) add(RouteFeature.TOLLS)
+        if (hasHighway) add(RouteFeature.MOTORWAYS)
+        if (hasFerry) add(RouteFeature.FERRIES)
+    }
+
 // Fine enough for a chart of a walk or ride, while keeping the response small.
 private const val ELEVATION_SPACING_METERS = 30.0
+
+private const val MAX_ALTERNATIVES = 2
+
+/** Alternatives taking this many times as long as the fastest route are left out. */
+private const val MAX_SLOWER = 1.5
+
+private fun LatLng.location() = LocationDto(latitude, longitude, SearchFilterDto(excludeClosures = false), SEARCH_CUTOFF_METERS)
+
+private fun TripDto.points() = legs.flatMap { decodePolyline(it.shape, precision = 6) }
+
+/** Routes sharing more than this much of their length count as the same way. */
+private const val SAME_ROUTE_SHARE = 0.85
+
+internal const val THROUGH_CUTOFF_METERS = 100
+internal const val THROUGH_HEADING_TOLERANCE = 45

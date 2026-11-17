@@ -15,6 +15,7 @@ import nz.eloque.openmaps.core.model.TransportMode
 import nz.eloque.openmaps.core.model.TravelMode
 import nz.eloque.openmaps.ui.components.LoadState
 import nz.eloque.openmaps.ui.components.loadOnce
+import nz.eloque.openmaps.ui.directions.ItineraryCache
 import nz.eloque.openmaps.ui.navigation.NavigationKey
 
 /** Runs one trip for as long as its screen is open. */
@@ -22,6 +23,7 @@ class NavigationViewModel(
     private val navigator: Navigator,
     private val settings: SettingsStore,
     private val active: ActiveTrip,
+    private val itineraries: ItineraryCache,
     private val key: NavigationKey,
 ) : ViewModel() {
     val state: StateFlow<NavigationState?> = navigator.state
@@ -47,6 +49,7 @@ class NavigationViewModel(
                         settings.routeOptions.value,
                         key.simulate,
                         key.via.map { it.location },
+                        key.routeId?.let { itineraries[it] }?.legs?.flatMap { it.geometry },
                     )
                 }
         }

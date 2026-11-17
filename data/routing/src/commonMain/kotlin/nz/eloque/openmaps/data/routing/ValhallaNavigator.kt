@@ -81,6 +81,7 @@ internal data class NavigationLocationDto(
     @SerialName("search_cutoff") val searchCutoff: Int,
     val heading: Int? = null,
     @SerialName("heading_tolerance") val headingTolerance: Int? = null,
+    val type: String? = null,
 )
 
 /** Routes with banner and voice instructions in the Mapbox Directions format MapLibre Navigation reads. */
@@ -117,7 +118,10 @@ internal class ValhallaNavigationRoutes(
         return SpeedLimits.of(route.points(), edges.edges)
     }
 
-    /** Null when Valhalla finds no route. [heading] keeps a rerouted trip going the way the user faces. Each stop in [via] ends a leg. */
+    /**
+     * Null when Valhalla finds no route. [heading] keeps a rerouted trip going the way the user faces. Each stop in [via] ends a leg.
+     * [through] makes the route pass a point without stopping there.
+     */
     suspend fun route(
         from: LatLng,
         heading: Float?,
@@ -125,6 +129,7 @@ internal class ValhallaNavigationRoutes(
         mode: TransportMode,
         options: RouteOptions,
         via: List<LatLng> = emptyList(),
+        through: Through? = null,
     ): DirectionsRoute? {
         val costing = checkNotNull(costing(mode)) { "No street routing for $mode" }
         val start =
@@ -140,9 +145,28 @@ internal class ValhallaNavigationRoutes(
             NavigationRequestDto(
                 locations =
                     listOf(start) +
-                        (via + to).map {
+                        via.map {
                             NavigationLocationDto(it.latitude, it.longitude, SearchFilterDto(excludeClosures = false), SEARCH_CUTOFF_METERS)
-                        },
+                        } +
+                        listOfNotNull(
+                            through?.let {
+                                NavigationLocationDto(
+                                    it.location.latitude,
+                                    it.location.longitude,
+                                    SearchFilterDto(excludeClosures = false),
+                                    THROUGH_CUTOFF_METERS,
+                                    heading = it.heading,
+                                    headingTolerance = THROUGH_HEADING_TOLERANCE,
+                                    type = "through",
+                                )
+                            },
+                            NavigationLocationDto(
+                                to.latitude,
+                                to.longitude,
+                                SearchFilterDto(excludeClosures = false),
+                                SEARCH_CUTOFF_METERS,
+                            ),
+                        ),
                 costing = costing,
                 costingOptions = mapOf(costing to costingOptions(mode, options)),
                 // Valhalla only applies live closures to routes leaving now.
@@ -210,6 +234,8 @@ internal class ValhallaNavigator(
         val mode: TransportMode,
         val options: RouteOptions,
         val replay: ReplayRouteLocationEngine?,
+        /** A point on the route the user chose over the fastest one, which the trip keeps to until it is passed. */
+        var detour: Through?,
         /** The stops of the route being followed, of which the first [legIndex] are behind. */
         var stops: List<LatLng>,
         var geometry: List<LatLng>,
@@ -243,6 +269,7 @@ internal class ValhallaNavigator(
         val from = here?.let { LatLng(it.latitude, it.longitude) } ?: _state.value?.position ?: error("Position unknown")
         val through = listOf(location) + trip.stopsAhead
         val route = routes.route(from, here?.bearing, trip.to, trip.mode, trip.options, through) ?: error("No route to the stop")
+        trip.detour = null
         if (this.trip !== trip) return
         trip.voiceLanguage = route.voiceLanguage ?: trip.voiceLanguage
         trip.follow(route, through)
@@ -256,12 +283,16 @@ internal class ValhallaNavigator(
         options: RouteOptions,
         simulate: Boolean,
         via: List<LatLng>,
+        prefer: List<LatLng>?,
     ) {
-        val route = routes.route(from, null, to, mode, options, via) ?: error("No route to the destination")
+        val fastest = routes.route(from, null, to, mode, options, via) ?: error("No route to the destination")
+        val detour = prefer?.takeIf { via.isEmpty() }?.let { detour(it, fastest.points()) }
+        val route = detour?.let { runCatching { routes.route(from, null, to, mode, options, through = it) }.getOrNull() } ?: fastest
         stop()
         val replay = if (simulate) ReplayRouteLocationEngine(scope).apply { assign(route) } else null
         val navigation = MapLibreNavigation(navigationOptions(mode), replay ?: FixLocationEngine(location))
-        val trip = Trip(navigation, to, mode, options, replay, via, route.points(), route.voiceLanguage)
+        val trip =
+            Trip(navigation, to, mode, options, replay, detour.takeIf { route !== fastest }, via, route.points(), route.voiceLanguage)
         this.trip = trip
         navigation.addProgressChangeListener { location, progress -> onProgress(trip, location, progress) }
         navigation.addMilestoneEventListener { _, instruction, milestone ->
@@ -285,7 +316,17 @@ internal class ValhallaNavigator(
             val remaining = _state.value?.takeIf { it.status == NavigationStatus.NAVIGATING }?.remainingTime ?: continue
             val ahead = trip.stopsAhead
             val route =
-                runCatching { routes.route(LatLng(here.latitude, here.longitude), here.bearing, trip.to, trip.mode, trip.options, ahead) }
+                runCatching {
+                    routes.route(
+                        LatLng(here.latitude, here.longitude),
+                        here.bearing,
+                        trip.to,
+                        trip.mode,
+                        trip.options,
+                        ahead,
+                        trip.detour,
+                    )
+                }
                     .getOrNull() ?: continue
             if (this.trip !== trip) return
             if (trip.rerouting || trip.stopsAhead != ahead) continue
@@ -315,6 +356,13 @@ internal class ValhallaNavigator(
     ) {
         if (this.trip !== trip) return
         trip.lastLocation = location
+        trip.detour?.let {
+            if (LatLng(location.latitude, location.longitude).distanceTo(it.location) <
+                DETOUR_PASSED_METERS
+            ) {
+                trip.detour = null
+            }
+        }
         trip.legIndex = progress.legIndex
         val steps = progress.currentLeg.steps
         val step = steps.getOrNull(progress.stepIndex)
@@ -359,7 +407,7 @@ internal class ValhallaNavigator(
             val route =
                 runCatching {
                     val here = LatLng(location.latitude, location.longitude)
-                    routes.route(here, location.bearing, trip.to, trip.mode, trip.options, trip.stopsAhead)
+                    routes.route(here, location.bearing, trip.to, trip.mode, trip.options, trip.stopsAhead, trip.detour)
                 }.getOrNull()
             trip.rerouting = false
             if (this@ValhallaNavigator.trip !== trip) return@launch
@@ -509,6 +557,7 @@ private fun navigationOptions(mode: TransportMode): MapLibreNavigationOptions {
 
 private val RECHECK_INTERVAL = 5.minutes
 private val RECHECK_DIFFERENCE = 1.minutes
+private const val DETOUR_PASSED_METERS = 300.0
 private const val HEADING_TOLERANCE = 45
 private const val LANES_AHEAD_METERS = 500.0
 private const val ARRIVAL_METERS = 25.0
