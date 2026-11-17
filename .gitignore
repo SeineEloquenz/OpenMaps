@@ -21,3 +21,4 @@ result-*
 .idea/
 *.iml
 .vscode/
+/research/
