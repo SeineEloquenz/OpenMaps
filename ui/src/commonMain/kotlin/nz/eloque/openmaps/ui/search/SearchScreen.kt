@@ -67,8 +67,10 @@ fun SearchScreen(
     onDismiss: () -> Unit,
     onSelect: (SearchResult) -> Unit,
     onCategory: ((PlaceCategory) -> Unit)? = null,
+    initialQuery: String? = null,
 ) {
     val viewModel = koinViewModel<SearchViewModel>()
+    LaunchedEffect(initialQuery) { initialQuery?.let(viewModel::setQuery) }
     viewModel.near = near
     viewModel.stopsFirst = stopsFirst
     val query by viewModel.query.collectAsStateWithLifecycle()

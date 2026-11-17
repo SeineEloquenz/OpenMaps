@@ -33,6 +33,7 @@ enum class DirectionsField { FROM, TO }
 data class SearchKey(
     val field: DirectionsField? = null,
     val saveAs: FavouriteLabel? = null,
+    val query: String? = null,
 ) : NavKey
 
 /** A route end. Stops route by id, everything else by coordinates. */

@@ -69,12 +69,15 @@ import coil3.network.ktor3.KtorNetworkFetcherFactory
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsText
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass
 import nz.eloque.openmaps.core.model.Geocoder
+import nz.eloque.openmaps.core.model.LatLng
 import nz.eloque.openmaps.core.model.Navigator
 import nz.eloque.openmaps.core.model.PlaceCategory
 import nz.eloque.openmaps.core.model.PlacesStore
@@ -105,7 +108,9 @@ import nz.eloque.openmaps.ui.navigation.AboutKey
 import nz.eloque.openmaps.ui.navigation.CategoryKey
 import nz.eloque.openmaps.ui.navigation.DirectionsField
 import nz.eloque.openmaps.ui.navigation.DirectionsKey
+import nz.eloque.openmaps.ui.navigation.Endpoint
 import nz.eloque.openmaps.ui.navigation.HomeKey
+import nz.eloque.openmaps.ui.navigation.MapLink
 import nz.eloque.openmaps.ui.navigation.NavigationKey
 import nz.eloque.openmaps.ui.navigation.PlaceKey
 import nz.eloque.openmaps.ui.navigation.RoadEventKey
@@ -116,6 +121,7 @@ import nz.eloque.openmaps.ui.navigation.SettingsKey
 import nz.eloque.openmaps.ui.navigation.StopKey
 import nz.eloque.openmaps.ui.navigation.TransitGuidanceKey
 import nz.eloque.openmaps.ui.navigation.TripKey
+import nz.eloque.openmaps.ui.navigation.parseMapLink
 import nz.eloque.openmaps.ui.navigation.toEndpoint
 import nz.eloque.openmaps.ui.navigation.toKey
 import nz.eloque.openmaps.ui.place.PlaceSheet
@@ -176,6 +182,7 @@ private val ControlMargin = 16.dp
 fun App(
     version: String,
     debug: Boolean = false,
+    links: Flow<String> = emptyFlow(),
 ) {
     val http = koinInject<HttpClient>()
     setSingletonImageLoaderFactory { context ->
@@ -195,18 +202,46 @@ fun App(
         val scope = rememberCoroutineScope()
         val geocoder = koinInject<Geocoder>()
         val pinName = stringResource(Res.string.dropped_pin)
+
+        fun dropPin(
+            location: LatLng,
+            label: String? = null,
+        ) {
+            val pin = PlaceKey(label ?: pinName, location.latitude, location.longitude, null, null, null, pinned = true)
+            if ((backStack.lastOrNull() as? PlaceKey)?.pinned == true) backStack.removeLastOrNull()
+            backStack.add(pin)
+            scope.launch {
+                val address = runCatching { geocoder.reverse(location) }.getOrNull() ?: return@launch
+                val index = backStack.indexOf(pin)
+                if (index >= 0) backStack[index] = pin.copy(name = label ?: address.name, subtitle = address.area)
+            }
+        }
         DisposableEffect(map) {
-            map.onLongPress = { location ->
-                val pin = PlaceKey(pinName, location.latitude, location.longitude, null, null, null, pinned = true)
-                if ((backStack.lastOrNull() as? PlaceKey)?.pinned == true) backStack.removeLastOrNull()
-                backStack.add(pin)
-                scope.launch {
-                    val address = runCatching { geocoder.reverse(location) }.getOrNull() ?: return@launch
-                    val index = backStack.indexOf(pin)
-                    if (index >= 0) backStack[index] = pin.copy(name = address.name, subtitle = address.area)
+            map.onLongPress = { location -> dropPin(location) }
+            onDispose { map.onLongPress = null }
+        }
+        val settings = koinInject<SettingsStore>()
+        LaunchedEffect(links) {
+            links.collect { link ->
+                when (val target = parseMapLink(link)) {
+                    is MapLink.Show -> dropPin(target.location, target.label)
+                    is MapLink.Find -> backStack.add(SearchKey(query = target.query))
+                    is MapLink.Route -> {
+                        target.mode?.let(settings::setTravelMode)
+                        val to =
+                            target.to?.let { Endpoint(pinName, it.latitude, it.longitude) }
+                                ?: target.query?.let { query ->
+                                    runCatching { geocoder.search(query, map.userLocation) }.getOrNull()?.firstOrNull()?.toEndpoint()
+                                }
+                        if (to != null) {
+                            backStack.add(DirectionsKey(from = null, to = to))
+                        } else {
+                            target.query?.let { backStack.add(SearchKey(query = it)) }
+                        }
+                    }
+                    null -> Unit
                 }
             }
-            onDispose { map.onLongPress = null }
         }
         StopsOnMap(map) { stop ->
             val top = backStack.lastOrNull()
@@ -291,6 +326,7 @@ fun App(
                                     SearchScreen(
                                         near = map.userLocation,
                                         stopsFirst = search.field != null,
+                                        initialQuery = search.query,
                                         onDismiss = { backStack.removeLastOrNull() },
                                         onCategory =
                                             if (search.field == null && search.saveAs == null) {
