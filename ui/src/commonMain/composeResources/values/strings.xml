@@ -45,6 +45,11 @@
     <string name="report_failed">The note could not be sent. Try again later.</string>
     <string name="report_view">View note</string>
     <string name="route_options">Options</string>
+    <string name="tracks">Tracks</string>
+    <string name="import_gpx">Import GPX</string>
+    <string name="import_gpx_failed">That file holds no tracks or routes.</string>
+    <string name="imported_track">Imported track</string>
+    <string name="export_gpx">Export GPX</string>
     <string name="measure_distance">Measure</string>
     <string name="measure_title">Measure distance</string>
     <string name="measure_hint">Move the map to put the cross on the next point.</string>

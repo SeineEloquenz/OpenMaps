@@ -124,6 +124,12 @@ data class TripKey(
 @Serializable
 data object SavedKey : NavKey
 
+/** A saved track by its [nz.eloque.openmaps.core.model.TrackStore] id. */
+@Serializable
+data class TrackKey(
+    val id: Long,
+) : NavKey
+
 /** Measuring a distance on the map, starting at a point. */
 @Serializable
 data class MeasureKey(

@@ -89,8 +89,10 @@ import nz.eloque.openmaps.core.model.PlacesStore
 import nz.eloque.openmaps.core.model.RoadEvents
 import nz.eloque.openmaps.core.model.SearchResult
 import nz.eloque.openmaps.core.model.SettingsStore
+import nz.eloque.openmaps.core.model.TrackStore
 import nz.eloque.openmaps.core.model.TransportMode
 import nz.eloque.openmaps.core.model.TripGuide
+import nz.eloque.openmaps.core.platform.Files
 import nz.eloque.openmaps.map.MapAction
 import nz.eloque.openmaps.map.MapController
 import nz.eloque.openmaps.map.OpenMap
@@ -131,6 +133,7 @@ import nz.eloque.openmaps.ui.navigation.SavedKey
 import nz.eloque.openmaps.ui.navigation.SearchKey
 import nz.eloque.openmaps.ui.navigation.SettingsKey
 import nz.eloque.openmaps.ui.navigation.StopKey
+import nz.eloque.openmaps.ui.navigation.TrackKey
 import nz.eloque.openmaps.ui.navigation.TransitGuidanceKey
 import nz.eloque.openmaps.ui.navigation.TripKey
 import nz.eloque.openmaps.ui.navigation.parseMapLink
@@ -140,6 +143,7 @@ import nz.eloque.openmaps.ui.place.PlaceSheet
 import nz.eloque.openmaps.ui.resources.Res
 import nz.eloque.openmaps.ui.resources.clear
 import nz.eloque.openmaps.ui.resources.dropped_pin
+import nz.eloque.openmaps.ui.resources.imported_track
 import nz.eloque.openmaps.ui.resources.map_layers
 import nz.eloque.openmaps.ui.resources.my_location
 import nz.eloque.openmaps.ui.resources.parked_car
@@ -156,6 +160,7 @@ import nz.eloque.openmaps.ui.settings.SettingsPage
 import nz.eloque.openmaps.ui.sharing.SharingSheet
 import nz.eloque.openmaps.ui.stop.StopSheet
 import nz.eloque.openmaps.ui.theme.OpenMapsTheme
+import nz.eloque.openmaps.ui.tracks.TrackSheet
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
@@ -250,6 +255,14 @@ fun App(
                 }
             }
             onDispose { map.onParkedCarClick = null }
+        }
+        val files = koinInject<Files>()
+        val trackStore = koinInject<TrackStore>()
+        val importedName = stringResource(Res.string.imported_track)
+        LaunchedEffect(files) {
+            files.opened.collect { text ->
+                trackStore.importGpx(text, importedName).firstOrNull()?.let { backStack.add(TrackKey(it)) }
+            }
         }
         LaunchedEffect(links) {
             links.collect { link ->
@@ -360,11 +373,13 @@ fun App(
                                     )
                                 }
                                 entry<MeasureKey> { MeasureSheet(it, map) }
+                                entry<TrackKey> { TrackSheet(it, map, onDeleted = { backStack.removeLastOrNull() }) }
                                 entry<SavedKey> {
                                     SavedSheet(
                                         onOpenPlace = { backStack.add(it.toKey()) },
                                         onOpenRoute = { backStack.add(DirectionsKey(it.from?.toEndpoint(), it.to?.toEndpoint())) },
                                         onOpenList = { backStack.add(ListKey(it)) },
+                                        onOpenTrack = { backStack.add(TrackKey(it)) },
                                     )
                                 }
                                 entry<ListKey> { key ->

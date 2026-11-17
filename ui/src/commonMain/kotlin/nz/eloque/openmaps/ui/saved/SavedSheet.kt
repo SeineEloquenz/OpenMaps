@@ -1,15 +1,19 @@
 package nz.eloque.openmaps.ui.saved
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Directions
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.FileOpen
+import androidx.compose.material.icons.filled.Timeline
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -25,21 +29,32 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import nz.eloque.openmaps.core.model.Favourite
 import nz.eloque.openmaps.core.model.PlaceList
 import nz.eloque.openmaps.core.model.PlacesStore
 import nz.eloque.openmaps.core.model.SavedRoute
 import nz.eloque.openmaps.core.model.SearchResult
+import nz.eloque.openmaps.core.model.SettingsStore
+import nz.eloque.openmaps.core.model.TrackStore
+import nz.eloque.openmaps.core.platform.Files
+import nz.eloque.openmaps.ui.components.formatDate
+import nz.eloque.openmaps.ui.components.formatDistance
 import nz.eloque.openmaps.ui.components.icon
 import nz.eloque.openmaps.ui.resources.Res
 import nz.eloque.openmaps.ui.resources.cancel
 import nz.eloque.openmaps.ui.resources.delete
 import nz.eloque.openmaps.ui.resources.favourites
+import nz.eloque.openmaps.ui.resources.import_gpx
+import nz.eloque.openmaps.ui.resources.import_gpx_failed
+import nz.eloque.openmaps.ui.resources.imported_track
 import nz.eloque.openmaps.ui.resources.list_places
 import nz.eloque.openmaps.ui.resources.lists
 import nz.eloque.openmaps.ui.resources.name
@@ -48,6 +63,7 @@ import nz.eloque.openmaps.ui.resources.ok
 import nz.eloque.openmaps.ui.resources.rename
 import nz.eloque.openmaps.ui.resources.saved
 import nz.eloque.openmaps.ui.resources.saved_routes
+import nz.eloque.openmaps.ui.resources.tracks
 import nz.eloque.openmaps.ui.resources.your_location
 import nz.eloque.openmaps.ui.search.titleRes
 import org.jetbrains.compose.resources.StringResource
@@ -61,11 +77,18 @@ fun SavedSheet(
     onOpenPlace: (SearchResult) -> Unit,
     onOpenRoute: (SavedRoute) -> Unit,
     onOpenList: (Long) -> Unit,
+    onOpenTrack: (Long) -> Unit,
 ) {
     val store = koinInject<PlacesStore>()
     val favourites by store.favourites.collectAsStateWithLifecycle(emptyList())
     val routes by store.savedRoutes.collectAsStateWithLifecycle(emptyList())
     val lists by store.lists.collectAsStateWithLifecycle(emptyList())
+    val trackStore = koinInject<TrackStore>()
+    val tracks by trackStore.tracks.collectAsStateWithLifecycle(emptyList())
+    val files = koinInject<Files>()
+    val unit by koinInject<SettingsStore>().distanceUnit.collectAsStateWithLifecycle()
+    val importedName = stringResource(Res.string.imported_track)
+    var importFailed by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     var renaming by remember { mutableStateOf<Favourite?>(null) }
     var renamingList by remember { mutableStateOf<PlaceList?>(null) }
@@ -79,7 +102,7 @@ fun SavedSheet(
                 modifier = Modifier.padding(horizontal = 16.dp),
             )
         }
-        if (favourites.isEmpty() && routes.isEmpty() && lists.isEmpty()) {
+        if (favourites.isEmpty() && routes.isEmpty() && lists.isEmpty() && tracks.isEmpty()) {
             item {
                 Text(
                     stringResource(Res.string.nothing_saved),
@@ -143,6 +166,50 @@ fun SavedSheet(
                 },
                 colors = transparent,
                 modifier = Modifier.clickable { onOpenRoute(route) },
+            )
+        }
+        item {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.weight(1f)) { SectionTitle(Res.string.tracks) }
+                TextButton(
+                    onClick = {
+                        scope.launch {
+                            val text = files.pickText() ?: return@launch
+                            val ids = trackStore.importGpx(text, importedName)
+                            importFailed = ids.isEmpty()
+                            ids.firstOrNull()?.let(onOpenTrack)
+                        }
+                    },
+                    modifier = Modifier.padding(end = 8.dp, top = 8.dp),
+                ) {
+                    Icon(Icons.Default.FileOpen, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Text(stringResource(Res.string.import_gpx), modifier = Modifier.padding(start = 8.dp))
+                }
+            }
+        }
+        if (importFailed) {
+            item {
+                Text(
+                    stringResource(Res.string.import_gpx_failed),
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                )
+            }
+        }
+        items(tracks, key = { "track-${it.id}" }) { track ->
+            ListItem(
+                headlineContent = { Text(track.name) },
+                supportingContent = {
+                    Text(
+                        "${formatDistance(
+                            track.distanceMeters,
+                            unit,
+                        )} · ${formatDate(track.createdAt.toLocalDateTime(TimeZone.currentSystemDefault()).date)}",
+                    )
+                },
+                leadingContent = { Icon(Icons.Default.Timeline, contentDescription = null) },
+                colors = transparent,
+                modifier = Modifier.clickable { onOpenTrack(track.id) },
             )
         }
     }

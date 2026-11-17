@@ -8,6 +8,7 @@ import kotlinx.coroutines.launch
 import nz.eloque.openmaps.core.model.LocationUpdates
 import nz.eloque.openmaps.core.model.ServiceCatalog
 import nz.eloque.openmaps.core.model.VoiceGuidance
+import nz.eloque.openmaps.core.platform.Files
 import nz.eloque.openmaps.core.platform.ReminderScheduler
 import nz.eloque.openmaps.core.platform.Sharer
 import nz.eloque.openmaps.core.platform.createHttpClient
@@ -56,6 +57,8 @@ class OpenMapsApplication : Application() {
                     single {
                         ServiceCatalog(transitServiceSettings + routingServiceSettings + geocodingServiceSettings + fuelServiceSettings)
                     }
+                    single { AndroidFiles(this@OpenMapsApplication) }
+                    single<Files> { get<AndroidFiles>() }
                     single<Sharer> {
                         Sharer { text ->
                             val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text)
