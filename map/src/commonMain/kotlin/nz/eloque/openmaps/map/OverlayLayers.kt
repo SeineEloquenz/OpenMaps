@@ -45,6 +45,17 @@ internal fun OverlayLayers(
     if (MapLayer.TRANSIT in layers) TransitLines(dark)
     Trail(MapLayer.CYCLING in layers, "cycling")
     Trail(MapLayer.HIKING in layers, "hiking")
+    if (MapLayer.SEAMARKS in layers) Seamarks()
+}
+
+@Composable
+private fun Seamarks() {
+    val tiles =
+        rememberRasterTileSource(listOf(SEAMARKS_TILES), tileSize = 256) {
+            maxZoom = SEAMARKS_MAX_ZOOM
+            attributionHtml = SEAMARKS_ATTRIBUTION
+        }
+    RasterLayer(id = "seamarks", source = tiles)
 }
 
 @Composable
@@ -108,6 +119,12 @@ private const val TRAILS_OPACITY = 0.85f
 private const val TRAILS_ATTRIBUTION =
     "<a href=\"https://waymarkedtrails.org\">Waymarked Trails</a> " +
         "<a href=\"https://www.openstreetmap.org/copyright\">© OpenStreetMap contributors</a>"
+
+private const val SEAMARKS_TILES = "https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png"
+private const val SEAMARKS_MAX_ZOOM = 18
+private const val SEAMARKS_ATTRIBUTION =
+    "<a href=\"https://www.openseamap.org\">© OpenSeaMap contributors</a>, " +
+        "<a href=\"https://creativecommons.org/licenses/by-sa/2.0/\">CC BY-SA</a>"
 
 private val Rail = Color(0xFF1565C0)
 private val RailDark = Color(0xFF64B5F6)

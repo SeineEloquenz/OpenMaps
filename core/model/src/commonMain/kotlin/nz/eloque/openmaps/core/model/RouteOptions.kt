@@ -74,7 +74,7 @@ enum class BikeType { ROAD, HYBRID, CROSS, MOUNTAIN }
 
 enum class DistanceUnit { METRIC, IMPERIAL }
 
-enum class MapLayer { TERRAIN, TRANSIT, CYCLING, HIKING, ROADWORKS, BUILDINGS_3D }
+enum class MapLayer { TERRAIN, TRANSIT, CYCLING, HIKING, ROADWORKS, BUILDINGS_3D, SEAMARKS }
 
 interface SettingsStore {
     val routeOptions: StateFlow<RouteOptions>

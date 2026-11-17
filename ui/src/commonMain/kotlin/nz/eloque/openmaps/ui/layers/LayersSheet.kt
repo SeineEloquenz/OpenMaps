@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.DirectionsBike
+import androidx.compose.material.icons.filled.Anchor
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Construction
 import androidx.compose.material.icons.filled.DirectionsTransit
@@ -55,6 +56,7 @@ import nz.eloque.openmaps.ui.resources.layer_cycling
 import nz.eloque.openmaps.ui.resources.layer_default
 import nz.eloque.openmaps.ui.resources.layer_hiking
 import nz.eloque.openmaps.ui.resources.layer_roadworks
+import nz.eloque.openmaps.ui.resources.layer_seamarks
 import nz.eloque.openmaps.ui.resources.layer_terrain
 import nz.eloque.openmaps.ui.resources.layer_transit
 import nz.eloque.openmaps.ui.resources.map_details
@@ -63,7 +65,8 @@ import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 
-private val Details = listOf(MapLayer.TRANSIT, MapLayer.CYCLING, MapLayer.HIKING, MapLayer.ROADWORKS, MapLayer.BUILDINGS_3D)
+private val Details =
+    listOf(MapLayer.TRANSIT, MapLayer.CYCLING, MapLayer.HIKING, MapLayer.ROADWORKS, MapLayer.BUILDINGS_3D, MapLayer.SEAMARKS)
 
 /** Chooses the map type and switches the optional map details on and off. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -185,6 +188,7 @@ private val MapLayer.label: StringResource
             MapLayer.HIKING -> Res.string.layer_hiking
             MapLayer.ROADWORKS -> Res.string.layer_roadworks
             MapLayer.BUILDINGS_3D -> Res.string.layer_buildings
+            MapLayer.SEAMARKS -> Res.string.layer_seamarks
         }
 
 private val MapLayer.badge: ImageVector?
@@ -194,6 +198,7 @@ private val MapLayer.badge: ImageVector?
             MapLayer.CYCLING -> Icons.AutoMirrored.Filled.DirectionsBike
             MapLayer.HIKING -> Icons.Default.Hiking
             MapLayer.ROADWORKS -> Icons.Default.Construction
+            MapLayer.SEAMARKS -> Icons.Default.Anchor
             else -> null
         }
 
@@ -217,6 +222,9 @@ private val MapLayer.drawing: DrawScope.() -> Unit
             }
             MapLayer.TERRAIN -> {
                 { drawTerrain() }
+            }
+            MapLayer.SEAMARKS -> {
+                { drawSeamarks() }
             }
         }
 
@@ -323,6 +331,23 @@ private fun DrawScope.drawRoadworks() {
     )
 }
 
+private fun DrawScope.drawSeamarks() {
+    drawRect(Water)
+    drawLine(
+        Fairway,
+        Offset(size.width * 0.1f, size.height),
+        Offset(size.width * 0.9f, 0f),
+        2.dp.toPx(),
+        pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 7f)),
+    )
+    listOf(0.25f to 0.45f, 0.55f to 0.15f).forEach { (x, y) ->
+        drawCircle(BuoyRed, radius = 5.dp.toPx(), center = Offset(size.width * x, size.height * y))
+    }
+    listOf(0.48f to 0.85f, 0.8f to 0.55f).forEach { (x, y) ->
+        drawCircle(BuoyGreen, radius = 5.dp.toPx(), center = Offset(size.width * x, size.height * y))
+    }
+}
+
 private fun DrawScope.drawBuildings() {
     drawRect(BuildingGround)
 
@@ -390,3 +415,6 @@ private val BuildingGround = Color(0xFFDDF2E4)
 private val BuildingFront = Color(0xFFE8EAED)
 private val BuildingTop = Color(0xFFFFFFFF)
 private val BuildingSide = Color(0xFFBDC1C6)
+private val BuoyRed = Color(0xFFD93025)
+private val BuoyGreen = Color(0xFF188038)
+private val Fairway = Color(0xFF7A3E9D)
