@@ -12,6 +12,7 @@ import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.AddLocationAlt
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -45,6 +46,7 @@ import nz.eloque.openmaps.core.model.SettingsStore
 import nz.eloque.openmaps.core.model.TransportMode
 import nz.eloque.openmaps.core.model.VoiceGuidance
 import nz.eloque.openmaps.core.model.VoiceStatus
+import nz.eloque.openmaps.core.platform.Sharer
 import nz.eloque.openmaps.map.MapAction
 import nz.eloque.openmaps.map.MapController
 import nz.eloque.openmaps.map.MapLine
@@ -56,6 +58,7 @@ import nz.eloque.openmaps.ui.components.formatDuration
 import nz.eloque.openmaps.ui.navigation.NavigationKey
 import nz.eloque.openmaps.ui.resources.Res
 import nz.eloque.openmaps.ui.resources.add_stop
+import nz.eloque.openmaps.ui.resources.dropped_pin
 import nz.eloque.openmaps.ui.resources.navigation_arrived
 import nz.eloque.openmaps.ui.resources.navigation_end
 import nz.eloque.openmaps.ui.resources.navigation_finding_route
@@ -66,6 +69,9 @@ import nz.eloque.openmaps.ui.resources.navigation_simulated
 import nz.eloque.openmaps.ui.resources.navigation_summary
 import nz.eloque.openmaps.ui.resources.navigation_unmute
 import nz.eloque.openmaps.ui.resources.retry
+import nz.eloque.openmaps.ui.resources.share_arrival
+import nz.eloque.openmaps.ui.resources.share_arrival_time
+import nz.eloque.openmaps.ui.resources.share_arrival_unnamed
 import nz.eloque.openmaps.ui.resources.voice_no_engine
 import nz.eloque.openmaps.ui.resources.voice_no_language
 import org.jetbrains.compose.resources.stringResource
@@ -88,6 +94,7 @@ fun NavigationSheet(
     val unit by koinInject<SettingsStore>().distanceUnit.collectAsStateWithLifecycle()
     var following by rememberSaveable { mutableStateOf(true) }
     val voice = koinInject<VoiceGuidance>()
+    val sharer = koinInject<Sharer>()
     val muted by voice.muted.collectAsStateWithLifecycle()
     val voiceStatus by voice.status.collectAsStateWithLifecycle()
 
@@ -175,6 +182,18 @@ fun NavigationSheet(
                     if (!following) {
                         FilledTonalIconButton(onClick = { following = true }) {
                             Icon(Icons.Default.MyLocation, contentDescription = stringResource(Res.string.navigation_recenter))
+                        }
+                    }
+                    if (trip.status != NavigationStatus.ARRIVED) {
+                        val arrival = clockTime(Clock.System.now() + trip.remainingTime)
+                        val message =
+                            if (key.to.name == stringResource(Res.string.dropped_pin)) {
+                                stringResource(Res.string.share_arrival_unnamed, arrival)
+                            } else {
+                                stringResource(Res.string.share_arrival, key.to.name, arrival)
+                            }
+                        IconButton(onClick = { sharer.share("$message\n${map.linkTo(key.to.location)}") }) {
+                            Icon(Icons.Default.Share, contentDescription = stringResource(Res.string.share_arrival_time))
                         }
                     }
                     IconButton(onClick = { voice.setMuted(!muted) }, enabled = voiceStatus == VoiceStatus.READY) {

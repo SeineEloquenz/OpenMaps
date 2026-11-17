@@ -45,6 +45,9 @@
     <string name="report_failed">The note could not be sent. Try again later.</string>
     <string name="report_view">View note</string>
     <string name="route_options">Options</string>
+    <string name="share_arrival">On my way to %1$s, arriving around %2$s.</string>
+    <string name="share_arrival_time">Share arrival time</string>
+    <string name="share_arrival_unnamed">On my way, arriving around %1$s.</string>
     <string name="parked_car">Your car</string>
     <string name="parked_since">Parked at %1$s</string>
     <string name="save_parking">Save parking</string>
