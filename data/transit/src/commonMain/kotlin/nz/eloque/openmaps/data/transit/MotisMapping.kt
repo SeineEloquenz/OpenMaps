@@ -157,6 +157,7 @@ internal fun StopTimeDto.toDeparture(): Departure? {
         headsign = headsign,
         time = time,
         platform = place.track,
+        scheduledPlatform = place.scheduledTrack,
         tripId = tripId,
         isCancelled = cancelled || tripCancelled,
         alerts = place.alerts.mapNotNull { it.toAlert() },

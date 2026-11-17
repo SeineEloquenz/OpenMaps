@@ -101,6 +101,18 @@ class MotisClientTest {
         }
 
     @Test
+    fun departuresKeepThePlannedPlatform() =
+        runTest {
+            val moved = STOP_TIMES_JSON.replaceFirst("\"track\":\"2a\"", "\"track\":\"5\"")
+            val repository = MotisTransitRepository(client(moved), { TRANSITOUS_API })
+
+            val intercity = repository.departures("de-DELFI_000008400058").departures.first()
+            assertEquals("5", intercity.platform)
+            assertEquals("2a", intercity.scheduledPlatform)
+            assertTrue(intercity.platformChanged)
+        }
+
+    @Test
     fun stopsInSendsCornersAndMapsModes() =
         runTest {
             val body =

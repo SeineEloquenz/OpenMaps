@@ -34,6 +34,7 @@ import nz.eloque.openmaps.ui.components.icon
 import nz.eloque.openmaps.ui.resources.Res
 import nz.eloque.openmaps.ui.resources.guide_at_risk
 import nz.eloque.openmaps.ui.resources.guide_cancelled
+import nz.eloque.openmaps.ui.resources.guide_platform_changed
 import nz.eloque.openmaps.ui.resources.guide_ride
 import nz.eloque.openmaps.ui.resources.guide_stops_left
 import nz.eloque.openmaps.ui.resources.guide_wait
@@ -64,6 +65,7 @@ fun TransitGuidanceBanner(modifier: Modifier = Modifier) {
                 Text(step.title, style = MaterialTheme.typography.headlineSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 step.detail?.let { Text(it, style = MaterialTheme.typography.bodyLarge) }
                 if (step.cancelled) Text(stringResource(Res.string.guide_cancelled), color = colors.error)
+                step.movedFrom?.let { Text(stringResource(Res.string.guide_platform_changed, it), color = colors.error) }
                 if (trip.connectionAtRisk) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         Icon(Icons.Default.Warning, contentDescription = null, tint = colors.error, modifier = Modifier.size(18.dp))
@@ -80,6 +82,8 @@ private class Step(
     val title: String,
     val detail: String?,
     val cancelled: Boolean = false,
+    /** The planned platform when the vehicle leaves from another one. */
+    val movedFrom: String? = null,
 )
 
 @Composable
@@ -99,6 +103,7 @@ private fun TripGuidance.step(): Step {
                     stringResource(Res.string.guide_walk_to, vehicle.from.name),
                     stringResource(Res.string.guide_walk_detail, distance.orEmpty(), vehicle.line.label, clockTime(vehicle.start.actual)),
                     vehicle.isCancelled,
+                    vehicle.from.scheduledPlatform.takeIf { vehicle.from.platformChanged },
                 )
             }
         }
@@ -114,6 +119,7 @@ private fun TripGuidance.step(): Step {
                     stringResource(Res.string.guide_wait_detail, clockTime(vehicle.start.actual))
                 },
                 vehicle.isCancelled,
+                vehicle.from.scheduledPlatform.takeIf { vehicle.from.platformChanged },
             )
         }
         TripStage.RIDE -> {

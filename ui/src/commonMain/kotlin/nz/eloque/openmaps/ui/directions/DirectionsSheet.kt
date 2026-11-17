@@ -88,6 +88,7 @@ import nz.eloque.openmaps.ui.components.formatDistance
 import nz.eloque.openmaps.ui.components.formatDuration
 import nz.eloque.openmaps.ui.components.icon
 import nz.eloque.openmaps.ui.components.label
+import nz.eloque.openmaps.ui.components.platformLabel
 import nz.eloque.openmaps.ui.components.timeRange
 import nz.eloque.openmaps.ui.guidance.transportMode
 import nz.eloque.openmaps.ui.navigation.DirectionsField
@@ -615,11 +616,16 @@ private fun ItineraryCard(
             firstTransit?.let { leg ->
                 val departure = leg.start
                 val delayed = departure.isRealTime && departure.delay.inWholeMinutes >= 1
-                val stop = leg.from.platform?.let { "${leg.from.name} · ${stringResource(Res.string.platform, it)}" } ?: leg.from.name
+                val stop = leg.from.platform?.let { "${leg.from.name} · ${platformLabel(it, leg.from.scheduledPlatform)}" } ?: leg.from.name
                 Text(
                     stringResource(Res.string.departs_from, clockTime(departure.actual), stop),
                     style = MaterialTheme.typography.bodySmall,
-                    color = if (delayed || leg.isCancelled) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                    color =
+                        if (delayed || leg.isCancelled || leg.from.platformChanged) {
+                            MaterialTheme.colorScheme.error
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )

@@ -50,6 +50,7 @@ import nz.eloque.openmaps.ui.components.formatDistance
 import nz.eloque.openmaps.ui.components.formatDuration
 import nz.eloque.openmaps.ui.components.icon
 import nz.eloque.openmaps.ui.components.label
+import nz.eloque.openmaps.ui.components.platformLabel
 import nz.eloque.openmaps.ui.components.timeRange
 import nz.eloque.openmaps.ui.components.withoutLinePrefix
 import nz.eloque.openmaps.ui.navigation.RouteKey
@@ -269,10 +270,10 @@ internal fun StopLine(
             if (emphasized) {
                 waypoint.platform?.let {
                     Text(
-                        stringResource(Res.string.platform, it),
+                        platformLabel(it, waypoint.scheduledPlatform),
                         style = MaterialTheme.typography.bodySmall,
                         color =
-                            if (waypoint.scheduledPlatform != null && waypoint.scheduledPlatform != it) {
+                            if (waypoint.platformChanged) {
                                 MaterialTheme.colorScheme.error
                             } else {
                                 MaterialTheme.colorScheme.onSurfaceVariant

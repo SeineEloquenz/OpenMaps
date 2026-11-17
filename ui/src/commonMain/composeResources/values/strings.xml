@@ -20,6 +20,8 @@
     <string name="board_now">Now</string>
     <string name="board_from">From %1$s</string>
     <string name="platform">Platform %1$s</string>
+    <string name="platform_changed">Platform %1$s instead of %2$s</string>
+    <string name="guide_platform_changed">Platform changed from %1$s</string>
     <string name="cancelled">Cancelled</string>
     <string name="has_alerts">Service alerts, tap to show</string>
     <string name="now">now</string>

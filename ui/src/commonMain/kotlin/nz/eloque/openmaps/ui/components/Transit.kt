@@ -46,12 +46,14 @@ import kotlinx.datetime.toLocalDateTime
 import nz.eloque.openmaps.core.model.Departure
 import nz.eloque.openmaps.core.model.Line
 import nz.eloque.openmaps.core.model.TransportMode
+import nz.eloque.openmaps.core.model.platformChanged
 import nz.eloque.openmaps.ui.resources.Res
 import nz.eloque.openmaps.ui.resources.cancelled
 import nz.eloque.openmaps.ui.resources.has_alerts
 import nz.eloque.openmaps.ui.resources.minutes
 import nz.eloque.openmaps.ui.resources.now
 import nz.eloque.openmaps.ui.resources.platform
+import nz.eloque.openmaps.ui.resources.platform_changed
 import nz.eloque.openmaps.ui.resources.weekday_fri
 import nz.eloque.openmaps.ui.resources.weekday_mon
 import nz.eloque.openmaps.ui.resources.weekday_sat
@@ -191,11 +193,12 @@ private fun DepartureGroupSummary(
                     )
                 }
             }
-            group.departures.first().platform?.let {
+            val first = group.departures.first()
+            first.platform?.let {
                 Text(
-                    stringResource(Res.string.platform, it),
+                    platformLabel(it, first.scheduledPlatform),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = if (first.platformChanged) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -284,3 +287,15 @@ val Weekdays =
         Res.string.weekday_sat,
         Res.string.weekday_sun,
     )
+
+/** "Platform 5", or "Platform 5 instead of 3" when the platform changed. */
+@Composable
+fun platformLabel(
+    platform: String,
+    scheduled: String?,
+): String =
+    if (scheduled != null && platformChanged(platform, scheduled)) {
+        stringResource(Res.string.platform_changed, platform, scheduled)
+    } else {
+        stringResource(Res.string.platform, platform)
+    }
