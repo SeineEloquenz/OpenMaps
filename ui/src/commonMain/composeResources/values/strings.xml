@@ -236,6 +236,9 @@
     <string name="weather_thunderstorm">Thunderstorm</string>
     <string name="role_weather_forecast">Weather forecast</string>
     <string name="reviews">Reviews</string>
+    <string name="details">Details</string>
+    <string name="more">More</string>
+    <string name="copy_coordinates">Copy coordinates</string>
     <plurals name="reviews_count">
         <item quantity="one">%1$d review</item>
         <item quantity="other">%1$d reviews</item>

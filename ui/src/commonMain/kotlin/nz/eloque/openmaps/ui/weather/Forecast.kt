@@ -1,17 +1,23 @@
 package nz.eloque.openmaps.ui.weather
 
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AcUnit
 import androidx.compose.material.icons.filled.Bedtime
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.Dehaze
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Grain
 import androidx.compose.material.icons.filled.NightsStay
 import androidx.compose.material.icons.filled.Thunderstorm
@@ -21,10 +27,14 @@ import androidx.compose.material.icons.filled.WbCloudy
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -82,7 +92,7 @@ fun rememberForecast(location: LatLng?): Forecast? {
     return state
 }
 
-/** The weather now, the next hours and the coming days. */
+/** The weather now in one line, unfolding to the next hours and the coming days. */
 @Composable
 fun ForecastSection(
     forecast: Forecast,
@@ -90,22 +100,41 @@ fun ForecastSection(
 ) {
     val unit by koinInject<SettingsStore>().distanceUnit.collectAsStateWithLifecycle()
     val muted = MaterialTheme.colorScheme.onSurfaceVariant
-    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            val now = forecast.current
-            Icon(now.icon, contentDescription = null, modifier = Modifier.size(32.dp))
-            Text(temperature(now.temperature, unit), style = MaterialTheme.typography.headlineSmall)
-            Column {
-                Text(stringResource(now.condition.label))
-                forecast.days.firstOrNull()?.let {
-                    Text(
-                        stringResource(Res.string.weather_high_low, temperature(it.high, unit), temperature(it.low, unit)),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = muted,
-                    )
-                }
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        modifier = modifier.fillMaxWidth().clickable { expanded = !expanded },
+    ) {
+        Column(Modifier.padding(12.dp).animateContentSize(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                val now = forecast.current
+                Icon(now.icon, contentDescription = null, modifier = Modifier.size(24.dp))
+                Text(
+                    listOfNotNull(
+                        temperature(now.temperature, unit),
+                        stringResource(now.condition.label),
+                        forecast.days.firstOrNull()?.let {
+                            stringResource(Res.string.weather_high_low, temperature(it.high, unit), temperature(it.low, unit))
+                        },
+                    ).joinToString(" · "),
+                    style = MaterialTheme.typography.titleSmall,
+                    modifier = Modifier.weight(1f),
+                )
+                Icon(if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore, contentDescription = null, tint = muted)
             }
+            if (expanded) ForecastDetails(forecast, unit)
         }
+    }
+}
+
+@Composable
+private fun ForecastDetails(
+    forecast: Forecast,
+    unit: DistanceUnit,
+) {
+    val muted = MaterialTheme.colorScheme.onSurfaceVariant
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             forecast.hours.take(HOURS).forEach { hour ->
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {

@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -24,6 +25,7 @@ import androidx.compose.material.icons.filled.AcUnit
 import androidx.compose.material.icons.filled.BabyChangingStation
 import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Deck
 import androidx.compose.material.icons.filled.DeliveryDining
@@ -37,6 +39,7 @@ import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LocalAtm
 import androidx.compose.material.icons.filled.LocalHospital
 import androidx.compose.material.icons.filled.LocalParking
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Pets
 import androidx.compose.material.icons.filled.Phone
@@ -51,7 +54,10 @@ import androidx.compose.material.icons.filled.Wc
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material.icons.outlined.Place
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
@@ -87,6 +93,7 @@ import nz.eloque.openmaps.core.model.ParkedCar
 import nz.eloque.openmaps.core.model.PlaceDetails
 import nz.eloque.openmaps.core.model.PlaceFeature
 import nz.eloque.openmaps.core.model.PlaceMedia
+import nz.eloque.openmaps.core.model.PlaceReviews
 import nz.eloque.openmaps.core.model.PricedStation
 import nz.eloque.openmaps.core.model.SettingsStore
 import nz.eloque.openmaps.core.model.formatted
@@ -109,10 +116,13 @@ import nz.eloque.openmaps.ui.navigation.StopKey
 import nz.eloque.openmaps.ui.navigation.parsedId
 import nz.eloque.openmaps.ui.navigation.toSearchResult
 import nz.eloque.openmaps.ui.resources.Res
+import nz.eloque.openmaps.ui.resources.about
 import nz.eloque.openmaps.ui.resources.address
 import nz.eloque.openmaps.ui.resources.call
 import nz.eloque.openmaps.ui.resources.coordinates
+import nz.eloque.openmaps.ui.resources.copy_coordinates
 import nz.eloque.openmaps.ui.resources.cuisine
+import nz.eloque.openmaps.ui.resources.details
 import nz.eloque.openmaps.ui.resources.email
 import nz.eloque.openmaps.ui.resources.fact_cash_deposit
 import nz.eloque.openmaps.ui.resources.feature_air_conditioning
@@ -138,6 +148,7 @@ import nz.eloque.openmaps.ui.resources.filter_baby_changing
 import nz.eloque.openmaps.ui.resources.filter_bottle_refill
 import nz.eloque.openmaps.ui.resources.fuel_prices
 import nz.eloque.openmaps.ui.resources.measure_distance
+import nz.eloque.openmaps.ui.resources.more
 import nz.eloque.openmaps.ui.resources.nearby_departures
 import nz.eloque.openmaps.ui.resources.operator
 import nz.eloque.openmaps.ui.resources.phone
@@ -148,6 +159,7 @@ import nz.eloque.openmaps.ui.resources.prices_updated
 import nz.eloque.openmaps.ui.resources.read_on_wikipedia
 import nz.eloque.openmaps.ui.resources.read_on_wikivoyage
 import nz.eloque.openmaps.ui.resources.report
+import nz.eloque.openmaps.ui.resources.reviews
 import nz.eloque.openmaps.ui.resources.save_parking
 import nz.eloque.openmaps.ui.resources.share
 import nz.eloque.openmaps.ui.resources.travel_guide
@@ -186,8 +198,9 @@ fun PlaceSheet(
     val now by rememberNow()
     val loaded = (details as? LoadState.Loaded)?.value
     FocusOnMap(map, place.location, zoomIn = !place.pinned)
+    val reviews = rememberReviews(place.name, place.location, enabled = !place.pinned)
 
-    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(bottom = 16.dp)) {
         Column(Modifier.padding(horizontal = 16.dp)) {
             Text(place.name, style = MaterialTheme.typography.headlineSmall)
             val stars = loaded?.stars?.takeIf { it in 1..7 }?.let { "★".repeat(it) }
@@ -195,25 +208,29 @@ fun PlaceSheet(
             if (subtitle.isNotEmpty()) {
                 Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            StatusLine(place, loaded, map)
+            StatusLine(place, loaded, map, reviews)
         }
         ActionRow(place, loaded, shareUrl = viewModel.pageUrl ?: map.linkTo(place.location), onDirections, onMeasure)
-        rememberWarnings(place.location).forEach { WarningCard(it, Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) }
-        rememberForecast(place.location)?.let { ForecastSection(it, Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) }
-        media?.let { MediaSection(it) }
-        loaded?.description?.let {
-            Text(it, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
+        Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            rememberWarnings(place.location).forEach { WarningCard(it) }
+            rememberForecast(place.location)?.let { ForecastSection(it) }
         }
-        HorizontalDivider(Modifier.padding(horizontal = 16.dp).padding(top = 12.dp))
-        Column(Modifier.padding(horizontal = 16.dp)) {
-            prices?.let { FuelPriceSection(it, now) }
+        media?.takeIf { it.photos.isNotEmpty() }?.let { Photos(it) }
+        prices?.let { station ->
+            Section(stringResource(Res.string.fuel_prices)) { FuelPriceSection(station, now) }
+        }
+        val description = loaded?.description
+        if (description != null || media?.article != null || media?.guide != null) {
+            Section(stringResource(Res.string.about)) { About(description, media) }
+        }
+        Section(stringResource(Res.string.details), padded = false) {
             LoadStateContent(details, onRetry = viewModel::load) { it?.let { DetailRows(it, place.name) } }
             CoordinatesRow(place.location)
-            if (!place.pinned) ReviewsSection(place.name, place.location)
-            val stops = (nearby as? LoadState.Loaded)?.value.orEmpty()
-            if (stops.isNotEmpty()) {
-                HorizontalDivider(Modifier.padding(vertical = 8.dp))
-                Text(stringResource(Res.string.nearby_departures), style = MaterialTheme.typography.titleMedium)
+        }
+        reviews?.let { Section(stringResource(Res.string.reviews)) { ReviewsSection(it) } }
+        val stops = (nearby as? LoadState.Loaded)?.value.orEmpty()
+        if (stops.isNotEmpty()) {
+            Section(stringResource(Res.string.nearby_departures)) {
                 stops.forEach { stop ->
                     NearbyStopCard(stop, now, onOpenTrip = onOpenTrip, onClick = {
                         stop.id?.let { onOpenStop(StopKey(it, stop.name, stop.location.latitude, stop.location.longitude)) }
@@ -225,31 +242,40 @@ fun PlaceSheet(
 }
 
 @Composable
+private fun Section(
+    title: String,
+    padded: Boolean = true,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    Column(Modifier.fillMaxWidth().padding(top = 16.dp)) {
+        HorizontalDivider(Modifier.padding(horizontal = 16.dp))
+        Text(
+            title,
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 4.dp),
+        )
+        Column(if (padded) Modifier.padding(horizontal = 16.dp) else Modifier, content = content)
+    }
+}
+
+@Composable
 private fun StatusLine(
     place: PlaceKey,
     details: PlaceDetails?,
     map: MapController,
+    reviews: PlaceReviews?,
 ) {
     val unit by koinInject<SettingsStore>().distanceUnit.collectAsState()
     val hours = details?.openingHours?.let(OpeningHours::parse)
     val distance = map.userLocation?.let { formatDistance(it.distanceTo(place.location), unit) }
-    val accessible = details?.wheelchair == Accessibility.YES
-    if (hours == null && distance == null && !accessible) return
-    Row(Modifier.padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+    if (hours == null && distance == null && reviews == null) return
+    FlowRow(Modifier.padding(top = 4.dp), itemVerticalAlignment = Alignment.CenterVertically) {
+        val muted = MaterialTheme.colorScheme.onSurfaceVariant
         hours?.let { OpenStatusText(it) }
-        distance?.let {
-            Text(
-                if (hours != null) " · $it" else it,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        if (accessible) {
-            Icon(
-                Icons.AutoMirrored.Filled.Accessible,
-                contentDescription = stringResource(Res.string.wheelchair_yes),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = 8.dp).size(18.dp),
-            )
+        distance?.let { Text(if (hours != null) " · $it" else it, color = muted) }
+        reviews?.let {
+            if (hours != null || distance != null) Text(" · ", color = muted)
+            RatingSummary(it)
         }
     }
 }
@@ -265,11 +291,14 @@ private fun ActionRow(
     val uriHandler = LocalUriHandler.current
     val sharer = koinInject<Sharer>()
     val settings = koinInject<SettingsStore>()
+    val clipboard = LocalClipboardManager.current
     var reporting by remember { mutableStateOf(false) }
+    var menu by remember { mutableStateOf(false) }
     if (reporting) ReportDialog(place.location, place.name.takeUnless { place.pinned }, onDismiss = { reporting = false })
     LazyRow(
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         item { DirectionsButton(onDirections) }
         item { SaveButton(place.toSearchResult()) }
@@ -280,14 +309,45 @@ private fun ActionRow(
             item { ActionButton(Icons.Default.Language, Res.string.website) { uriHandler.openUri(url) } }
         }
         item { ActionButton(Icons.Default.Share, Res.string.share) { sharer.share("${place.name}\n$shareUrl") } }
-        item { ActionButton(Icons.Default.Straighten, Res.string.measure_distance, onMeasure) }
         item {
-            ActionButton(Icons.Default.LocalParking, Res.string.save_parking) {
-                settings.setParkedCar(ParkedCar(place.location, Clock.System.now()))
+            Box {
+                FilledTonalIconButton(onClick = { menu = true }) {
+                    Icon(Icons.Default.MoreVert, contentDescription = stringResource(Res.string.more))
+                }
+                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                    MenuItem(Icons.Default.Straighten, Res.string.measure_distance) {
+                        menu = false
+                        onMeasure()
+                    }
+                    MenuItem(Icons.Default.LocalParking, Res.string.save_parking) {
+                        menu = false
+                        settings.setParkedCar(ParkedCar(place.location, Clock.System.now()))
+                    }
+                    MenuItem(Icons.Default.ContentCopy, Res.string.copy_coordinates) {
+                        menu = false
+                        clipboard.setText(AnnotatedString(place.location.formatted()))
+                    }
+                    MenuItem(Icons.Outlined.Flag, Res.string.report) {
+                        menu = false
+                        reporting = true
+                    }
+                }
             }
         }
-        item { ActionButton(Icons.Outlined.Flag, Res.string.report) { reporting = true } }
     }
+}
+
+@Composable
+private fun MenuItem(
+    icon: ImageVector,
+    label: StringResource,
+    onClick: () -> Unit,
+) {
+    DropdownMenuItem(
+        text = { Text(stringResource(label)) },
+        leadingIcon = { Icon(icon, contentDescription = null) },
+        onClick = onClick,
+    )
 }
 
 @Composable
@@ -303,13 +363,12 @@ private fun ActionButton(
 }
 
 @Composable
-private fun MediaSection(media: PlaceMedia) {
+private fun Photos(media: PlaceMedia) {
     val uriHandler = LocalUriHandler.current
-    if (media.photos.isNotEmpty()) {
+    Column(Modifier.padding(top = 16.dp)) {
         LazyRow(
             contentPadding = PaddingValues(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(top = 4.dp),
         ) {
             items(media.photos, key = { it.pageUrl }) { photo ->
                 Box(
@@ -350,25 +409,32 @@ private fun MediaSection(media: PlaceMedia) {
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
         )
     }
-    media.article?.let { article ->
-        Column(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
-            Text(article.extract, maxLines = 5, overflow = TextOverflow.Ellipsis)
-            TextButton(onClick = { uriHandler.openUri(article.url) }, contentPadding = PaddingValues(0.dp)) {
-                Text(stringResource(Res.string.read_on_wikipedia))
-            }
+}
+
+/** The place's own description, then what Wikipedia and Wikivoyage write about it. */
+@Composable
+private fun About(
+    description: String?,
+    media: PlaceMedia?,
+) {
+    val uriHandler = LocalUriHandler.current
+    description?.let { Text(it, modifier = Modifier.padding(vertical = 4.dp)) }
+    media?.article?.let { article ->
+        Text(article.extract, maxLines = 5, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 4.dp))
+        TextButton(onClick = { uriHandler.openUri(article.url) }, contentPadding = PaddingValues(0.dp)) {
+            Text(stringResource(Res.string.read_on_wikipedia))
         }
     }
-    media.guide?.let { guide ->
-        Column(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
-            Text(
-                stringResource(Res.string.travel_guide, guide.article),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(guide.text, maxLines = 5, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 2.dp))
-            TextButton(onClick = { uriHandler.openUri(guide.url) }, contentPadding = PaddingValues(0.dp)) {
-                Text(stringResource(Res.string.read_on_wikivoyage))
-            }
+    media?.guide?.let { guide ->
+        Text(
+            stringResource(Res.string.travel_guide, guide.article),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 4.dp),
+        )
+        Text(guide.text, maxLines = 5, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 2.dp))
+        TextButton(onClick = { uriHandler.openUri(guide.url) }, contentPadding = PaddingValues(0.dp)) {
+            Text(stringResource(Res.string.read_on_wikivoyage))
         }
     }
 }
@@ -487,7 +553,6 @@ private fun FuelPriceSection(
     now: Instant,
 ) {
     val uriHandler = LocalUriHandler.current
-    Text(stringResource(Res.string.fuel_prices), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 8.dp))
     station.prices.sortedBy { it.fuel }.forEach { price ->
         Row(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
             Text(price.fuel.label, modifier = Modifier.weight(1f))
@@ -504,5 +569,4 @@ private fun FuelPriceSection(
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.clickable { uriHandler.openUri(station.source.url) }.padding(vertical = 4.dp),
     )
-    HorizontalDivider(Modifier.padding(vertical = 8.dp))
 }

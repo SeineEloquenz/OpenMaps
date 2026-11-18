@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.StarOutline
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -41,7 +40,6 @@ import nz.eloque.openmaps.core.model.Review
 import nz.eloque.openmaps.core.model.Reviews
 import nz.eloque.openmaps.ui.components.formatDate
 import nz.eloque.openmaps.ui.resources.Res
-import nz.eloque.openmaps.ui.resources.reviews
 import nz.eloque.openmaps.ui.resources.reviews_all
 import nz.eloque.openmaps.ui.resources.reviews_count
 import nz.eloque.openmaps.ui.resources.reviews_source
@@ -50,37 +48,49 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import kotlin.math.roundToInt
 
-/** Reviews of the place, nothing while loading, when there are none or when the source fails. */
+/** Reviews of the place, null while loading, when there are none or when the source fails. */
 @Composable
-fun ReviewsSection(
+fun rememberReviews(
     name: String,
     location: LatLng,
-) {
+    enabled: Boolean,
+): PlaceReviews? {
     val source = koinInject<Reviews>()
-    val reviews by produceState<PlaceReviews?>(null, name, location) {
+    val reviews by produceState<PlaceReviews?>(null, name, location, enabled) {
         value =
-            try {
-                source.of(name, location)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (_: Exception) {
+            if (!enabled) {
                 null
+            } else {
+                try {
+                    source.of(name, location)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (_: Exception) {
+                    null
+                }
             }
     }
-    val loaded = reviews?.takeIf { it.reviews.isNotEmpty() } ?: return
-    var all by rememberSaveable(name, location) { mutableStateOf(false) }
-    HorizontalDivider(Modifier.padding(vertical = 8.dp))
+    return reviews?.takeIf { it.reviews.isNotEmpty() }
+}
+
+/** The average as a number and stars, with the number of reviews. */
+@Composable
+fun RatingSummary(reviews: PlaceReviews) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(stringResource(Res.string.reviews), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-        loaded.average?.let { average ->
-            Text(
-                ((average * 10).roundToInt() / 10.0).toString(),
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(end = 4.dp),
-            )
-            Stars(average.roundToInt(), 16.dp)
+        reviews.average?.let { average ->
+            Text(((average * 10).roundToInt() / 10.0).toString(), modifier = Modifier.padding(end = 4.dp))
+            Stars(average.roundToInt(), 14.dp)
         }
+        Text(
+            " (${reviews.reviews.size})",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
+}
+
+@Composable
+fun ReviewsSection(loaded: PlaceReviews) {
+    var all by rememberSaveable(loaded.reviews.firstOrNull()?.id) { mutableStateOf(false) }
     Text(
         pluralStringResource(Res.plurals.reviews_count, loaded.reviews.size, loaded.reviews.size),
         style = MaterialTheme.typography.bodySmall,
