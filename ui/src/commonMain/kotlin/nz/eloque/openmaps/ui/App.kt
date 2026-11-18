@@ -1,6 +1,8 @@
 package nz.eloque.openmaps.ui
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
@@ -101,6 +103,8 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass
+import nz.eloque.compose_kit.navigation.slideBackward
+import nz.eloque.compose_kit.navigation.slideForward
 import nz.eloque.openmaps.core.model.Geocoder
 import nz.eloque.openmaps.core.model.LatLng
 import nz.eloque.openmaps.core.model.MapLayer
@@ -472,8 +476,8 @@ fun App(
                                     },
                                 backStack = backStack.filterNot { it.isPage() },
                                 onBack = { backStack.removeLastOrNull() },
-                                transitionSpec = { fadeIn() togetherWith fadeOut() },
-                                popTransitionSpec = { fadeIn() togetherWith fadeOut() },
+                                transitionSpec = { quickFade() },
+                                popTransitionSpec = { quickFade() },
                                 entryDecorators =
                                     listOf(
                                         rememberSaveableStateHolderNavEntryDecorator(),
@@ -694,7 +698,10 @@ fun App(
                     }
                     if (tab != null) TabBar(tab, onSelect = ::openTab)
                 }
-                AnimatedContent(top?.takeIf { it.isPage() }, transitionSpec = { fadeIn() togetherWith fadeOut() }) { page ->
+                AnimatedContent(
+                    top?.takeIf { it.isPage() },
+                    transitionSpec = { if (targetState.pageDepth > initialState.pageDepth) slideForward() else slideBackward() },
+                ) { page ->
                     when (page) {
                         SettingsKey -> SettingsPage(onBack = { backStack.removeLastOrNull() })
                         AboutKey ->
@@ -732,6 +739,20 @@ private fun Modifier.belowStatusBar(
 
 /** Keys shown as full-screen pages over the map instead of in the sheet. */
 private fun NavKey.isPage() = this == SettingsKey || this == AboutKey || this == DataSourcesKey || this == PrivacyKey
+
+/** How deep a page sits below the map, so opening a deeper one slides forward and leaving it slides back. */
+private val NavKey?.pageDepth: Int
+    get() =
+        when (this) {
+            null -> 0
+            DataSourcesKey, PrivacyKey -> 2
+            else -> 1
+        }
+
+private fun <S> AnimatedContentTransitionScope<S>.quickFade() =
+    fadeIn(tween(QUICK_FADE_MILLIS)) togetherWith fadeOut(tween(QUICK_FADE_MILLIS))
+
+private const val QUICK_FADE_MILLIS = 150
 
 @Composable
 private fun MapLayer(
