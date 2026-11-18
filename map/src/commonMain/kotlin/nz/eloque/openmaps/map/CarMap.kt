@@ -1,15 +1,11 @@
 package nz.eloque.openmaps.map
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.referentialEqualityPolicy
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
-import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import kotlinx.coroutines.CoroutineScope
@@ -25,9 +21,6 @@ import org.maplibre.compose.camera.CameraUpdate
 import org.maplibre.compose.expressions.dsl.asString
 import org.maplibre.compose.expressions.dsl.const
 import org.maplibre.compose.expressions.dsl.feature
-import org.maplibre.compose.expressions.dsl.image
-import org.maplibre.compose.expressions.value.IconPitchAlignment
-import org.maplibre.compose.expressions.value.IconRotationAlignment
 import org.maplibre.compose.expressions.value.LineCap
 import org.maplibre.compose.expressions.value.LineJoin
 import org.maplibre.compose.layers.CircleLayer
@@ -67,6 +60,19 @@ class CarMap(
 
     private var styleJob: Job? = null
     private var camera: Job? = null
+    private var applyPending = false
+
+    // Without a phone screen in the process nothing else applies state changes, so the map would never see new lines.
+    private val writes =
+        Snapshot.registerGlobalWriteObserver {
+            if (!applyPending) {
+                applyPending = true
+                scope.launch {
+                    applyPending = false
+                    Snapshot.sendApplyNotifications()
+                }
+            }
+        }
 
     init {
         setDark(dark)
@@ -121,6 +127,7 @@ class CarMap(
     }
 
     override fun close() {
+        writes.dispose()
         styleJob?.cancel()
         camera?.cancel()
         state.close()
@@ -181,28 +188,14 @@ class CarMap(
         Markers()
         val puck = puck ?: return
         val source = rememberGeoJsonSource(GeoJsonData.Features(Point(puck.position.toPosition())))
-        if (puck.bearing == null) {
-            CircleLayer(
-                id = "car-position",
-                source = source,
-                color = const(CarRouteColor),
-                radius = const(10.dp),
-                strokeColor = const(Color.White),
-                strokeWidth = const(3.dp),
-            )
-            return
-        }
-        val painter = rememberVectorPainter(Icons.Default.Navigation)
-        val icon = image(remember(painter) { BadgePainter(painter, CarRouteColor, Color.White) }, size = DpSize(36.dp, 36.dp))
-        SymbolLayer(
+        // An icon image would need the graphics context of a phone screen, which car screens lack, so the position is a plain dot.
+        CircleLayer(
             id = "car-position",
             source = source,
-            iconImage = icon,
-            iconRotate = const(puck.bearing.toFloat()),
-            iconRotationAlignment = const(IconRotationAlignment.Map),
-            iconPitchAlignment = const(IconPitchAlignment.Viewport),
-            iconAllowOverlap = const(true),
-            iconIgnorePlacement = const(true),
+            color = const(CarRouteColor),
+            radius = const(if (puck.bearing == null) 10.dp else 12.dp),
+            strokeColor = const(Color.White),
+            strokeWidth = const(3.dp),
         )
     }
 }

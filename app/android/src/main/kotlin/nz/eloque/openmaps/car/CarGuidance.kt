@@ -65,13 +65,25 @@ internal class CarGuidance(
         val estimate = estimate(state, unit)
         val builder = Trip.Builder().setLoading(state.status == NavigationStatus.REROUTING)
         if (state.status != NavigationStatus.REROUTING) {
-            state.instruction?.let { builder.addStep(step(it, withLanes = false), estimate) }
-            builder.addDestination(
-                androidx.car.app.navigation.model.Destination.Builder().setName(destination.orEmpty()).build(),
-                estimate,
-            )
+            state.instruction?.let { builder.addStep(step(it, withLanes = false), toManeuver(state, unit)) }
+            destination?.takeIf { it.isNotBlank() }?.let {
+                builder.addDestination(androidx.car.app.navigation.model.Destination.Builder().setName(it).build(), estimate)
+            }
         }
         return builder.build()
+    }
+
+    /** The way to the next maneuver, its time taken as the same share of the remaining time as of the remaining distance. */
+    private fun toManeuver(
+        state: NavigationState,
+        unit: DistanceUnit,
+    ): TravelEstimate {
+        val share = if (state.remainingMeters > 0) (state.metersToManeuver / state.remainingMeters).coerceIn(0.0, 1.0) else 0.0
+        val seconds = (state.remainingTime.inWholeSeconds * share).toLong()
+        val arrival = Clock.System.now().toEpochMilliseconds() + seconds * 1000
+        return TravelEstimate.Builder(distance(state.metersToManeuver, unit), DateTimeWithZone.create(arrival, TimeZone.getDefault()))
+            .setRemainingTimeSeconds(seconds)
+            .build()
     }
 
     private fun step(

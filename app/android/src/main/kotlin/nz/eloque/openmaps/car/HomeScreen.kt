@@ -43,6 +43,8 @@ import org.koin.core.component.inject
 /** The car's main screen: a map that follows the car, and turn-by-turn guidance while a trip runs. */
 internal class HomeScreen(
     carContext: CarContext,
+    /** The car session's lifecycle, which keeps the map drawing while other screens cover this one. */
+    session: Lifecycle,
 ) : Screen(carContext),
     KoinComponent {
     val navigator: Navigator by inject()
@@ -55,7 +57,7 @@ internal class HomeScreen(
     val guidance = CarGuidance(carContext)
     val map = CarMap(lifecycleScope, { url -> http.get(url).bodyAsText() }, carContext.isDarkMode)
     private val surface =
-        CarMapSurface(carContext, lifecycle, map) {
+        CarMapSurface(carContext, session, map) {
             if (following) {
                 following = false
                 invalidate()

@@ -1,5 +1,6 @@
 package nz.eloque.openmaps.car
 
+import android.text.SpannableStringBuilder
 import androidx.car.app.CarContext
 import androidx.car.app.Screen
 import androidx.car.app.model.Action
@@ -14,9 +15,11 @@ import kotlinx.coroutines.launch
 import nz.eloque.openmaps.R
 import nz.eloque.openmaps.core.model.Favourite
 import nz.eloque.openmaps.core.model.FavouriteLabel
+import nz.eloque.openmaps.core.model.LatLng
 import nz.eloque.openmaps.core.model.PlaceCategory
 import nz.eloque.openmaps.core.model.PlacesStore
 import nz.eloque.openmaps.core.model.SearchResult
+import nz.eloque.openmaps.core.model.SettingsStore
 import nz.eloque.openmaps.core.model.storageKey
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -28,6 +31,7 @@ internal class PlacesScreen(
 ) : Screen(carContext),
     KoinComponent {
     private val places: PlacesStore by inject()
+    private val settings: SettingsStore by inject()
     private var favourites: List<Favourite>? = null
     private var recents: List<SearchResult> = emptyList()
 
@@ -72,7 +76,7 @@ internal class PlacesScreen(
                 add(
                     Row.Builder()
                         .setTitle(recent.name)
-                        .apply { recent.area?.let { addText(it) } }
+                        .addText(withDistance(recent.location, recent.area))
                         .setImage(home.guidance.icon(R.drawable.car_history))
                         .setOnClickListener { choose(home, recent.toDestination()) }
                         .build(),
@@ -87,7 +91,7 @@ internal class PlacesScreen(
     ): Row =
         Row.Builder()
             .setTitle(label?.let(carContext::getString) ?: favourite.displayName)
-            .apply { (if (label != null) favourite.displayName else favourite.place.area)?.takeIf { it.isNotBlank() }?.let { addText(it) } }
+            .addText(withDistance(favourite.place.location, if (label != null) favourite.displayName else favourite.place.area))
             .setImage(home.guidance.icon(icon))
             .setOnClickListener { choose(home, CarDestination.At(favourite.displayName, favourite.place.location, favourite.place)) }
             .build()
@@ -103,4 +107,14 @@ internal class PlacesScreen(
             .setBrowsable(true)
             .setOnClickListener { screenManager.push(NearbyScreen(carContext, home, category, carContext.getString(label))) }
             .build()
+
+    /** The distance from the car first, as the car requires one on every place it lists, then [detail]. */
+    private fun withDistance(
+        location: LatLng,
+        detail: String?,
+    ): CharSequence {
+        val text = SpannableStringBuilder(distanceText(home.position?.distanceTo(location) ?: 0.0, settings.distanceUnit.value))
+        detail?.takeIf { it.isNotBlank() }?.let { text.append(" · ").append(it) }
+        return text
+    }
 }

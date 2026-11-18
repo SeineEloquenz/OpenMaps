@@ -49,7 +49,7 @@ internal class NearbyScreen(
                 ).coveringAtLeast(center, RADIUS_METERS)
             lifecycleScope.launch {
                 nearby.search(category, center, area, loaded = null).catch { failed = true }.collect { results ->
-                    places = results.places.take(carContext.listLimit())
+                    places = results.places.take(minOf(carContext.listLimit(), MAX_PLACES))
                     showOnMap()
                     invalidate()
                 }
@@ -110,3 +110,4 @@ internal class NearbyScreen(
 }
 
 private const val RADIUS_METERS = 5_000.0
+private const val MAX_PLACES = 10

@@ -28,7 +28,7 @@ private class CarSession : Session() {
     private var home: HomeScreen? = null
 
     override fun onCreateScreen(intent: Intent): Screen {
-        val screen = HomeScreen(carContext)
+        val screen = HomeScreen(carContext, lifecycle)
         home = screen
         navigateTo(intent)?.let {
             screens().push(screen)
