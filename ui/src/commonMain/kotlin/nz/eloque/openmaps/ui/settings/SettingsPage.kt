@@ -1,10 +1,11 @@
 package nz.eloque.openmaps.ui.settings
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -12,14 +13,11 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -30,7 +28,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.input.ImeAction
@@ -46,7 +43,6 @@ import nz.eloque.openmaps.core.model.ServiceSettingKind
 import nz.eloque.openmaps.core.model.SettingsStore
 import nz.eloque.openmaps.ui.components.Page
 import nz.eloque.openmaps.ui.resources.Res
-import nz.eloque.openmaps.ui.resources.about
 import nz.eloque.openmaps.ui.resources.api_keys
 import nz.eloque.openmaps.ui.resources.api_keys_detail
 import nz.eloque.openmaps.ui.resources.role_active_routing
@@ -80,74 +76,64 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 
 @Composable
-fun SettingsPage(
-    onBack: () -> Unit,
-    onOpenAbout: () -> Unit,
-) = Page(stringResource(Res.string.settings), onBack) {
-    val settings = koinInject<SettingsStore>()
-    val routeOptions by settings.routeOptions.collectAsStateWithLifecycle()
-    val distanceUnit by settings.distanceUnit.collectAsStateWithLifecycle()
-    val speedingAlert by settings.speedingAlert.collectAsStateWithLifecycle()
-    val services = koinInject<ServiceCatalog>().settings
+fun SettingsPage(onBack: () -> Unit) =
+    Page(stringResource(Res.string.settings), onBack) {
+        val settings = koinInject<SettingsStore>()
+        val routeOptions by settings.routeOptions.collectAsStateWithLifecycle()
+        val distanceUnit by settings.distanceUnit.collectAsStateWithLifecycle()
+        val speedingAlert by settings.speedingAlert.collectAsStateWithLifecycle()
+        val services = koinInject<ServiceCatalog>().settings
 
-    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).navigationBarsPadding()) {
-        SectionTitle(Res.string.settings_routes)
-        RouteOptionsEditor(routeOptions, settings::setRouteOptions)
-        HorizontalDivider(Modifier.padding(vertical = 8.dp))
+        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).navigationBarsPadding()) {
+            SectionTitle(Res.string.settings_routes)
+            RouteOptionsEditor(routeOptions, settings::setRouteOptions)
+            HorizontalDivider(Modifier.padding(vertical = 8.dp))
 
-        SectionTitle(Res.string.units)
-        Row(Modifier.padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilterChip(
-                selected = distanceUnit == DistanceUnit.METRIC,
-                onClick = { settings.setDistanceUnit(DistanceUnit.METRIC) },
-                label = { Text(stringResource(Res.string.units_metric)) },
+            SectionTitle(Res.string.units)
+            Row(Modifier.padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilterChip(
+                    selected = distanceUnit == DistanceUnit.METRIC,
+                    onClick = { settings.setDistanceUnit(DistanceUnit.METRIC) },
+                    label = { Text(stringResource(Res.string.units_metric)) },
+                )
+                FilterChip(
+                    selected = distanceUnit == DistanceUnit.IMPERIAL,
+                    onClick = { settings.setDistanceUnit(DistanceUnit.IMPERIAL) },
+                    label = { Text(stringResource(Res.string.units_imperial)) },
+                )
+            }
+            HorizontalDivider(Modifier.padding(vertical = 8.dp))
+
+            SectionTitle(Res.string.settings_navigation)
+            SettingsSwitch(
+                title = stringResource(Res.string.speeding_alert),
+                subtitle = stringResource(Res.string.speeding_alert_detail),
+                checked = speedingAlert,
+                onCheckedChange = settings::setSpeedingAlert,
             )
-            FilterChip(
-                selected = distanceUnit == DistanceUnit.IMPERIAL,
-                onClick = { settings.setDistanceUnit(DistanceUnit.IMPERIAL) },
-                label = { Text(stringResource(Res.string.units_imperial)) },
+            HorizontalDivider(Modifier.padding(vertical = 8.dp))
+
+            SectionTitle(Res.string.servers)
+            Text(
+                stringResource(Res.string.servers_detail),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 16.dp),
             )
+            services.filter { it.kind == ServiceSettingKind.SERVER_URL }.forEach { ServiceField(it, settings) }
+            HorizontalDivider(Modifier.padding(vertical = 8.dp))
+
+            SectionTitle(Res.string.api_keys)
+            Text(
+                stringResource(Res.string.api_keys_detail),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 16.dp),
+            )
+            services.filter { it.kind == ServiceSettingKind.API_KEY }.forEach { ServiceField(it, settings) }
+            Spacer(Modifier.height(16.dp))
         }
-        HorizontalDivider(Modifier.padding(vertical = 8.dp))
-
-        SectionTitle(Res.string.settings_navigation)
-        SettingsSwitch(
-            title = stringResource(Res.string.speeding_alert),
-            subtitle = stringResource(Res.string.speeding_alert_detail),
-            checked = speedingAlert,
-            onCheckedChange = settings::setSpeedingAlert,
-        )
-        HorizontalDivider(Modifier.padding(vertical = 8.dp))
-
-        SectionTitle(Res.string.servers)
-        Text(
-            stringResource(Res.string.servers_detail),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 16.dp),
-        )
-        services.filter { it.kind == ServiceSettingKind.SERVER_URL }.forEach { ServiceField(it, settings) }
-        HorizontalDivider(Modifier.padding(vertical = 8.dp))
-
-        SectionTitle(Res.string.api_keys)
-        Text(
-            stringResource(Res.string.api_keys_detail),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 16.dp),
-        )
-        services.filter { it.kind == ServiceSettingKind.API_KEY }.forEach { ServiceField(it, settings) }
-        HorizontalDivider(Modifier.padding(vertical = 8.dp))
-
-        ListItem(
-            headlineContent = { Text(stringResource(Res.string.about)) },
-            leadingContent = { Icon(Icons.Outlined.Info, contentDescription = null) },
-            trailingContent = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null) },
-            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-            modifier = Modifier.clickable(onClick = onOpenAbout).padding(bottom = 16.dp),
-        )
     }
-}
 
 @Composable
 private fun SectionTitle(title: StringResource) {

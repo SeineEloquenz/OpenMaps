@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.outlined.Bookmarks
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.BottomSheetScaffold
@@ -171,6 +172,7 @@ import nz.eloque.openmaps.ui.navigation.toEndpoint
 import nz.eloque.openmaps.ui.navigation.toKey
 import nz.eloque.openmaps.ui.place.PlaceSheet
 import nz.eloque.openmaps.ui.resources.Res
+import nz.eloque.openmaps.ui.resources.about
 import nz.eloque.openmaps.ui.resources.app_name
 import nz.eloque.openmaps.ui.resources.clear
 import nz.eloque.openmaps.ui.resources.dropped_pin
@@ -422,6 +424,7 @@ fun App(
                     if (map.isLocationPermissionGranted) recorder.start() else map.requestLocationPermission()
                 }.takeIf { recording == null },
                 MenuEntry(Icons.Outlined.Settings, stringResource(Res.string.settings)) { backStack.add(SettingsKey) },
+                MenuEntry(Icons.Outlined.Info, stringResource(Res.string.about)) { backStack.add(AboutKey) },
             )
         val drawer = rememberDrawerState(DrawerValue.Closed)
 
@@ -693,7 +696,7 @@ fun App(
                 }
                 AnimatedContent(top?.takeIf { it.isPage() }, transitionSpec = { fadeIn() togetherWith fadeOut() }) { page ->
                     when (page) {
-                        SettingsKey -> SettingsPage(onBack = { backStack.removeLastOrNull() }, onOpenAbout = { backStack.add(AboutKey) })
+                        SettingsKey -> SettingsPage(onBack = { backStack.removeLastOrNull() })
                         AboutKey ->
                             AboutPage(
                                 version,
