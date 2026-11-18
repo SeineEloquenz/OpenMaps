@@ -50,15 +50,19 @@ private class CarSession : Session() {
 
     private fun screens() = carContext.getCarService(ScreenManager::class.java)
 
-    /** The destination of a navigation request from the car's assistant, given as a `geo:` address. */
     private fun navigateTo(intent: Intent): CarDestination? {
         if (intent.action != CarContext.ACTION_NAVIGATE) return null
-        val uri = intent.data ?: return null
-        val coordinates = uri.schemeSpecificPart.substringBefore('?')
-        val query = uri.schemeSpecificPart.substringAfter("q=", "").substringBefore('&').takeIf { it.isNotBlank() }
-        parseCoordinates(coordinates)?.takeIf { it.latitude != 0.0 || it.longitude != 0.0 }?.let {
-            return CarDestination.At(query?.substringAfter('(')?.substringBefore(')') ?: query ?: coordinates, it)
-        }
-        return query?.let { CarDestination.Search(it) }
+        return intent.data?.schemeSpecificPart?.let(::geoDestination)
     }
+}
+
+/** The destination in the decoded part after `geo:` of a navigation request from the car's assistant. */
+internal fun geoDestination(address: String): CarDestination? {
+    val coordinates = address.substringBefore('?')
+    val query = address.substringAfter("q=", "").substringBefore('&').takeIf { it.isNotBlank() }
+    parseCoordinates(coordinates)?.takeIf { it.latitude != 0.0 || it.longitude != 0.0 }?.let {
+        val label = query?.takeIf { '(' in it }?.substringAfter('(')?.substringBefore(')')
+        return CarDestination.At(label ?: query ?: coordinates, it)
+    }
+    return query?.let { CarDestination.Search(it) }
 }

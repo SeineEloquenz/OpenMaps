@@ -68,7 +68,7 @@ fun StopSheet(
     LazyColumn(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
         item {
             Text(stop.name, style = MaterialTheme.typography.headlineSmall)
-            Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 DirectionsButton(onDirections)
                 SaveButton(stop.toSearchResult())
             }

@@ -95,4 +95,5 @@ dependencies {
     implementation(libs.androidx.work.runtime)
     implementation(libs.compose.runtime)
     implementation(libs.koin.android)
+    testImplementation(kotlin("test-junit"))
 }
