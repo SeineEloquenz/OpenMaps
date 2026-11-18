@@ -93,7 +93,6 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberDecoratedNavEntries
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
-import androidx.navigation3.scene.NavigationBackHandler
 import androidx.navigation3.scene.SinglePaneSceneStrategy
 import androidx.navigation3.scene.rememberNavigationEventState
 import androidx.navigation3.scene.rememberSceneState
@@ -172,6 +171,7 @@ import nz.eloque.openmaps.ui.navigation.ListKey
 import nz.eloque.openmaps.ui.navigation.MapLink
 import nz.eloque.openmaps.ui.navigation.MeasureKey
 import nz.eloque.openmaps.ui.navigation.NavigationKey
+import nz.eloque.openmaps.ui.navigation.PageKey
 import nz.eloque.openmaps.ui.navigation.PlaceKey
 import nz.eloque.openmaps.ui.navigation.PrivacyKey
 import nz.eloque.openmaps.ui.navigation.RoadEventKey
@@ -414,9 +414,10 @@ fun App(
             }
         }
 
-        val top = backStack.lastOrNull()
-        val sheetTop = backStack.lastOrNull { !it.isPage() }
-        LaunchedEffect(sheetTop) {
+        // The map and sheet always show the screen below any pages, so a page closing reveals them unchanged.
+        val top = backStack.lastOrNull { it !is PageKey }
+        val pageOpen = backStack.lastOrNull() is PageKey
+        LaunchedEffect(top) {
             if (sheetState.bottomSheetState.currentValue == SheetValue.Expanded) sheetState.bottomSheetState.partialExpand()
         }
         val windowHeight = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.height.toDp() }
@@ -484,7 +485,7 @@ fun App(
                         sheetContent = {
                             val sheetEntries =
                                 rememberDecoratedNavEntries(
-                                    backStack = backStack.filterNot { it.isPage() },
+                                    backStack = backStack.filterNot { it is PageKey },
                                     entryDecorators =
                                         listOf(
                                             rememberSaveableStateHolderNavEntryDecorator(),
@@ -641,7 +642,12 @@ fun App(
                                             }
                                         },
                                 )
-                            SheetDisplay(sheetEntries, sheetState.bottomSheetState, onBack = { backStack.removeLastOrNull() })
+                            SheetDisplay(
+                                sheetEntries,
+                                sheetState.bottomSheetState,
+                                handlesBack = !pageOpen,
+                                onBack = { backStack.removeLastOrNull() },
+                            )
                         },
                     ) {
                         MapLayer(
@@ -711,7 +717,7 @@ fun App(
                 NavDisplay(
                     // The map entry fills the screen too, as slides measure their distance from the content they slide to.
                     modifier = Modifier.fillMaxSize(),
-                    backStack = listOf<NavKey>(NoPage) + backStack.filter { it.isPage() },
+                    backStack = listOf<NavKey>(NoPage) + backStack.filterIsInstance<PageKey>(),
                     onBack = { backStack.removeLastOrNull() },
                     transitionSpec = { slideForward() },
                     popTransitionSpec = { slideBackward() },
@@ -754,9 +760,6 @@ private fun Modifier.belowStatusBar(
     layout(placeable.width, placeable.height + inset) { placeable.place(0, inset) }
 }
 
-/** Keys shown as full-screen pages over the map instead of in the sheet. */
-private fun NavKey.isPage() = this == SettingsKey || this == AboutKey || this == DataSourcesKey || this == PrivacyKey
-
 /**
  * The sheet's surface and its screens. A back gesture sinks the whole sheet down with the finger,
  * and the screen below shows only towards the end of the gesture.
@@ -766,11 +769,17 @@ private fun NavKey.isPage() = this == SettingsKey || this == AboutKey || this ==
 private fun SheetDisplay(
     entries: List<NavEntry<NavKey>>,
     sheet: SheetState,
+    handlesBack: Boolean,
     onBack: () -> Unit,
 ) {
     val sceneState = rememberSceneState(entries, listOf(SinglePaneSceneStrategy<NavKey>()), onBack = onBack)
     val backState = rememberNavigationEventState(sceneState)
-    NavigationBackHandler(sceneState, backState, onBackCompleted = onBack)
+    // Stays registered while disabled, as registering again would put it ahead of the drawer's handler.
+    NavigationBackHandler(
+        backState,
+        isBackEnabled = handlesBack && sceneState.currentScene.previousEntries.isNotEmpty(),
+        onBackCompleted = onBack,
+    )
     val gesture = (backState.transitionState as? NavigationEventTransitionState.InProgress)?.latestEvent?.progress
     val sink by animateFloatAsState(gesture ?: 0f, if (gesture != null) snap() else spring(), label = "sheet sink")
     val statusBar = WindowInsets.statusBars.getTop(LocalDensity.current)

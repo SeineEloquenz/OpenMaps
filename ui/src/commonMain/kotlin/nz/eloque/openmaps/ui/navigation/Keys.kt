@@ -14,17 +14,20 @@ import nz.eloque.openmaps.core.model.TravelMode
 @Serializable
 data object HomeKey : NavKey
 
-@Serializable
-data object AboutKey : NavKey
+/** A screen shown full size over the map, rather than in the sheet. */
+sealed interface PageKey : NavKey
 
 @Serializable
-data object DataSourcesKey : NavKey
+data object AboutKey : PageKey
 
 @Serializable
-data object PrivacyKey : NavKey
+data object DataSourcesKey : PageKey
 
 @Serializable
-data object SettingsKey : NavKey
+data object PrivacyKey : PageKey
+
+@Serializable
+data object SettingsKey : PageKey
 
 /** Places of one category in the visible map area. */
 @Serializable
