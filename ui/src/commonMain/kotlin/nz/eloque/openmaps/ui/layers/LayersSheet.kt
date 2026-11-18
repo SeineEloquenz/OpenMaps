@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.Anchor
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.Construction
+import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.DirectionsTransit
 import androidx.compose.material.icons.filled.Hiking
 import androidx.compose.material.icons.filled.Umbrella
@@ -75,6 +76,7 @@ import nz.eloque.openmaps.ui.resources.layer_roadworks
 import nz.eloque.openmaps.ui.resources.layer_seamarks
 import nz.eloque.openmaps.ui.resources.layer_terrain
 import nz.eloque.openmaps.ui.resources.layer_transit
+import nz.eloque.openmaps.ui.resources.layer_vehicles
 import nz.eloque.openmaps.ui.resources.map_details
 import nz.eloque.openmaps.ui.resources.map_type
 import org.jetbrains.compose.resources.StringResource
@@ -84,6 +86,7 @@ import org.koin.compose.koinInject
 private val Details =
     listOf(
         MapLayer.TRANSIT,
+        MapLayer.VEHICLES,
         MapLayer.CYCLING,
         MapLayer.HIKING,
         MapLayer.ROADWORKS,
@@ -249,6 +252,7 @@ internal val MapLayer.label: StringResource
             MapLayer.SEAMARKS -> Res.string.layer_seamarks
             MapLayer.RAIN_RADAR -> Res.string.layer_rain_radar
             MapLayer.CLOUDS -> Res.string.layer_clouds
+            MapLayer.VEHICLES -> Res.string.layer_vehicles
         }
 
 private val MapLayer.badge: ImageVector?
@@ -261,6 +265,7 @@ private val MapLayer.badge: ImageVector?
             MapLayer.SEAMARKS -> Icons.Default.Anchor
             MapLayer.RAIN_RADAR -> Icons.Default.Umbrella
             MapLayer.CLOUDS -> Icons.Default.Cloud
+            MapLayer.VEHICLES -> Icons.Default.DirectionsBus
             else -> null
         }
 
@@ -290,6 +295,9 @@ private val MapLayer.drawing: DrawScope.() -> Unit
             }
             MapLayer.RAIN_RADAR -> {
                 { drawRadar() }
+            }
+            MapLayer.VEHICLES -> {
+                { drawVehicles() }
             }
             MapLayer.CLOUDS -> {
                 { drawClouds() }
@@ -505,3 +513,21 @@ private val RainLight = Color(0xFF8AB4F8)
 private val RainHeavy = Color(0xFF1A73E8)
 private val CloudWhite = Color(0xFFF8F9FA)
 private val CloudGrey = Color(0xFFDADCE0)
+
+private fun DrawScope.drawVehicles() {
+    land()
+    val track =
+        Path().apply {
+            moveTo(0f, size.height * 0.75f)
+            cubicTo(size.width * 0.35f, size.height * 0.7f, size.width * 0.55f, size.height * 0.25f, size.width, size.height * 0.2f)
+        }
+    drawPath(track, VehicleTrack, style = Stroke(3.dp.toPx()))
+    listOf(Triple(0.22f, 0.72f, VehicleRed), Triple(0.66f, 0.3f, VehiclePurple)).forEach { (x, y, color) ->
+        drawCircle(Color.White, radius = 8.dp.toPx(), center = Offset(size.width * x, size.height * y))
+        drawCircle(color, radius = 6.5.dp.toPx(), center = Offset(size.width * x, size.height * y))
+    }
+}
+
+private val VehicleTrack = Color(0xFFB0B7C3)
+private val VehicleRed = Color(0xFFD32F2F)
+private val VehiclePurple = Color(0xFF7B1FA2)

@@ -129,6 +129,7 @@ class MapController internal constructor(
     private val radarState: MutableState<RadarFrames?>,
     private val radarFrameState: MutableState<Int>,
     private val cloudFrameState: MutableState<Int>,
+    private val vehiclesState: MutableState<List<VehicleMarker>>,
 ) {
     val isLocationPermissionGranted: Boolean
         get() = location.permission is LocationPermission.Granted
@@ -220,6 +221,11 @@ class MapController internal constructor(
 
     /** Index of the cloud picture shown while the radar is off. */
     var cloudFrame: Int by cloudFrameState
+
+    /** Transit vehicles drawn where they are now, shown while [MapLayer.VEHICLES] is on. */
+    var vehicles: List<VehicleMarker> by vehiclesState
+
+    var onVehicleClick: ((VehicleMarker) -> Unit)? by mutableStateOf(null)
 
     /** Road events drawn on the map, or null for none. */
     var roadEvents: RoadEventTiles? by roadEventsState
@@ -377,6 +383,7 @@ fun rememberMapController(
     val radarState = remember { mutableStateOf<RadarFrames?>(null) }
     val radarFrameState = remember { mutableStateOf(0) }
     val cloudFrameState = remember { mutableStateOf(0) }
+    val vehiclesState = remember { mutableStateOf<List<VehicleMarker>>(emptyList(), referentialEqualityPolicy()) }
     val puckIcon =
         rememberVectorPainter(Icons.Default.Navigation).let { painter ->
             image(remember(painter, markerColor) { BadgePainter(painter, markerColor, Color.White) }, size = DpSize(30.dp, 30.dp))
@@ -419,6 +426,9 @@ fun rememberMapController(
             PlaceLayers(dark) { place -> controllerRef[0]?.onPlaceClick?.invoke(place) }
             ResultLayers(resultsState.value, resultIconState.value, dark) { place -> controllerRef[0]?.onPlaceClick?.invoke(place) }
             SharingLayers(sharingState.value, dark) { id -> controllerRef[0]?.onSharingClick?.invoke(id) }
+            if (MapLayer.VEHICLES in layersState.value) {
+                VehicleLayers(vehiclesState.value, dark) { controllerRef[0]?.onVehicleClick?.invoke(it) }
+            }
             RecordingLayer(recordingState.value, markerColor)
             ParkedCarLayer(parkedCarState.value, dark) { controllerRef[0]?.onParkedCarClick?.invoke() }
             OtherRouteLines(routesState.value, routeColors) { id -> controllerRef[0]?.onRouteClick?.invoke(id) }
@@ -561,6 +571,7 @@ fun rememberMapController(
             radarState,
             radarFrameState,
             cloudFrameState,
+            vehiclesState,
         )
     }
         .also { controllerRef[0] = it }

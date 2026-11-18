@@ -125,6 +125,7 @@ import nz.eloque.openmaps.ui.category.CategoryChipsHeight
 import nz.eloque.openmaps.ui.category.CategorySheet
 import nz.eloque.openmaps.ui.category.label
 import nz.eloque.openmaps.ui.components.StopsOnMap
+import nz.eloque.openmaps.ui.components.VehiclesOnMap
 import nz.eloque.openmaps.ui.components.clockTime
 import nz.eloque.openmaps.ui.directions.DirectionsSheet
 import nz.eloque.openmaps.ui.directions.RouteSheet
@@ -339,6 +340,7 @@ fun App(
         LaunchedEffect(map) { settings.mapLayers.collect { map.layers = it } }
         val rainRadar = koinInject<RainRadar>()
         val mapLayers by settings.mapLayers.collectAsStateWithLifecycle()
+        VehiclesOnMap(map, MapLayer.VEHICLES in mapLayers) { tripId, _ -> backStack.add(TripKey(tripId, null)) }
         val radarOn = MapLayer.RAIN_RADAR in mapLayers
         val weatherOn = radarOn || MapLayer.CLOUDS in mapLayers
         val lifecycle = LocalLifecycleOwner.current.lifecycle

@@ -1,6 +1,7 @@
 package nz.eloque.openmaps.data.transit
 
 import nz.eloque.openmaps.core.model.Geocoder
+import nz.eloque.openmaps.core.model.LiveVehicles
 import nz.eloque.openmaps.core.model.ServiceRole
 import nz.eloque.openmaps.core.model.ServiceSetting
 import nz.eloque.openmaps.core.model.ServiceSettingKind
@@ -28,6 +29,10 @@ fun transitModule(language: () -> String? = { null }) =
         single<SharedMobility> {
             val settings = get<SettingsStore>()
             MotisSharedMobility(get()) { settings.serviceValue(TransitServer.id).value ?: TRANSITOUS_API }
+        }
+        single<LiveVehicles> {
+            val settings = get<SettingsStore>()
+            MotisLiveVehicles(get()) { settings.serviceValue(TransitServer.id).value ?: TRANSITOUS_API }
         }
         single<Geocoder> {
             val settings = get<SettingsStore>()
