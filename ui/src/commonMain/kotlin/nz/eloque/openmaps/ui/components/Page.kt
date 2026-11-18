@@ -11,15 +11,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
-import androidx.navigationevent.NavigationEventInfo
-import androidx.navigationevent.compose.NavigationBackHandler
-import androidx.navigationevent.compose.rememberNavigationEventState
 import nz.eloque.compose_kit.scaffold.AppScaffold
 import nz.eloque.openmaps.ui.resources.Res
 import nz.eloque.openmaps.ui.resources.back
 import org.jetbrains.compose.resources.stringResource
 
-/** A full-screen page with a top bar that covers the map. */
+/** A full-screen page with a top bar that covers the map. Back is handled by the page stack that shows it. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Page(
@@ -27,7 +24,6 @@ fun Page(
     onBack: () -> Unit,
     content: @Composable () -> Unit,
 ) {
-    NavigationBackHandler(rememberNavigationEventState(NavigationEventInfo.None), onBackCompleted = onBack)
     AppScaffold(
         title = { Text(title) },
         navigationIcon = {

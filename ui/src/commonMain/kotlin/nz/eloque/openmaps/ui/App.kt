@@ -1,6 +1,5 @@
 package nz.eloque.openmaps.ui
 
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -698,26 +697,31 @@ fun App(
                     }
                     if (tab != null) TabBar(tab, onSelect = ::openTab)
                 }
-                AnimatedContent(
-                    top?.takeIf { it.isPage() },
-                    // Full size, as an empty map state would otherwise make the page grow from an edge instead of sliding.
+                NavDisplay(
+                    // Full size, as the empty map entry would otherwise make a page grow from an edge instead of sliding.
                     modifier = Modifier.fillMaxSize(),
-                    transitionSpec = { if (targetState.pageDepth > initialState.pageDepth) slideForward() else slideBackward() },
-                ) { page ->
-                    when (page) {
-                        SettingsKey -> SettingsPage(onBack = { backStack.removeLastOrNull() })
-                        AboutKey ->
-                            AboutPage(
-                                version,
-                                onBack = { backStack.removeLastOrNull() },
-                                onOpenSources = { backStack.add(DataSourcesKey) },
-                                onOpenPrivacy = { backStack.add(PrivacyKey) },
-                            )
-                        DataSourcesKey -> DataSourcesPage(onBack = { backStack.removeLastOrNull() })
-                        PrivacyKey -> PrivacyPage(onBack = { backStack.removeLastOrNull() })
-                        else -> {}
-                    }
-                }
+                    backStack = listOf<NavKey>(NoPage) + backStack.filter { it.isPage() },
+                    onBack = { backStack.removeLastOrNull() },
+                    transitionSpec = { slideForward() },
+                    popTransitionSpec = { slideBackward() },
+                    predictivePopTransitionSpec = { slideBackward() },
+                    entryDecorators = listOf(rememberSaveableStateHolderNavEntryDecorator()),
+                    entryProvider =
+                        entryProvider {
+                            entry<NoPage> {}
+                            entry<SettingsKey> { SettingsPage(onBack = { backStack.removeLastOrNull() }) }
+                            entry<AboutKey> {
+                                AboutPage(
+                                    version,
+                                    onBack = { backStack.removeLastOrNull() },
+                                    onOpenSources = { backStack.add(DataSourcesKey) },
+                                    onOpenPrivacy = { backStack.add(PrivacyKey) },
+                                )
+                            }
+                            entry<DataSourcesKey> { DataSourcesPage(onBack = { backStack.removeLastOrNull() }) }
+                            entry<PrivacyKey> { PrivacyPage(onBack = { backStack.removeLastOrNull() }) }
+                        },
+                )
             }
             // Composed after the sheets so it takes back first while the drawer is open.
             NavigationBackHandler(
@@ -742,14 +746,8 @@ private fun Modifier.belowStatusBar(
 /** Keys shown as full-screen pages over the map instead of in the sheet. */
 private fun NavKey.isPage() = this == SettingsKey || this == AboutKey || this == DataSourcesKey || this == PrivacyKey
 
-/** How deep a page sits below the map, so opening a deeper one slides forward and leaving it slides back. */
-private val NavKey?.pageDepth: Int
-    get() =
-        when (this) {
-            null -> 0
-            DataSourcesKey, PrivacyKey -> 2
-            else -> 1
-        }
+/** The bottom of the page stack, showing the map through it. */
+private data object NoPage : NavKey
 
 private fun <S> AnimatedContentTransitionScope<S>.quickFade() =
     fadeIn(tween(QUICK_FADE_MILLIS)) togetherWith fadeOut(tween(QUICK_FADE_MILLIS))
