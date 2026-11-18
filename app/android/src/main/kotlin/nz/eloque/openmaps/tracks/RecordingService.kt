@@ -83,7 +83,7 @@ class RecordingService :
             )
         return Notification
             .Builder(this, CHANNEL)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(getString(R.string.recording_title))
             .setContentText(formatDistance(meters, settings.distanceUnit.value))
             .setOngoing(true)

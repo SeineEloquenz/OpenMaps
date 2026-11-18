@@ -37,7 +37,7 @@ class ReminderReceiver :
         val notification =
             Notification
                 .Builder(context, CHANNEL)
-                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setSmallIcon(R.drawable.ic_notification)
                 .setContentTitle(intent.getStringExtra(EXTRA_TITLE))
                 .setContentText(intent.getStringExtra(EXTRA_TEXT))
                 .setCategory(Notification.CATEGORY_REMINDER)

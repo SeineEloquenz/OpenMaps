@@ -46,7 +46,7 @@ internal fun notifyChanges(
     val notification =
         Notification
             .Builder(context, CHANNEL)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(context.title(changes))
             .setContentText(text)
             .setStyle(Notification.BigTextStyle().bigText(text))
