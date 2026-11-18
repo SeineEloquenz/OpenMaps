@@ -6,6 +6,7 @@ import nz.eloque.openmaps.core.model.ServiceRole
 import nz.eloque.openmaps.core.model.ServiceSetting
 import nz.eloque.openmaps.core.model.ServiceSettingKind
 import nz.eloque.openmaps.core.model.SettingsStore
+import nz.eloque.openmaps.core.model.WeatherForecasts
 import nz.eloque.openmaps.core.model.WeatherWarnings
 import org.koin.dsl.module
 
@@ -31,10 +32,23 @@ val WeatherWarningsServer =
         helpUrl = "https://github.com/JoshuaKimsey/LibreWXR/blob/main/docs/alerts.md",
     )
 
+/** An Open-Meteo server for weather forecasts. */
+val WeatherForecastServer =
+    ServiceSetting(
+        "server.forecast",
+        ServiceRole.WEATHER_FORECAST,
+        ServiceSettingKind.SERVER_URL,
+        "Open-Meteo",
+        default = OPEN_METEO,
+        helpUrl = "https://open-meteo.com/en/docs",
+    )
+
+internal const val OPEN_METEO = "https://api.open-meteo.com"
+
 internal const val LIBREWXR = "https://api.librewxr.net"
 
 /** The settings this module's sources read. */
-val weatherServiceSettings = listOf(RainRadarServer, WeatherWarningsServer)
+val weatherServiceSettings = listOf(RainRadarServer, WeatherWarningsServer, WeatherForecastServer)
 
 val weatherModule =
     module {
@@ -44,5 +58,8 @@ val weatherModule =
         }
         single<WeatherWarnings> {
             LibreWxrWarnings(get(), get<SettingsStore>().serviceValue(WeatherWarningsServer.id).map { it ?: LIBREWXR })
+        }
+        single<WeatherForecasts> {
+            OpenMeteoForecasts(get(), get<SettingsStore>().serviceValue(WeatherForecastServer.id).map { it ?: OPEN_METEO })
         }
     }

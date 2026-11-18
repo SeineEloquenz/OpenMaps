@@ -156,7 +156,9 @@ import nz.eloque.openmaps.ui.resources.wheelchair
 import nz.eloque.openmaps.ui.resources.wheelchair_limited
 import nz.eloque.openmaps.ui.resources.wheelchair_no
 import nz.eloque.openmaps.ui.resources.wheelchair_yes
+import nz.eloque.openmaps.ui.weather.ForecastSection
 import nz.eloque.openmaps.ui.weather.WarningCard
+import nz.eloque.openmaps.ui.weather.rememberForecast
 import nz.eloque.openmaps.ui.weather.rememberWarnings
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
@@ -197,6 +199,7 @@ fun PlaceSheet(
         }
         ActionRow(place, loaded, shareUrl = viewModel.pageUrl ?: map.linkTo(place.location), onDirections, onMeasure)
         rememberWarnings(place.location).forEach { WarningCard(it, Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) }
+        rememberForecast(place.location)?.let { ForecastSection(it, Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) }
         media?.let { MediaSection(it) }
         loaded?.description?.let {
             Text(it, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))

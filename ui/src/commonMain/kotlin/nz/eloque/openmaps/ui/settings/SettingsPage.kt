@@ -59,6 +59,7 @@ import nz.eloque.openmaps.ui.resources.role_reviews
 import nz.eloque.openmaps.ui.resources.role_road_events
 import nz.eloque.openmaps.ui.resources.role_street_routing
 import nz.eloque.openmaps.ui.resources.role_transit
+import nz.eloque.openmaps.ui.resources.role_weather_forecast
 import nz.eloque.openmaps.ui.resources.role_weather_warnings
 import nz.eloque.openmaps.ui.resources.server_invalid
 import nz.eloque.openmaps.ui.resources.servers
@@ -226,4 +227,5 @@ private val ServiceRole.label: StringResource
             ServiceRole.RAIN_RADAR -> Res.string.role_rain_radar
             ServiceRole.WEATHER_WARNINGS -> Res.string.role_weather_warnings
             ServiceRole.REVIEWS -> Res.string.role_reviews
+            ServiceRole.WEATHER_FORECAST -> Res.string.role_weather_forecast
         }

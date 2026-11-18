@@ -12,6 +12,7 @@ enum class ServiceRole {
     FUEL_PRICES,
     RAIN_RADAR,
     WEATHER_WARNINGS,
+    WEATHER_FORECAST,
     REVIEWS,
 }
 

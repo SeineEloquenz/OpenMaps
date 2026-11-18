@@ -139,7 +139,9 @@ import nz.eloque.openmaps.ui.roads.icon
 import nz.eloque.openmaps.ui.settings.RouteOptionsEditor
 import nz.eloque.openmaps.ui.settings.icon
 import nz.eloque.openmaps.ui.settings.label
+import nz.eloque.openmaps.ui.weather.ArrivalWeather
 import nz.eloque.openmaps.ui.weather.WarningCard
+import nz.eloque.openmaps.ui.weather.rememberForecast
 import nz.eloque.openmaps.ui.weather.rememberWarnings
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.pluralStringResource
@@ -222,6 +224,9 @@ fun DirectionsSheet(
             EndpointsCard(directions, canAddStop = mode != TravelMode.TRANSIT, onEditField, onSwap, onRemoveStop)
             val atDestination = stringResource(Res.string.warning_at_destination)
             rememberWarnings(directions.to?.location).forEach { WarningCard(it, Modifier.padding(top = 8.dp), prefix = atDestination) }
+            val arrival = if (mode == TravelMode.TRANSIT) selected?.end else routes[mode]?.end
+            val forecast = rememberForecast(directions.to?.location)
+            if (forecast != null && arrival != null) ArrivalWeather(forecast, arrival, Modifier.padding(top = 8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
                 SaveRouteButton(directions)
                 if (moved) {
