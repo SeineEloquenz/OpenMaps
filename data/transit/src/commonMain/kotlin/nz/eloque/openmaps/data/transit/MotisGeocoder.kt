@@ -22,7 +22,10 @@ internal class MotisGeocoder(
             client
                 .get("${baseUrl()}/v1/geocode") {
                     parameter("text", query)
-                    near?.let { parameter("place", it.asParameter()) }
+                    near?.let {
+                        parameter("place", it.asParameter())
+                        parameter("placeBias", PLACE_BIAS)
+                    }
                     language()?.let { parameter("language", it) }
                 }.body()
         val results = matches.map { it.toSearchResult() }
@@ -40,3 +43,7 @@ internal class MotisGeocoder(
         return matches.firstOrNull()?.toSearchResult()
     }
 }
+
+// MOTIS defaults to 1, which ranks a famous place 5000 km away above the same name round the corner. Above 3, nearby
+// namesakes start to push out the cities people mean, such as a local "La Paris" over Paris.
+private const val PLACE_BIAS = 3

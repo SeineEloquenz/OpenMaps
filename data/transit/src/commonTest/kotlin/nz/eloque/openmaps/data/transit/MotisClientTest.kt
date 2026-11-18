@@ -56,6 +56,7 @@ class MotisClientTest {
             assertEquals("Amsterdam", place.area)
             assertTrue(results.any { it is SearchResult.Stop && TransportMode.TRAM in it.modes })
             assertEquals("52.36,4.89", requests.single().parameters["place"])
+            assertEquals("3", requests.single().parameters["placeBias"])
             assertEquals("nl", requests.single().parameters["language"])
         }
 
