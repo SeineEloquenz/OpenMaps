@@ -709,16 +709,17 @@ fun App(
                     if (tab != null) TabBar(tab, onSelect = ::openTab)
                 }
                 NavDisplay(
-                    // Full size, as the empty map entry would otherwise make a page grow from an edge instead of sliding.
+                    // The map entry fills the screen too, as slides measure their distance from the content they slide to.
                     modifier = Modifier.fillMaxSize(),
                     backStack = listOf<NavKey>(NoPage) + backStack.filter { it.isPage() },
                     onBack = { backStack.removeLastOrNull() },
                     transitionSpec = { slideForward() },
                     popTransitionSpec = { slideBackward() },
+                    predictivePopTransitionSpec = { slideBackward() },
                     entryDecorators = listOf(rememberSaveableStateHolderNavEntryDecorator()),
                     entryProvider =
                         entryProvider {
-                            entry<NoPage> {}
+                            entry<NoPage> { Box(Modifier.fillMaxSize()) }
                             entry<SettingsKey> { SettingsPage(onBack = { backStack.removeLastOrNull() }) }
                             entry<AboutKey> {
                                 AboutPage(
