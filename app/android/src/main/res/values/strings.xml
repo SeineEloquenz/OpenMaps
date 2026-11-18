@@ -22,7 +22,10 @@
     <string name="recording_title">Recording a track</string>
     <string name="recording_stop">Stop and save</string>
     <string name="navigation_next">In %1$s: %2$s</string>
-    <string name="navigation_left">%1$s · %2$d min left</string>
+    <string name="navigation_left">%1$s · %2$d min · arrive %3$s</string>
+    <string name="navigation_stop">Stop</string>
+    <string name="navigation_mute">Mute</string>
+    <string name="navigation_unmute">Unmute</string>
     <string name="navigation_arrived">You have arrived</string>
     <string name="navigation_rerouting">Finding a new route</string>
     <string name="navigation_off_route">Return to the route</string>
@@ -31,6 +34,10 @@
     <string name="guide_wait">%1$s towards %2$s</string>
     <string name="guide_leaves">%1$s leaves %2$s</string>
     <string name="guide_ride">Get off at %1$s</string>
+    <plurals name="guide_stops_short">
+        <item quantity="one">%1$d stop</item>
+        <item quantity="other">%1$d stops</item>
+    </plurals>
     <plurals name="guide_stops_left">
         <item quantity="one">Next stop · arrive %2$s</item>
         <item quantity="other">%1$d more stops · arrive %2$s</item>

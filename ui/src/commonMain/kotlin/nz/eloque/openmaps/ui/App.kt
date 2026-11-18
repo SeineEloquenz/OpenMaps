@@ -891,7 +891,11 @@ private fun GuidedTripLifecycle(backStack: MutableList<NavKey>) {
     LaunchedEffect(backStack) {
         snapshotFlow { active.key }.collect { key ->
             val running = navigator.state.value != null || guide.state.value != null
-            if (key != null && running && key !in backStack) backStack.add(key)
+            if (key == null) {
+                backStack.removeAll { it is NavigationKey || it is TransitGuidanceKey }
+            } else if (running && key !in backStack) {
+                backStack.add(key)
+            }
         }
     }
 }

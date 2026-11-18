@@ -21,6 +21,7 @@ nav3Lifecycle = "2.11.0"
 composeKit = "v0.6.0"
 maplibreCompose = "0.20.0"
 carApp = "1.7.0"
+androidxCore = "1.18.0"
 maplibreNavigation = "5.0.1"
 spatialk = "0.8.0"
 coil = "3.6.3"
@@ -84,6 +85,7 @@ compose-kit = { module = "com.github.SeineEloquenz.compose-kit:lib", version.ref
 htmlconverter = { module = "be.digitalia.compose.htmlconverter:htmlconverter", version = "1.1.1" }
 maplibre-compose = { module = "org.maplibre.compose:maplibre-compose", version.ref = "maplibreCompose" }
 androidx-car-app = { module = "androidx.car.app:app", version.ref = "carApp" }
+androidx-core = { module = "androidx.core:core", version.ref = "androidxCore" }
 androidx-car-app-projected = { module = "androidx.car.app:app-projected", version.ref = "carApp" }
 maplibre-navigation-core = { module = "org.maplibre.navigation:navigation-core", version.ref = "maplibreNavigation" }
 spatialk-gpx = { module = "org.maplibre.spatialk:gpx", version.ref = "spatialk" }

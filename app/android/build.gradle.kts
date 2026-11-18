@@ -88,6 +88,7 @@ dependencies {
     implementation(project(":map"))
     implementation(libs.maplibre.compose)
     implementation(libs.androidx.car.app)
+    implementation(libs.androidx.core)
     implementation(libs.androidx.car.app.projected)
     implementation(libs.compose.foundation)
     implementation(libs.nav3.ui)

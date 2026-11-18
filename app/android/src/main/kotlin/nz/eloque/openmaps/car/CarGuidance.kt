@@ -22,6 +22,7 @@ import nz.eloque.openmaps.core.model.ManeuverType
 import nz.eloque.openmaps.core.model.NavigationInstruction
 import nz.eloque.openmaps.core.model.NavigationState
 import nz.eloque.openmaps.core.model.NavigationStatus
+import nz.eloque.openmaps.navigation.icon
 import java.util.TimeZone
 import kotlin.time.Clock
 import androidx.car.app.navigation.model.Lane as CarLane
@@ -108,28 +109,22 @@ internal class CarGuidance(
     }
 
     private fun maneuver(instruction: NavigationInstruction): Maneuver {
-        val (type, icon) =
+        val type =
             when (instruction.maneuver) {
-                ManeuverType.DEPART -> Maneuver.TYPE_DEPART to R.drawable.car_navigation
-                ManeuverType.ARRIVE -> Maneuver.TYPE_DESTINATION to R.drawable.car_flag
-                ManeuverType.STRAIGHT, ManeuverType.OTHER -> Maneuver.TYPE_STRAIGHT to R.drawable.car_straight
-                ManeuverType.SLIGHT_LEFT -> Maneuver.TYPE_TURN_SLIGHT_LEFT to R.drawable.car_turn_slight_left
-                ManeuverType.LEFT -> Maneuver.TYPE_TURN_NORMAL_LEFT to R.drawable.car_turn_left
-                ManeuverType.SHARP_LEFT -> Maneuver.TYPE_TURN_SHARP_LEFT to R.drawable.car_turn_sharp_left
-                ManeuverType.SLIGHT_RIGHT -> Maneuver.TYPE_TURN_SLIGHT_RIGHT to R.drawable.car_turn_slight_right
-                ManeuverType.RIGHT -> Maneuver.TYPE_TURN_NORMAL_RIGHT to R.drawable.car_turn_right
-                ManeuverType.SHARP_RIGHT -> Maneuver.TYPE_TURN_SHARP_RIGHT to R.drawable.car_turn_sharp_right
-                ManeuverType.U_TURN -> Maneuver.TYPE_U_TURN_LEFT to R.drawable.car_u_turn_left
+                ManeuverType.DEPART -> Maneuver.TYPE_DEPART
+                ManeuverType.ARRIVE -> Maneuver.TYPE_DESTINATION
+                ManeuverType.STRAIGHT, ManeuverType.OTHER -> Maneuver.TYPE_STRAIGHT
+                ManeuverType.SLIGHT_LEFT -> Maneuver.TYPE_TURN_SLIGHT_LEFT
+                ManeuverType.LEFT -> Maneuver.TYPE_TURN_NORMAL_LEFT
+                ManeuverType.SHARP_LEFT -> Maneuver.TYPE_TURN_SHARP_LEFT
+                ManeuverType.SLIGHT_RIGHT -> Maneuver.TYPE_TURN_SLIGHT_RIGHT
+                ManeuverType.RIGHT -> Maneuver.TYPE_TURN_NORMAL_RIGHT
+                ManeuverType.SHARP_RIGHT -> Maneuver.TYPE_TURN_SHARP_RIGHT
+                ManeuverType.U_TURN -> Maneuver.TYPE_U_TURN_LEFT
                 ManeuverType.ROUNDABOUT ->
-                    (
-                        if (instruction.exit != null) {
-                            Maneuver.TYPE_ROUNDABOUT_ENTER_AND_EXIT_CCW
-                        } else {
-                            Maneuver.TYPE_ROUNDABOUT_ENTER_CCW
-                        }
-                    ) to R.drawable.car_roundabout_right
+                    if (instruction.exit != null) Maneuver.TYPE_ROUNDABOUT_ENTER_AND_EXIT_CCW else Maneuver.TYPE_ROUNDABOUT_ENTER_CCW
             }
-        val builder = Maneuver.Builder(type).setIcon(icon(icon))
+        val builder = Maneuver.Builder(type).setIcon(icon(instruction.maneuver.icon))
         if (type == Maneuver.TYPE_ROUNDABOUT_ENTER_AND_EXIT_CCW) builder.setRoundaboutExitNumber(instruction.exit ?: 1)
         return builder.build()
     }
