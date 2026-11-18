@@ -120,6 +120,8 @@ import nz.eloque.openmaps.map.MapController
 import nz.eloque.openmaps.map.OpenMap
 import nz.eloque.openmaps.map.rememberMapController
 import nz.eloque.openmaps.ui.about.AboutPage
+import nz.eloque.openmaps.ui.about.DataSourcesPage
+import nz.eloque.openmaps.ui.about.PrivacyPage
 import nz.eloque.openmaps.ui.category.CategoryChips
 import nz.eloque.openmaps.ui.category.CategoryChipsHeight
 import nz.eloque.openmaps.ui.category.CategorySheet
@@ -143,6 +145,7 @@ import nz.eloque.openmaps.ui.layers.RadarTimeline
 import nz.eloque.openmaps.ui.measure.MeasureSheet
 import nz.eloque.openmaps.ui.navigation.AboutKey
 import nz.eloque.openmaps.ui.navigation.CategoryKey
+import nz.eloque.openmaps.ui.navigation.DataSourcesKey
 import nz.eloque.openmaps.ui.navigation.DirectionsField
 import nz.eloque.openmaps.ui.navigation.DirectionsKey
 import nz.eloque.openmaps.ui.navigation.Endpoint
@@ -152,6 +155,7 @@ import nz.eloque.openmaps.ui.navigation.MapLink
 import nz.eloque.openmaps.ui.navigation.MeasureKey
 import nz.eloque.openmaps.ui.navigation.NavigationKey
 import nz.eloque.openmaps.ui.navigation.PlaceKey
+import nz.eloque.openmaps.ui.navigation.PrivacyKey
 import nz.eloque.openmaps.ui.navigation.RoadEventKey
 import nz.eloque.openmaps.ui.navigation.RouteKey
 import nz.eloque.openmaps.ui.navigation.SavedKey
@@ -207,6 +211,8 @@ private val navConfiguration =
                 polymorphic(NavKey::class) {
                     subclass(HomeKey::class)
                     subclass(AboutKey::class)
+                    subclass(DataSourcesKey::class)
+                    subclass(PrivacyKey::class)
                     subclass(SavedKey::class)
                     subclass(TripsKey::class)
                     subclass(TrackKey::class)
@@ -688,7 +694,15 @@ fun App(
                 AnimatedContent(top?.takeIf { it.isPage() }, transitionSpec = { fadeIn() togetherWith fadeOut() }) { page ->
                     when (page) {
                         SettingsKey -> SettingsPage(onBack = { backStack.removeLastOrNull() }, onOpenAbout = { backStack.add(AboutKey) })
-                        AboutKey -> AboutPage(version, onBack = { backStack.removeLastOrNull() })
+                        AboutKey ->
+                            AboutPage(
+                                version,
+                                onBack = { backStack.removeLastOrNull() },
+                                onOpenSources = { backStack.add(DataSourcesKey) },
+                                onOpenPrivacy = { backStack.add(PrivacyKey) },
+                            )
+                        DataSourcesKey -> DataSourcesPage(onBack = { backStack.removeLastOrNull() })
+                        PrivacyKey -> PrivacyPage(onBack = { backStack.removeLastOrNull() })
                         else -> {}
                     }
                 }
@@ -714,7 +728,7 @@ private fun Modifier.belowStatusBar(
 }
 
 /** Keys shown as full-screen pages over the map instead of in the sheet. */
-private fun NavKey.isPage() = this == SettingsKey || this == AboutKey
+private fun NavKey.isPage() = this == SettingsKey || this == AboutKey || this == DataSourcesKey || this == PrivacyKey
 
 @Composable
 private fun MapLayer(

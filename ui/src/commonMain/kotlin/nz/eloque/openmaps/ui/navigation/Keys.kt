@@ -18,6 +18,12 @@ data object HomeKey : NavKey
 data object AboutKey : NavKey
 
 @Serializable
+data object DataSourcesKey : NavKey
+
+@Serializable
+data object PrivacyKey : NavKey
+
+@Serializable
 data object SettingsKey : NavKey
 
 /** Places of one category in the visible map area. */
