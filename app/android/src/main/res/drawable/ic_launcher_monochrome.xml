@@ -6,8 +6,8 @@
     android:viewportHeight="108">
     <group android:pivotX="54" android:pivotY="54" android:scaleX="0.75" android:scaleY="0.75">
         <path android:fillColor="#FFFFFF" android:pathData="M16,68a2,2 0,1 0,4,0a2,2 0,1 0,-4,0ZM22,68a2,2 0,1 0,4,0a2,2 0,1 0,-4,0Z" />
-        <path android:strokeColor="#FFFFFF" android:strokeWidth="8" android:strokeLineCap="round" android:pathData="M50,68L60,68" />
-        <path android:strokeColor="#FFFFFF" android:strokeWidth="6" android:strokeLineCap="round" android:pathData="M72,56L72,50" />
+        <path android:strokeColor="#FFFFFF" android:strokeWidth="8" android:pathData="M48,68L62,68" />
+        <path android:strokeColor="#FFFFFF" android:strokeWidth="6" android:pathData="M72,58L72,50" />
         <path android:strokeColor="#FFFFFF" android:strokeWidth="2.5" android:pathData="M28,68a10,10 0,1 0,20,0a10,10 0,1 0,-20,0Z" />
         <path android:strokeColor="#FFFFFF" android:strokeWidth="2.5" android:pathData="M62,68a10,10 0,1 0,20,0a10,10 0,1 0,-20,0Z" />
         <group android:translateX="31.75" android:translateY="61.75" android:scaleX="0.5208" android:scaleY="0.5208">
