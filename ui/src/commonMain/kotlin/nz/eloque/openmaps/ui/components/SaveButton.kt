@@ -1,17 +1,17 @@
 package nz.eloque.openmaps.ui.components
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -21,7 +21,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import nz.eloque.openmaps.core.model.FavouriteLabel
 import nz.eloque.openmaps.core.model.PlacesStore
@@ -57,18 +56,17 @@ fun SaveButton(
 
     Box(modifier) {
         if (favourite != null || inLists.isNotEmpty()) {
-            FilledTonalButton(onClick = { menuOpen = true }) {
-                Icon(favourite?.label?.icon ?: ListIcon.of(inLists.firstOrNull()?.icon).vector, contentDescription = null)
-                Text(
-                    favourite?.label?.titleRes?.let { stringResource(it) } ?: inLists.singleOrNull()?.name
-                        ?: stringResource(Res.string.saved),
-                    modifier = Modifier.padding(start = 8.dp),
+            FilledTonalIconButton(onClick = { menuOpen = true }, modifier = Modifier.size(ACTION_SIZE)) {
+                Icon(
+                    favourite?.label?.icon ?: ListIcon.of(inLists.firstOrNull()?.icon).vector,
+                    contentDescription =
+                        favourite?.label?.titleRes?.let { stringResource(it) } ?: inLists.singleOrNull()?.name
+                            ?: stringResource(Res.string.saved),
                 )
             }
         } else {
-            OutlinedButton(onClick = { menuOpen = true }) {
-                Icon(Icons.Outlined.BookmarkBorder, contentDescription = null)
-                Text(stringResource(Res.string.save), modifier = Modifier.padding(start = 8.dp))
+            OutlinedIconButton(onClick = { menuOpen = true }, modifier = Modifier.size(ACTION_SIZE)) {
+                Icon(Icons.Outlined.BookmarkBorder, contentDescription = stringResource(Res.string.save))
             }
         }
         DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {

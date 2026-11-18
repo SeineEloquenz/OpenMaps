@@ -56,7 +56,6 @@ import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -101,6 +100,7 @@ import nz.eloque.openmaps.core.model.plusCode
 import nz.eloque.openmaps.core.platform.Sharer
 import nz.eloque.openmaps.map.MapController
 import nz.eloque.openmaps.ui.category.label
+import nz.eloque.openmaps.ui.components.ACTION_SIZE
 import nz.eloque.openmaps.ui.components.DirectionsButton
 import nz.eloque.openmaps.ui.components.FocusOnMap
 import nz.eloque.openmaps.ui.components.LoadState
@@ -295,42 +295,38 @@ private fun ActionRow(
     var reporting by remember { mutableStateOf(false) }
     var menu by remember { mutableStateOf(false) }
     if (reporting) ReportDialog(place.location, place.name.takeUnless { place.pinned }, onDismiss = { reporting = false })
-    LazyRow(
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    Row(
+        Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        item { DirectionsButton(onDirections) }
-        item { SaveButton(place.toSearchResult()) }
+        DirectionsButton(onDirections)
+        SaveButton(place.toSearchResult())
         details?.phone?.let { phone ->
-            item { ActionButton(Icons.Default.Call, Res.string.call) { uriHandler.openUri(phone.telUri()) } }
+            ActionButton(Icons.Default.Call, Res.string.call) { uriHandler.openUri(phone.telUri()) }
         }
         details?.website?.let { url ->
-            item { ActionButton(Icons.Default.Language, Res.string.website) { uriHandler.openUri(url) } }
+            ActionButton(Icons.Default.Language, Res.string.website) { uriHandler.openUri(url) }
         }
-        item { ActionButton(Icons.Default.Share, Res.string.share) { sharer.share("${place.name}\n$shareUrl") } }
-        item {
-            Box {
-                FilledTonalIconButton(onClick = { menu = true }) {
-                    Icon(Icons.Default.MoreVert, contentDescription = stringResource(Res.string.more))
+        ActionButton(Icons.Default.Share, Res.string.share) { sharer.share("${place.name}\n$shareUrl") }
+        Box {
+            ActionButton(Icons.Default.MoreVert, Res.string.more) { menu = true }
+            DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                MenuItem(Icons.Default.Straighten, Res.string.measure_distance) {
+                    menu = false
+                    onMeasure()
                 }
-                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                    MenuItem(Icons.Default.Straighten, Res.string.measure_distance) {
-                        menu = false
-                        onMeasure()
-                    }
-                    MenuItem(Icons.Default.LocalParking, Res.string.save_parking) {
-                        menu = false
-                        settings.setParkedCar(ParkedCar(place.location, Clock.System.now()))
-                    }
-                    MenuItem(Icons.Default.ContentCopy, Res.string.copy_coordinates) {
-                        menu = false
-                        clipboard.setText(AnnotatedString(place.location.formatted()))
-                    }
-                    MenuItem(Icons.Outlined.Flag, Res.string.report) {
-                        menu = false
-                        reporting = true
-                    }
+                MenuItem(Icons.Default.LocalParking, Res.string.save_parking) {
+                    menu = false
+                    settings.setParkedCar(ParkedCar(place.location, Clock.System.now()))
+                }
+                MenuItem(Icons.Default.ContentCopy, Res.string.copy_coordinates) {
+                    menu = false
+                    clipboard.setText(AnnotatedString(place.location.formatted()))
+                }
+                MenuItem(Icons.Outlined.Flag, Res.string.report) {
+                    menu = false
+                    reporting = true
                 }
             }
         }
@@ -356,9 +352,8 @@ private fun ActionButton(
     label: StringResource,
     onClick: () -> Unit,
 ) {
-    FilledTonalButton(onClick = onClick) {
-        Icon(icon, contentDescription = null)
-        Text(stringResource(label), modifier = Modifier.padding(start = 8.dp))
+    FilledTonalIconButton(onClick = onClick, modifier = Modifier.size(ACTION_SIZE)) {
+        Icon(icon, contentDescription = stringResource(label))
     }
 }
 
