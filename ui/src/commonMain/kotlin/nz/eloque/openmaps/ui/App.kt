@@ -700,6 +700,8 @@ fun App(
                 }
                 AnimatedContent(
                     top?.takeIf { it.isPage() },
+                    // Full size, as an empty map state would otherwise make the page grow from an edge instead of sliding.
+                    modifier = Modifier.fillMaxSize(),
                     transitionSpec = { if (targetState.pageDepth > initialState.pageDepth) slideForward() else slideBackward() },
                 ) { page ->
                     when (page) {
