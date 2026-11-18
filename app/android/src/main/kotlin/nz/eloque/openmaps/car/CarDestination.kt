@@ -67,7 +67,7 @@ internal fun distanceText(
     unit: DistanceUnit,
 ): CharSequence =
     SpannableString(" ").apply {
-        setSpan(DistanceSpan.create(distance(meters, unit)), 0, 1, Spanned.SPAN_INCLUSIVE_INCLUSIVE)
+        setSpan(DistanceSpan.create(distance(meters, unit)), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
     }
 
 /** Runs [onShown] each time [screen] comes to the front and [onHidden] when another covers it or it closes. */

@@ -139,7 +139,7 @@ internal class RoutePreviewScreen(
                 Row.Builder()
                     .setTitle(
                         SpannableString(" ").apply {
-                            setSpan(DurationSpan.create(route.duration.inWholeSeconds), 0, 1, Spanned.SPAN_INCLUSIVE_INCLUSIVE)
+                            setSpan(DurationSpan.create(route.duration.inWholeSeconds), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                         },
                     ).addText(text)
                     .build(),
