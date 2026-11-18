@@ -581,7 +581,7 @@ internal fun Position.toLatLng() = LatLng(latitude = latitude, longitude = longi
 
 internal fun LatLng.toPosition() = Position(longitude = longitude, latitude = latitude)
 
-private const val LIGHT_STYLE = "https://tiles.openfreemap.org/styles/liberty"
+internal const val LIGHT_STYLE = "https://tiles.openfreemap.org/styles/liberty"
 private const val BUILDINGS_3D_LAYER = "building-3d"
 private const val DARK_STYLE = "https://tiles.openfreemap.org/styles/dark"
 private val StyleRetryFirst = 5.seconds
@@ -612,7 +612,7 @@ internal fun darkStyles(loadLight: suspend () -> String): Flow<BaseStyle> =
         }
     }
 
-private val LoadingDarkStyle =
+internal val LoadingDarkStyle =
     BaseStyle.Json(
         """{"version":8,"sources":{},"layers":[{"id":"background","type":"background","paint":{"background-color":"#1c1c1c"}}]}""",
     )
@@ -630,7 +630,7 @@ private val StopIconTint = Color(0xFF303030)
 /** Below this zoom there are too many stops in view to load or draw. */
 const val STOPS_MIN_ZOOM = 14.0
 private val FIT_MARGIN = 48.dp
-private val FollowAnimation = 900.milliseconds
+internal val FollowAnimation = 900.milliseconds
 private const val ROUTE_EVENT_DISTANCE = 30.0
 private val EUROPE = Position(longitude = 10.0, latitude = 50.0)
 

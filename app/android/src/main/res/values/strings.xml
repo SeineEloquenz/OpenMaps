@@ -35,4 +35,31 @@
         <item quantity="one">Next stop · arrive %2$s</item>
         <item quantity="other">%1$d more stops · arrive %2$s</item>
     </plurals>
+
+    <string name="car_where_to">Where to?</string>
+    <string name="car_search">Search</string>
+    <string name="car_search_hint">Search for a place or address</string>
+    <string name="car_home">Home</string>
+    <string name="car_work">Work</string>
+    <string name="car_gas">Gas stations</string>
+    <string name="car_charging">Charging</string>
+    <string name="car_stop">Stop</string>
+    <string name="car_add_stop">Add stop</string>
+    <string name="car_recenter">Recenter</string>
+    <string name="car_zoom_in">Zoom in</string>
+    <string name="car_zoom_out">Zoom out</string>
+    <string name="car_go">Go</string>
+    <string name="car_routes">Routes to %1$s</string>
+    <string name="car_route_fastest">Fastest</string>
+    <string name="car_tolls">Tolls</string>
+    <string name="car_motorways">Motorways</string>
+    <string name="car_ferries">Ferries</string>
+    <string name="car_no_route">No route found</string>
+    <string name="car_no_location">Waiting for your location. Allow precise location for OpenMaps on the phone.</string>
+    <string name="car_nothing_found">Nothing found</string>
+    <string name="car_loading">Loading…</string>
+    <string name="car_arrived">You have arrived</string>
+    <string name="car_map_unavailable">The map could not be shown</string>
+    <string name="car_minutes">%1$d min</string>
+    <string name="car_hours">%1$d h %2$d min</string>
 </resources>

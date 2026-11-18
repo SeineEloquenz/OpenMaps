@@ -276,7 +276,7 @@ private fun ShowTripOnMap(
 }
 
 /** [route] cut [meters] along it, into the part before and the part after. */
-internal fun split(
+fun split(
     route: List<LatLng>,
     meters: Double,
 ): Pair<List<LatLng>, List<LatLng>> {

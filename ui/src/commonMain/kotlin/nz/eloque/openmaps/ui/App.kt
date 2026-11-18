@@ -888,6 +888,12 @@ private fun GuidedTripLifecycle(backStack: MutableList<NavKey>) {
             }
         }
     }
+    LaunchedEffect(backStack) {
+        snapshotFlow { active.key }.collect { key ->
+            val running = navigator.state.value != null || guide.state.value != null
+            if (key != null && running && key !in backStack) backStack.add(key)
+        }
+    }
 }
 
 @Composable

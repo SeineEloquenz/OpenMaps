@@ -375,7 +375,7 @@ private val Connector.label: String
             Connector.CEE -> "CEE"
         }
 
-internal val Fuel.label: String
+val Fuel.label: String
     get() =
         when (this) {
             Fuel.DIESEL -> "Diesel"
